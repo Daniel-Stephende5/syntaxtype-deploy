@@ -1,24 +1,24 @@
 import React, { useState } from "react";
 import "./GridGame.css";
 import { runCCode } from "./judge0";
- 
+
 const GRID_ROWS = 10;
 const GRID_COLS = 10;
- 
+
 function getRandomPos() {
   const r = Math.floor(Math.random() * GRID_ROWS);
   const c = Math.floor(Math.random() * GRID_COLS);
   return { row: r, col: c };
 }
- 
+
 const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
- 
+
 export default function GridGameSimulator() {
   // =======================
   // Difficulty Levels
   // =======================
   const [difficulty, setDifficulty] = useState("Normal");
- 
+
   const getObstacleCount = () => {
     switch (difficulty) {
       case "Easy":
@@ -31,19 +31,20 @@ export default function GridGameSimulator() {
         return 10;
     }
   };
- 
+
   // =======================
   // Initial Setup
   // =======================
   const [playerPos, setPlayerPos] = useState(getRandomPos);
   const [pokemonPos, setPokemonPos] = useState(() => {
-    let pos;
+    let pos, distance;
     do {
       pos = getRandomPos();
-    } while (pos.row === playerPos.row && pos.col === playerPos.col);
+      distance = Math.abs(pos.row - playerPos.row) + Math.abs(pos.col - playerPos.col);
+    } while (distance < 5);
     return pos;
   });
- 
+
   const generateObstacles = () => {
     const obstacles = [];
     const OBSTACLE_COUNT = getObstacleCount();
@@ -57,11 +58,24 @@ export default function GridGameSimulator() {
     }
     return obstacles;
   };
- 
+
   const [obstacles, setObstacles] = useState(generateObstacles);
   const [message, setMessage] = useState("🎮 Reach the Pokémon using rook-like moves!");
   const [showWhileEditor, setShowWhileEditor] = useState(false);
- 
+  const [showInstructions, setShowInstructions] = useState(true);
+
+  // =======================
+  // ❤️ HEALTH SYSTEM
+  // =======================
+  const [health, setHealth] = useState(3);
+  const [lastSafePosition, setLastSafePosition] = useState(playerPos);
+
+  const renderHearts = () => {
+    let hearts = "";
+    for (let i = 0; i < health; i++) hearts += "❤️";
+    return hearts;
+  };
+
   // =======================
   // Code Templates
   // =======================
@@ -69,44 +83,41 @@ export default function GridGameSimulator() {
 int main() {
     int r = ${startRow};
     int c = ${startCol};
- 
-    // Use loops to reach the Pokémon step by step
+
     for (int i = 0; i < 5; i++) {
-        MOVE(r, c); // Move one step at a time (rook-like)
+        MOVE(r, c);
         // increment r or c here
     }
- 
     return 0;
 }`;
- 
+
   const getWhileLoopCode = (startRow, startCol) => `#include <stdio.h>
 int main() {
     int r = ${startRow};
     int c = ${startCol};
- 
+
     int i = 0;
     while (i < 5) {
-        MOVE(r, c); // Move one step at a time (rook-like)
+        MOVE(r, c);
         // increment r or c here
         i++;
     }
- 
     return 0;
 }`;
- 
+
   const [codeInput, setCodeInput] = useState(getForLoopCode(playerPos.row, playerPos.col));
   const [whileCode, setWhileCode] = useState(getWhileLoopCode(playerPos.row, playerPos.col));
- 
+
   // =======================
   // Game Logic
   // =======================
   async function runCode(customCode) {
     setMessage("⏳ Running your C code...");
- 
+
     const instrumentedCode = `#include <stdio.h>
 #define MOVE(r, c) printf("ROW=%d COL=%d\\n", (r), (c));
 ${customCode}`;
- 
+
     const result = await runCCode(instrumentedCode);
     if (result.error) {
       setMessage("⚠️ Error contacting Judge0");
@@ -120,7 +131,7 @@ ${customCode}`;
       setMessage("❌ Runtime Error:\n" + result.stderr);
       return;
     }
- 
+
     const moves = (result.stdout || "")
       .trim()
       .split("\n")
@@ -130,64 +141,90 @@ ${customCode}`;
         return null;
       })
       .filter(Boolean);
- 
+
     if (moves.length === 0) {
       setMessage("⚠️ No moves detected. Use MOVE(r, c) for each step!");
       return;
     }
- 
+
     let currentPos = playerPos;
- 
+
     for (let pos of moves) {
-      const rowDiff = Math.abs(pos.row - currentPos.row);
-      const colDiff = Math.abs(pos.col - currentPos.col);
-      if (!((rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1))) {
-        setMessage("❌ Invalid move! You can only move like a rook by 1 cell per step.");
+      // Must be straight (rook move)
+      if (!(pos.row === currentPos.row || pos.col === currentPos.col)) {
+        setMessage("❌ Invalid move! Move must be horizontal or vertical only.");
         return;
       }
- 
-      if (pos.row >= GRID_ROWS || pos.col >= GRID_COLS || pos.row < 0 || pos.col < 0) {
-        setMessage("❌ Out of bounds!");
-        return;
+
+      // Determine movement direction
+      const rowStep = pos.row === currentPos.row ? 0 : pos.row > currentPos.row ? 1 : -1;
+      const colStep = pos.col === currentPos.col ? 0 : pos.col > currentPos.col ? 1 : -1;
+
+      // Scan path cell by cell
+      while (currentPos.row !== pos.row || currentPos.col !== pos.col) {
+        const nextRow = currentPos.row + rowStep;
+        const nextCol = currentPos.col + colStep;
+
+        // Out of bounds
+        if (nextRow < 0 || nextRow >= GRID_ROWS || nextCol < 0 || nextCol >= GRID_COLS) {
+          setMessage("❌ Out of bounds!");
+          return;
+        }
+
+        // Hit obstacle
+        if (obstacles.some(o => o.row === nextRow && o.col === nextCol)) {
+          setHealth(h => h - 1);
+
+          if (health - 1 > 0) {
+            setMessage("💥 Hit obstacle! Lost 1 ❤️. Returning to last safe position.");
+            setPlayerPos(lastSafePosition);
+          } else {
+            setMessage("💀 GAME OVER! No hearts left.");
+          }
+          return;
+        }
+
+        // Move to next cell
+        currentPos = { row: nextRow, col: nextCol };
+        setPlayerPos(currentPos);
+        await sleep(150);
+
+        // Check if reached Pokémon
+        if (currentPos.row === pokemonPos.row && currentPos.col === pokemonPos.col) {
+          setMessage("🎉 You found the Pokémon! 🎊");
+          return;
+        }
       }
- 
-      currentPos = pos;
-      setPlayerPos(currentPos);
-      await sleep(300);
- 
-      const hitObstacle = obstacles.some(o => o.row === currentPos.row && o.col === currentPos.col);
-      if (hitObstacle) {
-        setMessage("💀 Game Over! You hit an obstacle!");
-        return;
-      }
- 
-      if (currentPos.row === pokemonPos.row && currentPos.col === pokemonPos.col) {
-        setMessage("🎉 You found the Pokémon! 🎊 Keep playing or press New Game.");
-        return;
-      }
+
+      // Update last safe position after completing this move
+      setLastSafePosition(currentPos);
     }
- 
+
     setMessage("⏳ Keep moving! Adjust your loops to reach the Pokémon.");
   }
- 
+
   // =======================
   // New Game
   // =======================
   function newGame() {
-    let newPlayer, newPokemon;
+    let newPlayer, newPokemon, distance;
     do {
       newPlayer = getRandomPos();
       newPokemon = getRandomPos();
-    } while (newPlayer.row === newPokemon.row && newPlayer.col === newPokemon.col);
- 
+      distance = Math.abs(newPokemon.row - newPlayer.row) + Math.abs(newPokemon.col - newPlayer.col);
+    } while (distance < 5);
+
     setPlayerPos(newPlayer);
+    setLastSafePosition(newPlayer);
     setPokemonPos(newPokemon);
     setObstacles(generateObstacles());
+    setHealth(3);
+
     setCodeInput(getForLoopCode(newPlayer.row, newPlayer.col));
     setWhileCode(getWhileLoopCode(newPlayer.row, newPlayer.col));
-    setMessage(`🎲 New ${difficulty} game! Avoid obstacles and reach the Pokémon!`);
+    setMessage(`🎲 New ${difficulty} game! Avoid obstacles and reach Pokémon!`);
   }
- 
+
   // =======================
   // UI Rendering
   // =======================
@@ -210,57 +247,136 @@ ${customCode}`;
     cursor: "pointer",
     transition: "0.2s ease",
   });
- 
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
       <h2>Pokémon Hunting Grid ({difficulty} Mode)</h2>
- 
+
+      {/* ❤️ HEALTH DISPLAY */}
+      <div style={{ fontSize: "28px", marginBottom: "10px" }}>{renderHearts()}</div>
+
       {/* Difficulty Buttons */}
-      <div style={{ marginBottom: "20px" }}>
-        {["Easy", "Normal", "Hard"].map((level) => (
-          <button
-            key={level}
-            onClick={() => {
-              setDifficulty(level);
-              setMessage(`🎮 Difficulty set to ${level}. Press New Game to start.`);
-              setObstacles([]); // clear old obstacles until new game starts
-            }}
-            style={difficultyButtonStyle(level)}
-          >
-            {level}
-          </button>
-        ))}
+      <div style={{ marginBottom: "20px", display: "flex", alignItems: "center", gap: "20px" }}>
+        <div>
+          {["Easy", "Normal", "Hard"].map((level) => (
+            <button
+              key={level}
+              onClick={() => {
+                setDifficulty(level);
+                setMessage(`🎮 Difficulty set to ${level}. Press New Game.`);
+                setObstacles([]);
+              }}
+              style={difficultyButtonStyle(level)}
+            >
+              {level}
+            </button>
+          ))}
+        </div>
+        
+        {/* Instructions Toggle Button */}
+        <button 
+          onClick={() => setShowInstructions(!showInstructions)}
+          style={{
+            padding: "10px 20px",
+            backgroundColor: showInstructions ? "#4caf50" : "#66bb6a",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            fontWeight: "bold",
+            cursor: "pointer"
+          }}
+        >
+          {showInstructions ? "Hide Instructions" : "Show Instructions"}
+        </button>
       </div>
- 
-      {/* Grid */}
-      <div className="grid" style={{ marginBottom: "20px" }}>
-        {Array.from({ length: GRID_ROWS }).map((_, r) => (
-          <div key={r} className="row">
-            {Array.from({ length: GRID_COLS }).map((_, c) => {
-              let cellContent = "";
-              if (r === playerPos.row && c === playerPos.col) cellContent = "🧍";
-              else if (r === pokemonPos.row && c === pokemonPos.col)
-                cellContent = <img src="/images/pokeball.png" alt="Pokemon" style={{ width: "28px", height: "28px" }} />;
-              else if (obstacles.some(o => o.row === r && o.col === c))
-                cellContent = "🪨";
- 
-              return (
-                <div key={c} className="cell">{cellContent}</div>
-              );
-            })}
+
+      {/* Main Game Area with Grid and Instructions */}
+      <div style={{ 
+        display: "flex", 
+        gap: "50px", 
+        alignItems: "flex-start", 
+        marginBottom: "20px",
+        justifyContent: "center",
+        width: "100%",
+        maxWidth: "1200px"
+      }}>
+        {/* Grid */}
+        <div className="grid">
+          {Array.from({ length: GRID_ROWS }).map((_, r) => (
+            <div key={r} className="row">
+              {Array.from({ length: GRID_COLS }).map((_, c) => {
+                let cellContent = "";
+                if (r === playerPos.row && c === playerPos.col) cellContent = "🧍";
+                else if (r === pokemonPos.row && c === pokemonPos.col)
+                  cellContent = <img src="/images/pokeball.png" alt="Pokemon" style={{ width: "28px", height: "28px" }} />;
+                else if (obstacles.some(o => o.row === r && o.col === c))
+                  cellContent = "🪨";
+
+                return (
+                  <div key={c} className="cell">{cellContent}</div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        {/* Instructions Panel */}
+        {showInstructions && (
+          <div style={{
+            backgroundColor: "#e8f5e9",
+            padding: "20px",
+            borderRadius: "8px",
+            border: "2px solid #81c784",
+            width: "320px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+          }}>
+            <h3 style={{ color: "#2e7d32", marginTop: 0, marginBottom: "15px" }}>📖 How to Play</h3>
+            
+            <div style={{ fontSize: "14px", color: "#333", lineHeight: "1.6" }}>
+              <p><strong>🎯 Objective:</strong> Move the player (🧍) to catch the Pokémon (🔴)!</p>
+              
+              <p><strong>🎮 Controls:</strong></p>
+              <ul style={{ marginLeft: "20px", marginTop: "5px" }}>
+                <li>Write C code using for/while loops</li>
+                <li>Use <code style={{ backgroundColor: "#fff", padding: "2px 6px", borderRadius: "3px" }}>MOVE(r, c)</code> to move</li>
+                <li>Increment/decrement <code style={{ backgroundColor: "#fff", padding: "2px 6px", borderRadius: "3px" }}>r</code> or <code style={{ backgroundColor: "#fff", padding: "2px 6px", borderRadius: "3px" }}>c</code></li>
+              </ul>
+
+              <p><strong>📏 Movement Rules:</strong></p>
+              <ul style={{ marginLeft: "20px", marginTop: "5px" }}>
+                <li>Only horizontal or vertical moves</li>
+                <li>Cannot move diagonally</li>
+                <li>Avoid obstacles (🪨)</li>
+              </ul>
+
+              <p><strong>❤️ Health System:</strong></p>
+              <ul style={{ marginLeft: "20px", marginTop: "5px" }}>
+                <li>Start with 3 hearts</li>
+                <li>Lose 1 heart per obstacle hit</li>
+                <li>Return to last safe position</li>
+                <li>Game over at 0 hearts</li>
+              </ul>
+
+              <p><strong>🎚️ Difficulty:</strong></p>
+              <ul style={{ marginLeft: "20px", marginTop: "5px" }}>
+                <li><strong>Easy:</strong> No obstacles</li>
+                <li><strong>Normal:</strong> 10 obstacles</li>
+                <li><strong>Hard:</strong> 20 obstacles</li>
+              </ul>
+            </div>
           </div>
-        ))}
+        )}
       </div>
- 
+
       {/* Controls */}
       <button style={{ marginBottom: "10px" }} onClick={() => setShowWhileEditor(!showWhileEditor)}>
         {showWhileEditor ? "Hide While Loop Editor" : "Show While Loop Editor"}
       </button>
- 
+
       <textarea
         rows={12}
         cols={60}
-        style={{ marginBottom: "10px", width: "100%" }}
+        style={{ marginBottom: "10px", width: "550px", maxWidth: "100%" }}
         value={codeInput}
         onChange={(e) => setCodeInput(e.target.value)}
       />
@@ -268,18 +384,18 @@ ${customCode}`;
         <textarea
           rows={12}
           cols={60}
-          style={{ marginBottom: "10px", width: "100%" }}
+          style={{ marginBottom: "10px", width: "550px", maxWidth: "100%" }}
           value={whileCode}
           onChange={(e) => setWhileCode(e.target.value)}
         />
       )}
- 
+
       <div style={{ display: "flex", gap: 8 }}>
         <button onClick={() => runCode(codeInput)}>Run For Loop Code</button>
         <button onClick={() => runCode(whileCode)}>Run While Loop Code</button>
         <button onClick={newGame}>New Game</button>
       </div>
- 
+
       <pre style={{ marginTop: 12, textAlign: "center" }}>{message}</pre>
     </div>
   );
