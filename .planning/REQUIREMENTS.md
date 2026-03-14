@@ -68,13 +68,33 @@
 
 ## Traceability
 
-| Requirement | Phase (TBD) | Status |
-|-------------|-------------|--------|
-| SEC-01 to SEC-06 | 1 | Pending |
-| ERR-01 to ERR-05 | 1 | Pending |
-| BQ-01 to BQ-05 | 2 | Pending |
-| FQ-01 to FQ-04 | 3 | Pending |
-| TEST-01 to TEST-03 | 2 | Pending |
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| SEC-01 | Phase 1 | Pending |
+| SEC-02 | Phase 1 | Pending |
+| SEC-03 | Phase 1 | Pending |
+| SEC-04 | Phase 1 | Pending |
+| SEC-05 | Phase 1 | Pending |
+| SEC-06 | Phase 1 | Pending |
+| ERR-01 | Phase 1 | Pending |
+| ERR-02 | Phase 1 | Pending |
+| ERR-03 | Phase 1 | Pending |
+| ERR-04 | Phase 1 | Pending |
+| ERR-05 | Phase 1 | Pending |
+| BQ-01 | Phase 2 | Pending |
+| BQ-02 | Phase 2 | Pending |
+| BQ-03 | Phase 2 | Pending |
+| BQ-04 | Phase 2 | Pending |
+| BQ-05 | Phase 2 | Pending |
+| TEST-01 | Phase 2 | Pending |
+| TEST-02 | Phase 2 | Pending |
+| TEST-03 | Phase 2 | Pending |
+| FQ-01 | Phase 4 | Pending |
+| FQ-02 | Phase 4 | Pending |
+| FQ-03 | Phase 4 | Pending |
+| FQ-04 | Phase 4 | Pending |
+
+**Coverage:** 23/23 requirements mapped ✓
 
 ---
 
