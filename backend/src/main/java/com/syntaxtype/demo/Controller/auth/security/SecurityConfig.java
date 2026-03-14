@@ -75,7 +75,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         // Add frontend URL to allowed origins; support comma separated values in FRONTEND_URL
-        List<String> allowedOrigins = List.of("http://localhost:3000", "http://localhost:5173");
+        List<String> allowedOrigins = List.of("http://localhost:3000", "http://localhost:5173", "https://syntaxtype-deploy-omega.vercel.app/");
         if (frontendUrl != null && !frontendUrl.isEmpty()) {
             // handle multiple origins separated by comma
             String[] extras = frontendUrl.split(",");
