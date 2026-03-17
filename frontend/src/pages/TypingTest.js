@@ -20,7 +20,7 @@ const [blankIndices, setBlankIndices] = useState([]);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [wpm, setWpm] = useState(0);
   const [score, setScore] = useState(0);
- 
+ const [blankInputs, setBlankInputs] = useState([]);
   const navigate = useNavigate();
   const toggleMenu = () => setIsMenuOpen((prev) => !prev);
  
@@ -28,7 +28,7 @@ const [blankIndices, setBlankIndices] = useState([]);
   const fetchChallengeList = async (type) => {
     try {
       let url;
-      if (type === "normal")  {setChallenges(codeChallenges);}
+      if (type === "normal")  {setChallenges(codeChallenges);return;}
       else if (type === "falling") {url = `${API_BASE}/api/challenges/falling`;}
       else if (type === "advancedFalling"){ url = `${API_BASE}/api/challenges/falling/advanced`;}
       else throw new Error("Unknown challenge type");
@@ -48,11 +48,13 @@ const [blankIndices, setBlankIndices] = useState([]);
   const loadSelectedChallenge = async (challenge) => {
     try {
       let url;
-      if (challengeType === "normal") {
-        setSelectedChallenge(challenge);
-     setBlankInputs(new Array(challenge.answers.length).fill("")); // one per blank
+     if (challengeType === "normal") {
+  setSelectedChallenge(challenge);
+  setBlankInputs(new Array(challenge.answers.length).fill(""));
   setInput("");
   setIsTestComplete(false);
+  return; 
+}
       } else if (challengeType === "falling") {
         url = `${API_BASE}/api/challenges/falling/${challenge.challengeId}`;
       } else if (challengeType === "advancedFalling") {
