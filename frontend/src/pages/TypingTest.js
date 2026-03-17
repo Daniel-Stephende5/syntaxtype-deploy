@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "../css/typingtest.css";
 import { API_BASE } from "../utils/api";
-import codeChallenges from "./codeChallenges";
+import codeChallenges from "./codeChallenges.js";
  
 const TypingTest = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
