@@ -6,7 +6,7 @@ export default function GalaxyChallengeList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expanded, setExpanded] = useState({}); // track expanded descriptions by id
-
+const API_BASE = process.env.REACT_APP_API_BASE_URL;
   const fetchChallenges = async () => {
     setLoading(true);
     setError(null);
