@@ -1,140 +1,157 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import "../css/typingtest.css";
 import { API_BASE } from "../utils/api";
-import codeChallenges from "./codeChallenges";
-
+ import codeChallenges from "./codeChallenges";
 const TypingTest = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [challenges, setChallenges] = useState([]);
   const [selectedChallenge, setSelectedChallenge] = useState(null);
+  const [sampleParagraph, setSampleParagraph] = useState("");
   const [input, setInput] = useState("");
   const [correctCount, setCorrectCount] = useState(0);
   const [isTestComplete, setIsTestComplete] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [blankIndices, setBlankIndices] = useState([]);
   const [challengeType, setChallengeType] = useState("normal");
   const [startTime, setStartTime] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [wpm, setWpm] = useState(0);
   const [score, setScore] = useState(0);
   const [blankInputs, setBlankInputs] = useState([]);
-  const [showCursor, setShowCursor] = useState(true);
-
+ const [showCursor, setShowCursor] = useState(true);
   const navigate = useNavigate();
-
+  const toggleMenu = () => setIsMenuOpen((prev) => !prev);
+ 
   // ✅ Fetch challenge list
-  const fetchChallengeList = async (type) => {
-    setError(null);
-    try {
-      if (type === "normal") {
-        setChallenges(codeChallenges);
-      } else if (type === "falling") {
-        const res = await fetch(`${API_BASE}/api/challenges/falling`);
-        if (!res.ok) throw new Error("Failed to fetch falling challenges");
-        setChallenges(await res.json());
-      } else if (type === "advancedFalling") {
-        const res = await fetch(`${API_BASE}/api/challenges/falling/advanced`);
-        if (!res.ok) throw new Error("Failed to fetch advanced challenges");
-        setChallenges(await res.json());
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+const fetchChallengeList = async (type) => {
+  setError(null);
+  try {
+    if (type === "normal") {
+      // Local challenges
+      setChallenges(codeChallenges);
+    } else if (type === "falling") {
+      const res = await fetch(`${API_BASE}/api/challenges/falling`);
+      if (!res.ok) throw new Error("Failed to fetch falling challenges");
+      const data = await res.json();
+      setChallenges(data);
+    } else if (type === "advancedFalling") {
+      const res = await fetch(`${API_BASE}/api/challenges/falling/advanced`);
+      if (!res.ok) throw new Error("Failed to fetch advanced falling challenges");
+      const data = await res.json();
+      setChallenges(data);
+    } else {
+      throw new Error("Unknown challenge type");
     }
-  };
+  } catch (err) {
+    setError(err.message || "Failed to load challenges.");
+  } finally {
+    setLoading(false);
+  }
+};
 
+ 
   // ✅ Load selected challenge
-  const loadSelectedChallenge = async (challenge) => {
-    try {
-      if (challengeType === "normal") {
-        setSelectedChallenge(challenge);
-        setBlankInputs(new Array(challenge.answers.length).fill(""));
-        setInput("");
-        setIsTestComplete(false);
-      } else if (challengeType === "falling") {
-        const res = await fetch(
+ const loadSelectedChallenge = async (challenge) => {
+  try {
+    if (challengeType === "normal") {
+      setSelectedChallenge(challenge);
+     setBlankInputs(new Array(challenge.answers.length).fill("")); // one per blank
+  setInput("");
+  setIsTestComplete(false);
+    } else if (challengeType === "falling") {
+      const res = await fetch(
           `${API_BASE}/api/challenges/falling/${challenge.challengeId || challenge.id}`
         );
-        if (!res.ok) throw new Error("Failed to load falling challenge");
-
-        const data = await res.json();
-        sessionStorage.setItem("fallingChallenge", JSON.stringify(data));
-        navigate("/fallingtypingtest");
-        return;
-      } else if (challengeType === "advancedFalling") {
-        const res = await fetch(
+      if (!res.ok) throw new Error("Failed to load falling challenge");
+      const data = await res.json();
+      sessionStorage.setItem("fallingChallenge", JSON.stringify(data));
+      navigate("/fallingtypingtest");
+      return;
+    } else if (challengeType === "advancedFalling") {
+      const res = await fetch(
           `${API_BASE}/api/challenges/falling/advanced/${challenge.challengeId || challenge.id}`
         );
-        if (!res.ok) throw new Error("Failed to load advanced challenge");
+      if (!res.ok) throw new Error("Failed to load advanced falling challenge");
+      const data = await res.json();
+      sessionStorage.setItem("fallingChallenge", JSON.stringify(data));
+      navigate("/fallingtypingtest2");
+      return;
+    } else {
+      throw new Error("Unknown challenge type");
+    }
 
-        const data = await res.json();
-        sessionStorage.setItem("fallingChallenge", JSON.stringify(data));
-        navigate("/fallingtypingtest2");
-        return;
-      }
+    // Reset test state for normal typing
+    setInput("");
+    setCorrectCount(0);
+    setIsTestComplete(false);
+    setStartTime(null);
+    setElapsedTime(0);
+    setWpm(0);
+    setScore(0);
+  } catch (err) {
+    setError(err.message || "Failed to load challenge details.");
+  }
+};
+ 
+  // Timer effect
+useEffect(() => {
+  let timer;
 
-      // reset stats
-      setCorrectCount(0);
-      setStartTime(null);
-      setElapsedTime(0);
-      setWpm(0);
-      setScore(0);
+  if (startTime && !isTestComplete) {
+    timer = setInterval(() => {
+      const now = Date.now();
+      const seconds = Math.floor((now - startTime) / 1000);
+      setElapsedTime(seconds);
 
-    } catch (err) {
-      setError(err.message);
+      // Standard typing formula: 5 chars = 1 word
+      const wordsTyped = input.length / 5;
+      const liveWpm = seconds > 0 ? Math.round((wordsTyped / seconds) * 60) : 0;
+      setWpm(liveWpm);
+    }, 1000);
+  }
+
+  return () => clearInterval(timer);
+}, [startTime, isTestComplete, input]);
+ useEffect(() => {
+  if (!selectedChallenge || isTestComplete) return;
+
+  const handleKeyDown = (e) => {
+    // Ignore special keys except Backspace
+    if (e.key.length === 1) {
+      if (!startTime) setStartTime(Date.now());
+      setInput((prev) => prev + e.key);
+    }
+
+    if (e.key === "Backspace") {
+      setInput((prev) => prev.slice(0, -1));
+    }
+
+    if (e.key === "Enter") {
+      setInput((prev) => prev + "\n");
     }
   };
 
-  // ⏱ Timer
-  useEffect(() => {
-    let timer;
-    if (startTime && !isTestComplete) {
-      timer = setInterval(() => {
-        const seconds = Math.floor((Date.now() - startTime) / 1000);
-        setElapsedTime(seconds);
+  window.addEventListener("keydown", handleKeyDown);
 
-        const words = input.length / 5;
-        setWpm(seconds > 0 ? Math.round((words / seconds) * 60) : 0);
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [startTime, isTestComplete, input]);
+  return () => window.removeEventListener("keydown", handleKeyDown);
+}, [selectedChallenge, isTestComplete, startTime]);
+useEffect(() => {
+  if (!selectedChallenge || isTestComplete) return;
 
-  // ⌨️ Input handler
-  useEffect(() => {
-    if (!selectedChallenge || isTestComplete) return;
+  const interval = setInterval(() => {
+    setShowCursor((prev) => !prev);
+  }, 500); // blink speed
 
-    const handleKeyDown = (e) => {
-      if (e.key.length === 1) {
-        if (!startTime) setStartTime(Date.now());
-        setInput((prev) => prev + e.key);
-      }
-      if (e.key === "Backspace") {
-        setInput((prev) => prev.slice(0, -1));
-      }
-      if (e.key === "Enter") {
-        setInput((prev) => prev + "\n");
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedChallenge, isTestComplete, startTime]);
-
-  // ⌨️ Cursor blink
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setShowCursor((prev) => !prev);
-    }, 500);
-    return () => clearInterval(interval);
-  }, []);
-
-  // 🔄 Fetch on type change
+  return () => clearInterval(interval);
+}, [selectedChallenge, isTestComplete]);
+  // Fetch challenges on type change
   useEffect(() => {
     setLoading(true);
     fetchChallengeList(challengeType);
     setSelectedChallenge(null);
+    setSampleParagraph("");
     setInput("");
     setCorrectCount(0);
     setIsTestComplete(false);
@@ -143,106 +160,570 @@ const TypingTest = () => {
     setWpm(0);
     setScore(0);
   }, [challengeType]);
+ 
+  // Complete test
+const completeTest = () => {
+  if (!selectedChallenge || !startTime) return;
 
-  // ✅ Complete test
-  const completeTest = () => {
-    if (!selectedChallenge || !startTime) return;
+  const endTime = Date.now();
+  const finalElapsed = Math.floor((endTime - startTime) / 1000);
 
-    const time = Math.floor((Date.now() - startTime) / 1000);
-    const { code, answers } = selectedChallenge;
+  const { code, answers } = selectedChallenge;
 
-    let expected = code;
-    answers.forEach(a => {
-      expected = expected.replace("___", a);
-    });
+  // ===== BUILD FULL EXPECTED STRING (INCLUDING BLANKS) =====
+  let fullExpected = code;
 
-    const trimmed = input.slice(0, expected.length);
+  answers.forEach((answer) => {
+    fullExpected = fullExpected.replace("___", answer);
+  });
 
-    let correct = 0;
-    for (let i = 0; i < expected.length; i++) {
-      if (trimmed[i] === expected[i]) correct++;
+  // ===== IGNORE EXTRA TYPED CHARACTERS =====
+  const trimmedInput = input.slice(0, fullExpected.length);
+
+  // ===== COUNT GREEN CHARACTERS =====
+  let correctChars = 0;
+
+  for (let i = 0; i < fullExpected.length; i++) {
+    if (trimmedInput[i] === fullExpected[i]) {
+      correctChars++;
     }
+  }
 
-    const accuracy = Math.round((correct / expected.length) * 100);
-    const words = trimmed.split(/\s+/).length;
-    const finalWpm = Math.round((words / time) * 60);
+  const totalChars = fullExpected.length;
 
-    const finalScore = Math.min(100, accuracy);
+  // ===== ACCURACY =====
+  const accuracyPercent =
+    totalChars > 0
+      ? Math.round((correctChars / totalChars) * 100)
+      : 0;
 
-    setCorrectCount(correct);
-    setElapsedTime(time);
-    setWpm(finalWpm);
-    setScore(finalScore);
-    setIsTestComplete(true);
+  // ===== WPM (BASED ON TYPED CONTENT ONLY) =====
+  const wordCount =
+    trimmedInput.trim().split(/\s+/).filter(Boolean).length;
 
-    // ✅ submit score
-    fetch(`${API_BASE}/api/scores`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        score: finalScore,
-        timeInSeconds: time,
-        challengeType: "normal",
-      }),
-    });
-  };
+  const finalWpm =
+    finalElapsed > 0
+      ? Math.round((wordCount / finalElapsed) * 60)
+      : 0;
 
-  // 🎨 Render code
-  const renderColoredText = () => {
-    if (!selectedChallenge) return null;
+  // ===== TIME MULTIPLIER =====
+  let timeMultiplier = 1;
 
-    const { code, answers } = selectedChallenge;
-    const parts = code.split("___");
+  if (finalElapsed <= 60) timeMultiplier = 1;
+  else if (finalElapsed <= 90) timeMultiplier = 0.95;
+  else if (finalElapsed <= 120) timeMultiplier = 0.9;
+  else timeMultiplier = 0.8;
 
-    let index = 0;
-
-    return (
-      <div className="typing-container">
-        {parts.map((part, i) => (
-          <span key={i}>
-            {part.split("").map((char, j) => {
-              const typed = input[index];
-              const color = typed ? (typed === char ? "green" : "red") : "black";
-              index++;
-              return <span key={j} style={{ color }}>{char}</span>;
-            })}
-
-            {i < parts.length - 1 &&
-              answers[i].split("").map((char, j) => {
-                const typed = input[index];
-                const color = typed ? (typed === char ? "green" : "red") : "gray";
-                index++;
-                return <span key={j} style={{ color }}>{typed || "_"}</span>;
-              })}
-          </span>
-        ))}
-      </div>
-    );
-  };
-
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div style={{ color: "red" }}>{error}</div>;
-
-  return (
-    <div style={{ padding: "2rem" }}>
-      {!selectedChallenge && challenges.map((c) => (
-        <button key={c.id} onClick={() => loadSelectedChallenge(c)}>
-          {c.question}
-        </button>
-      ))}
-
-      {selectedChallenge && (
-        <>
-          <h3>{selectedChallenge.question}</h3>
-          {renderColoredText()}
-
-          {!isTestComplete && (
-            <button onClick={completeTest}>Submit</button>
-          )}
-        </>
-      )}
-    </div>
+  // ===== FINAL SCORE =====
+  const finalScore = Math.min(
+    100,
+    Math.round(accuracyPercent * timeMultiplier)
   );
+
+  // ===== UPDATE STATE =====
+  setCorrectCount(correctChars);
+  setElapsedTime(finalElapsed);
+  setWpm(finalWpm);
+  setIsTestComplete(true);
+  setScore(finalScore);
+
+  // ===== BACKEND SUBMISSION =====
+  fetch(`${API_BASE}/api/scores`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      score: finalScore,
+      timeInSeconds: finalElapsed,
+      challengeType: "normal",
+    }),
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error("Failed to save score");
+      console.log("✅ Score submitted successfully!");
+    })
+    .catch((err) => {
+      console.error("❌ Error submitting score:", err);
+    });
 };
 
+ /*const getParagraphChars = () => {
+  if (!selectedChallenge) return [];
+
+  const { code, answers } = selectedChallenge;
+
+  // Split paragraph by blanks ___
+  const parts = code.split("___");
+  const chars = [];
+
+  for (let i = 0; i < parts.length; i++) {
+    // Add normal characters
+    chars.push(...parts[i].split(""));
+
+    // Add a blank placeholder (as object)
+    if (i < parts.length - 1) {
+      chars.push({ isBlank: true });
+    }
+  }
+
+  return chars;
+};*/
+const parseCodeSegments = () => {
+  if (!selectedChallenge) return [];
+
+  const { code, answers } = selectedChallenge;
+  const parts = code.split("___");
+  const segments = [];
+
+  for (let i = 0; i < parts.length; i++) {
+    if (parts[i]) segments.push({ type: "text", content: parts[i] });
+
+    if (i < parts.length - 1) {
+      segments.push({
+        type: "blank",
+        index: i,
+        expected: answers[i] || "",
+        value: blankInputs[i] || ""
+      });
+    }
+  }
+
+  return segments;
+};
+
+
+  // Colored text rendering (UNCHANGED)
+const renderColoredText = () => {
+  if (!selectedChallenge) return null;
+
+  const { code, answers } = selectedChallenge;
+  const parts = code.split("___");
+
+  let inputIndex = 0; // Tracks index in main input
+  let globalIndex = 0;
+return (
+  <div
+    style={{
+      fontFamily: "monospace",
+      fontSize: "1.1rem",
+      lineHeight: "1.8rem",
+      backgroundColor: "#f9f9f9",
+      padding: "1rem",
+      borderRadius: "8px",
+      whiteSpace: "pre-wrap",
+      minHeight: "150px",
+      cursor: "text",
+      position: "relative",
+    }}
+    onClick={() => {
+      if (!startTime) setStartTime(Date.now());
+    }}
+  >
+    {parts.map((part, i) => {
+      const elements = [];
+
+      // 1️⃣ Normal text
+      part.split("").forEach((char, j) => {
+        const isCursorHere =
+          inputIndex === input.length && !isTestComplete;
+
+        const typedChar = input[inputIndex];
+        let color = "black";
+        if (typedChar) color = typedChar === char ? "green" : "red";
+
+        elements.push(
+          <span
+            key={`char-${i}-${j}`}
+            style={{ position: "relative", color }}
+          >
+            {/* Cursor BEFORE character */}
+            {isCursorHere && (
+              <span
+                style={{
+                  position: "absolute",
+                  left: "-1px",
+                  top: 0,
+                  width: "2px",
+                  height: "100%",
+                  backgroundColor: "#000",
+                  opacity: showCursor ? 1 : 0,
+                }}
+              />
+            )}
+
+            {char}
+          </span>
+        );
+
+        inputIndex++;
+      });
+
+      // 2️⃣ Blank word
+      if (i < parts.length - 1) {
+        const expected = answers[i] || "";
+        const userTyped = input.slice(
+          inputIndex,
+          inputIndex + expected.length
+        );
+
+        let bgColor = "#4cc9f0";
+        if (userTyped.length === expected.length) {
+          bgColor =
+            userTyped === expected ? "#d4edda" : "#f8d7da";
+        }
+
+        expected.split("").forEach((char, j) => {
+          const isCursorHere =
+            inputIndex === input.length && !isTestComplete;
+
+          const typedChar = userTyped[j];
+          let color = "#000";
+          if (typedChar) color = typedChar === char ? "green" : "red";
+
+          elements.push(
+            <span
+              key={`blank-${i}-${j}`}
+              style={{
+                position: "relative",
+                color,
+                backgroundColor: bgColor,
+              }}
+            >
+              {isCursorHere && (
+                <span
+                  style={{
+                    position: "absolute",
+                    left: "-1px",
+                    top: 0,
+                    width: "2px",
+                    height: "100%",
+                    backgroundColor: "#000",
+                    opacity: showCursor ? 1 : 0,
+                  }}
+                />
+              )}
+
+              {typedChar || "_"}
+            </span>
+          );
+
+          inputIndex++;
+        });
+      }
+
+      return elements;
+    })}
+
+    {/* Cursor at very end */}
+    {inputIndex === input.length && !isTestComplete && (
+      <span
+        style={{
+          display: "inline-block",
+          width: "2px",
+          height: "1em",
+          backgroundColor: "#000",
+          opacity: showCursor ? 1 : 0,
+        }}
+      />
+    )}
+  </div>
+);
+};
+
+
+
+ 
+  const handleChallengeTypeChange = (type) => {
+    setChallengeType(type);
+  };
+ 
+  if (loading) return <div style={{ padding: "2rem" }}>Loading challenges...</div>;
+  if (error) return <div style={{ padding: "2rem", color: "red" }}>{error}</div>;
+ 
+  return (
+    <>
+      <nav className="navbar">
+        <button className="hamburger-icon" onClick={toggleMenu}>☰</button>
+        <div className="navbar-left">
+          <h1 className="navbar-title">Typing Test</h1>
+        </div>
+        <div className="navbar-right">
+          <button className="nav-button" onClick={() => navigate("/")}>
+            Back to Dashboard
+          </button>
+        </div>
+      </nav>
+ 
+      <div style={{ padding: "2rem", maxWidth: "600px", margin: "auto" }}>
+        <div className="tab-buttons" style={{ padding: "50px" }}>
+          <button
+            className={`tab-button ${challengeType === "normal" ? "active" : ""}`}
+            onClick={() => handleChallengeTypeChange("normal")}
+          >
+            Paragraph Typing Test
+          </button>
+          <button
+            className={`tab-button ${challengeType === "falling" ? "active" : ""}`}
+            onClick={() => handleChallengeTypeChange("falling")}
+          >
+            Falling Typing Test
+          </button>
+          <button
+            className={`tab-button ${challengeType === "advancedFalling" ? "active" : ""}`}
+            onClick={() => handleChallengeTypeChange("advancedFalling")}
+          >
+            Advanced Falling Typing Test
+          </button>
+        </div>
+
+        {!selectedChallenge && (
+  <div className="results-box">
+    <h3 style={{ marginBottom: "20px" }}>
+      Select a Challenge
+    </h3>
+
+    {["easy", "medium", "hard"].map((level) => {
+      const filtered = challenges.filter(
+        (c) => c.difficulty === level
+      );
+
+      if (filtered.length === 0) return null;
+
+      const levelColor =
+        level === "easy"
+          ? "#28a745"
+          : level === "medium"
+          ? "#ffc107"
+          : "#dc3545";
+
+      return (
+        <div key={level} style={{ marginBottom: "30px" }}>
+          {/* Section Header */}
+          <div
+            style={{
+              fontWeight: "bold",
+              fontSize: "18px",
+              marginBottom: "12px",
+              color: levelColor,
+              borderBottom: `2px solid ${levelColor}`,
+              paddingBottom: "5px",
+            }}
+          >
+            {level === "easy" && "🟢 EASY"}
+            {level === "medium" && "🟡 MEDIUM"}
+            {level === "hard" && "🔴 HARD"}
+          </div>
+
+          <ul style={{ listStyle: "none", padding: 0 }}>
+            {filtered.map((challenge) => (
+              <li
+                key={challenge.id}
+                style={{
+                  marginBottom: "10px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                }}
+              >
+                <span
+                  style={{
+                    backgroundColor: levelColor,
+                    color: "white",
+                    padding: "4px 8px",
+                    borderRadius: "6px",
+                    fontSize: "12px",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {challenge.id}
+                </span>
+
+                <button
+                  onClick={() => loadSelectedChallenge(challenge)}
+                  style={{
+                    flex: 1,
+                    padding: "8px 12px",
+                    borderRadius: "6px",
+                    border: "1px solid #ddd",
+                    backgroundColor: "#554c16",
+                    cursor: "pointer",
+                    textAlign: "left",
+                  }}
+                >
+                  {challenge.question}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    })}
+  </div>
+)}
+
+        {selectedChallenge && (
+          
+          <>
+          <div
+  style={{
+    background: "#1e1e1e",
+    color: "#fff",
+    padding: "14px 18px",
+    borderRadius: "8px",
+    marginTop: "20px",
+    marginBottom: "15px",
+    fontSize: "16px",
+    fontWeight: "500"
+  }}
+>
+  <span style={{ color: "#00d4ff", fontWeight: "bold" }}>
+    Challenge:
+  </span>{" "}
+  {selectedChallenge.question}
+</div>
+          <div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    marginTop: "1rem",
+    fontFamily: "monospace",
+    fontSize: "1rem",
+  }}
+>
+  <div style={{
+  marginTop: "30px",
+  width: "100%",
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center"
+}}>
+
+  {/* TIME - LEFT */}
+  <div style={{ textAlign: "left" }}>
+    <div style={{
+      fontWeight: "bold",
+      fontSize: "20px",
+      marginBottom: "6px"
+    }}>
+      ⏱ Time in seconds
+    </div>
+    <div style={{
+      fontFamily: "'Digital-7 Mono', monospace",
+      fontSize: "30px",
+      letterSpacing: "4px",
+      backgroundColor: "#000",
+      color: "#00ff66",
+      padding: "8px 18px",
+      borderRadius: "8px",
+      textShadow: "0 0 10px #00ff66",
+      display: "inline-block",
+      minWidth: "120px",
+      textAlign: "center"
+    }}>
+      {String(elapsedTime).padStart(2, "0")}
+    </div>
+  </div>
+
+  {/* WPM - CENTER */}
+  <div style={{ textAlign: "center" }}>
+    <div style={{
+      fontWeight: "bold",
+      fontSize: "20px",
+      marginBottom: "6px"
+    }}>
+      ⚡ WPM
+    </div>
+    <div style={{
+      fontFamily: "'Digital-7 Mono', monospace",
+      fontSize: "30px",
+      letterSpacing: "4px",
+      backgroundColor: "#000",
+      color: "#00d4ff",
+      padding: "8px 18px",
+      borderRadius: "8px",
+      textShadow: "0 0 10px #00d4ff",
+      display: "inline-block",
+      minWidth: "120px",
+      textAlign: "center"
+    }}>
+      {String(wpm).padStart(2, "0")}
+    </div>
+  </div>
+
+  {/* SCORE - RIGHT */}
+  <div style={{ textAlign: "right" }}>
+    <div style={{
+      fontWeight: "bold",
+      fontSize: "20px",
+      marginBottom: "6px"
+    }}>
+      🎯 Score
+    </div>
+    <div style={{
+      fontFamily: "'Digital-7 Mono', monospace",
+      fontSize: "32px",
+      letterSpacing: "6px",
+      backgroundColor: "#000",
+      color: "#ff1744",
+      padding: "10px 24px",
+      borderRadius: "10px",
+      textShadow: "0 0 12px #ff1744",
+      display: "inline-block",
+      minWidth: "150px",
+      textAlign: "center"
+    }}>
+      {String(score).padStart(3, "0")}
+    </div>
+  </div>
+
+</div>
+</div>
+            <div className="typing-container">{renderColoredText()}</div>
+            {/*<textarea
+              rows="5"
+              style={{
+                width: "100%",
+                marginTop: "1rem",
+                padding: "1rem",
+                fontSize: "1rem",
+                fontFamily: "monospace",
+              }}
+              placeholder="Start typing here..."
+              value={input}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (!startTime && value.length === 1) {
+                  setStartTime(Date.now());
+                }
+                setInput(value);
+                if (value.length === sampleParagraph.length && !isTestComplete) {
+                  completeTest(value);
+                }
+              }}
+              disabled={isTestComplete}
+            /> */}
+
+            {!isTestComplete && (
+              <button
+                onClick={() => completeTest(input)}
+                style={{
+                  marginTop: "1rem",
+                  padding: "10px 20px",
+                  fontSize: "16px",
+                  backgroundColor: "#28a745",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                }}
+              >
+                Submit Test
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    </>
+  );
+};
+ 
 export default TypingTest;
