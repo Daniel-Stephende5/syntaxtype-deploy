@@ -54,7 +54,6 @@ const [blankIndices, setBlankIndices] = useState([]);
   setInput("");
   setIsTestComplete(false);
   return; 
-}
       } else if (challengeType === "falling") {
         url = `${API_BASE}/api/challenges/falling/${challenge.challengeId}`;
       } else if (challengeType === "advancedFalling") {
