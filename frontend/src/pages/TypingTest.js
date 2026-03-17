@@ -27,9 +27,9 @@ const [blankIndices, setBlankIndices] = useState([]);
   const fetchChallengeList = async (type) => {
     try {
       let url;
-      if (type === "normal") url = `${API_BASE}/api/challenges`;
-      else if (type === "falling") url = `${API_BASE}/api/challenges/falling`;
-      else if (type === "advancedFalling") url = `${API_BASE}/api/challenges/falling/advanced`;
+      if (type === "normal")  {setChallenges(codeChallenges);}
+      else if (type === "falling") {url = `${API_BASE}/api/challenges/falling`;}
+      else if (type === "advancedFalling"){ url = `${API_BASE}/api/challenges/falling/advanced`;}
       else throw new Error("Unknown challenge type");
  
       const res = await fetch(url);
