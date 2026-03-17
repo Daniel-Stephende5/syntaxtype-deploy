@@ -48,7 +48,10 @@ const [blankIndices, setBlankIndices] = useState([]);
     try {
       let url;
       if (challengeType === "normal") {
-        url = `${API_BASE}/api/challenges/${challenge.challengeId}`;
+        setSelectedChallenge(challenge);
+     setBlankInputs(new Array(challenge.answers.length).fill("")); // one per blank
+  setInput("");
+  setIsTestComplete(false);
       } else if (challengeType === "falling") {
         url = `${API_BASE}/api/challenges/falling/${challenge.challengeId}`;
       } else if (challengeType === "advancedFalling") {
