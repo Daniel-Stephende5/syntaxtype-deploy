@@ -11,7 +11,7 @@ export default function GalaxyChallengeList() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("${API_BASE}/challenges/galaxy");
+      const res = await fetch(`${API_BASE}/api/challenges/galaxy`);
       if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
       const data = await res.json();
       setChallenges(data || []);
