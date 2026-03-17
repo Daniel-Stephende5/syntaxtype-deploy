@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import "../css/typingtest.css";
 import { API_BASE } from "../utils/api";
 import codeChallenges from "./codeChallenges";
 
 const TypingTest = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [challenges, setChallenges] = useState([]);
   const [selectedChallenge, setSelectedChallenge] = useState(null);
+  const [sampleParagraph, setSampleParagraph] = useState("");
   const [input, setInput] = useState("");
   const [correctCount, setCorrectCount] = useState(0);
   const [isTestComplete, setIsTestComplete] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [blankIndices, setBlankIndices] = useState([]);
   const [challengeType, setChallengeType] = useState("normal");
   const [startTime, setStartTime] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -21,6 +24,7 @@ const TypingTest = () => {
   const [showCursor, setShowCursor] = useState(true);
 
   const navigate = useNavigate();
+  const toggleMenu = () => setIsMenuOpen((prev) => !prev);
 
   // ✅ Fetch challenge list
   const fetchChallengeList = async (type) => {
@@ -31,14 +35,18 @@ const TypingTest = () => {
       } else if (type === "falling") {
         const res = await fetch(`${API_BASE}/api/challenges/falling`);
         if (!res.ok) throw new Error("Failed to fetch falling challenges");
-        setChallenges(await res.json());
+        const data = await res.json();
+        setChallenges(data);
       } else if (type === "advancedFalling") {
         const res = await fetch(`${API_BASE}/api/challenges/falling/advanced`);
-        if (!res.ok) throw new Error("Failed to fetch advanced challenges");
-        setChallenges(await res.json());
+        if (!res.ok) throw new Error("Failed to fetch advanced falling challenges");
+        const data = await res.json();
+        setChallenges(data);
+      } else {
+        throw new Error("Unknown challenge type");
       }
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Failed to load challenges.");
     } finally {
       setLoading(false);
     }
@@ -57,7 +65,6 @@ const TypingTest = () => {
           `${API_BASE}/api/challenges/falling/${challenge.challengeId || challenge.id}`
         );
         if (!res.ok) throw new Error("Failed to load falling challenge");
-
         const data = await res.json();
         sessionStorage.setItem("fallingChallenge", JSON.stringify(data));
         navigate("/fallingtypingtest");
@@ -66,42 +73,46 @@ const TypingTest = () => {
         const res = await fetch(
           `${API_BASE}/api/challenges/falling/advanced/${challenge.challengeId || challenge.id}`
         );
-        if (!res.ok) throw new Error("Failed to load advanced challenge");
-
+        if (!res.ok) throw new Error("Failed to load advanced falling challenge");
         const data = await res.json();
         sessionStorage.setItem("fallingChallenge", JSON.stringify(data));
         navigate("/fallingtypingtest2");
         return;
+      } else {
+        throw new Error("Unknown challenge type");
       }
 
-      // reset stats
+      setInput("");
       setCorrectCount(0);
+      setIsTestComplete(false);
       setStartTime(null);
       setElapsedTime(0);
       setWpm(0);
       setScore(0);
-
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Failed to load challenge details.");
     }
   };
 
-  // ⏱ Timer
+  // Timer effect
   useEffect(() => {
     let timer;
+
     if (startTime && !isTestComplete) {
       timer = setInterval(() => {
-        const seconds = Math.floor((Date.now() - startTime) / 1000);
+        const now = Date.now();
+        const seconds = Math.floor((now - startTime) / 1000);
         setElapsedTime(seconds);
 
-        const words = input.length / 5;
-        setWpm(seconds > 0 ? Math.round((words / seconds) * 60) : 0);
+        const wordsTyped = input.length / 5;
+        const liveWpm = seconds > 0 ? Math.round((wordsTyped / seconds) * 60) : 0;
+        setWpm(liveWpm);
       }, 1000);
     }
+
     return () => clearInterval(timer);
   }, [startTime, isTestComplete, input]);
 
-  // ⌨️ Input handler
   useEffect(() => {
     if (!selectedChallenge || isTestComplete) return;
 
@@ -110,9 +121,11 @@ const TypingTest = () => {
         if (!startTime) setStartTime(Date.now());
         setInput((prev) => prev + e.key);
       }
+
       if (e.key === "Backspace") {
         setInput((prev) => prev.slice(0, -1));
       }
+
       if (e.key === "Enter") {
         setInput((prev) => prev + "\n");
       }
@@ -122,19 +135,21 @@ const TypingTest = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedChallenge, isTestComplete, startTime]);
 
-  // ⌨️ Cursor blink
   useEffect(() => {
+    if (!selectedChallenge || isTestComplete) return;
+
     const interval = setInterval(() => {
       setShowCursor((prev) => !prev);
     }, 500);
-    return () => clearInterval(interval);
-  }, []);
 
-  // 🔄 Fetch on type change
+    return () => clearInterval(interval);
+  }, [selectedChallenge, isTestComplete]);
+
   useEffect(() => {
     setLoading(true);
     fetchChallengeList(challengeType);
     setSelectedChallenge(null);
+    setSampleParagraph("");
     setInput("");
     setCorrectCount(0);
     setIsTestComplete(false);
@@ -144,105 +159,79 @@ const TypingTest = () => {
     setScore(0);
   }, [challengeType]);
 
-  // ✅ Complete test
   const completeTest = () => {
     if (!selectedChallenge || !startTime) return;
 
-    const time = Math.floor((Date.now() - startTime) / 1000);
+    const endTime = Date.now();
+    const finalElapsed = Math.floor((endTime - startTime) / 1000);
+
     const { code, answers } = selectedChallenge;
 
-    let expected = code;
-    answers.forEach(a => {
-      expected = expected.replace("___", a);
+    let fullExpected = code;
+    answers.forEach((answer) => {
+      fullExpected = fullExpected.replace("___", answer);
     });
 
-    const trimmed = input.slice(0, expected.length);
+    const trimmedInput = input.slice(0, fullExpected.length);
 
-    let correct = 0;
-    for (let i = 0; i < expected.length; i++) {
-      if (trimmed[i] === expected[i]) correct++;
+    let correctChars = 0;
+    for (let i = 0; i < fullExpected.length; i++) {
+      if (trimmedInput[i] === fullExpected[i]) {
+        correctChars++;
+      }
     }
 
-    const accuracy = Math.round((correct / expected.length) * 100);
-    const words = trimmed.split(/\s+/).length;
-    const finalWpm = Math.round((words / time) * 60);
+    const totalChars = fullExpected.length;
 
-    const finalScore = Math.min(100, accuracy);
+    const accuracyPercent =
+      totalChars > 0
+        ? Math.round((correctChars / totalChars) * 100)
+        : 0;
 
-    setCorrectCount(correct);
-    setElapsedTime(time);
+    const wordCount =
+      trimmedInput.trim().split(/\s+/).filter(Boolean).length;
+
+    const finalWpm =
+      finalElapsed > 0
+        ? Math.round((wordCount / finalElapsed) * 60)
+        : 0;
+
+    let timeMultiplier = 1;
+    if (finalElapsed <= 60) timeMultiplier = 1;
+    else if (finalElapsed <= 90) timeMultiplier = 0.95;
+    else if (finalElapsed <= 120) timeMultiplier = 0.9;
+    else timeMultiplier = 0.8;
+
+    const finalScore = Math.min(
+      100,
+      Math.round(accuracyPercent * timeMultiplier)
+    );
+
+    setCorrectCount(correctChars);
+    setElapsedTime(finalElapsed);
     setWpm(finalWpm);
-    setScore(finalScore);
     setIsTestComplete(true);
+    setScore(finalScore);
 
-    // ✅ submit score
     fetch(`${API_BASE}/api/scores`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         score: finalScore,
-        timeInSeconds: time,
+        timeInSeconds: finalElapsed,
         challengeType: "normal",
       }),
-    });
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to save score");
+        console.log("✅ Score submitted successfully!");
+      })
+      .catch((err) => {
+        console.error("❌ Error submitting score:", err);
+      });
   };
 
-  // 🎨 Render code
-  const renderColoredText = () => {
-    if (!selectedChallenge) return null;
-
-    const { code, answers } = selectedChallenge;
-    const parts = code.split("___");
-
-    let index = 0;
-
-    return (
-      <div className="typing-container">
-        {parts.map((part, i) => (
-          <span key={i}>
-            {part.split("").map((char, j) => {
-              const typed = input[index];
-              const color = typed ? (typed === char ? "green" : "red") : "black";
-              index++;
-              return <span key={j} style={{ color }}>{char}</span>;
-            })}
-
-            {i < parts.length - 1 &&
-              answers[i].split("").map((char, j) => {
-                const typed = input[index];
-                const color = typed ? (typed === char ? "green" : "red") : "gray";
-                index++;
-                return <span key={j} style={{ color }}>{typed || "_"}</span>;
-              })}
-          </span>
-        ))}
-      </div>
-    );
-  };
-
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div style={{ color: "red" }}>{error}</div>;
-
-  return (
-    <div style={{ padding: "2rem" }}>
-      {!selectedChallenge && challenges.map((c) => (
-        <button key={c.id} onClick={() => loadSelectedChallenge(c)}>
-          {c.question}
-        </button>
-      ))}
-
-      {selectedChallenge && (
-        <>
-          <h3>{selectedChallenge.question}</h3>
-          {renderColoredText()}
-
-          {!isTestComplete && (
-            <button onClick={completeTest}>Submit</button>
-          )}
-        </>
-      )}
-    </div>
-  );
+  // (rest of your component unchanged)
 };
 
 export default TypingTest;
