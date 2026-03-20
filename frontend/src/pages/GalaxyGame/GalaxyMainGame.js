@@ -1,91 +1,204 @@
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
+import { useControls } from "./GalaxyControls";
+import { useBackground } from "./GalaxyBackground";
+import { loadAssets } from "./assets";
 
-export default function GalaxyChallengeList() {
-  const [challenges, setChallenges] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [expanded, setExpanded] = useState({}); // track expanded descriptions by id
-const API_BASE = process.env.REACT_APP_API_BASE_URL;
-  const fetchChallenges = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`${API_BASE}/api/challenges/galaxy`);
-      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-      const data = await res.json();
-      setChallenges(data || []);
-    } catch (e) {
-      setError(e.message || "Failed to load");
-    } finally {
-      setLoading(false);
-    }
-  };
+import {
+  spawnEnemy,
+  updateEnemies,
+  handleTyping,
+  drawEnemies,
+  cleanupEnemies,
+} from "./GalaxyEnemy";
+
+const GalaxyMainGame = () => {
+  const canvasRef = useRef(null);
+  const animationRef = useRef(null);
+  const typedRef = useRef("");
+  const assetsRef = useRef({});
+  const [gameReady, setGameReady] = useState(false);
+
+  // Player
+  const playerRef = useRef({ x: 0, y: 0, width: 100, height: 80, speed: 300 });
+
+  // Enemies
+  const enemiesRef = useRef([]);
+  const levelRef = useRef(1);
+  const spawnTimerRef = useRef(0);
+
+  const { initStars, drawBackground } = useBackground();
+
+  // Controls (typing affects enemies directly)
+  const controls = useControls({
+    onTyped: (key) => {
+      typedRef.current += key;
+      enemiesRef.current = handleTyping(enemiesRef.current, key);
+    },
+    onBackspace: () => {
+      typedRef.current = typedRef.current.slice(0, -1);
+    },
+  });
 
   useEffect(() => {
-    fetchChallenges();
-  }, []);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
 
-  const toggleDesc = (id) => {
-    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
+    // prevent scroll
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
-  if (loading) return <div>Loading challenges…</div>;
-  if (error)
-    return (
-      <div>
-        <div>Error: {error}</div>
-        <button onClick={fetchChallenges}>Retry</button>
-      </div>
-    );
+    function resize() {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+
+      initStars(canvas, 160);
+
+      // center player
+      playerRef.current.x = canvas.width / 2 - playerRef.current.width / 2;
+      playerRef.current.y = canvas.height / 2 - playerRef.current.height / 2;
+    }
+
+    resize();
+    window.addEventListener("resize", resize);
+
+    let running = true;
+    let last = performance.now();
+
+    // Load assets
+    loadAssets({ images: { ship: "/images/nightraider.png" }, sounds: {} })
+      .then((loaded) => {
+        assetsRef.current = loaded;
+        setGameReady(true);
+        loop(performance.now());
+      })
+      .catch((err) => {
+        console.error("Failed to load assets:", err);
+        setGameReady(true);
+        loop(performance.now());
+      });
+
+    function updatePlayer(dt) {
+      const keys = controls.keysPressed.current;
+      const speed = playerRef.current.speed;
+
+      if (keys["ArrowLeft"]) {
+        playerRef.current.x = Math.max(0, playerRef.current.x - speed * dt);
+      }
+      if (keys["ArrowRight"]) {
+        playerRef.current.x = Math.min(
+          canvas.width - playerRef.current.width,
+          playerRef.current.x + speed * dt
+        );
+      }
+      if (keys["ArrowUp"]) {
+        playerRef.current.y = Math.max(0, playerRef.current.y - speed * dt);
+      }
+      if (keys["ArrowDown"]) {
+        playerRef.current.y = Math.min(
+          canvas.height - playerRef.current.height,
+          playerRef.current.y + speed * dt
+        );
+      }
+    }
+
+    function drawPlayer() {
+      const p = playerRef.current;
+      const shipImg = assetsRef.current.ship;
+
+      if (shipImg) {
+        ctx.drawImage(shipImg, p.x, p.y, p.width, p.height);
+      } else {
+        ctx.fillStyle = "#00ff00";
+        ctx.fillRect(p.x, p.y, p.width, p.height);
+      }
+    }
+
+    function loop(now) {
+      if (!running) return;
+
+      const dt = (now - last) / 1000;
+      last = now;
+
+      // --- UPDATE ---
+
+      updatePlayer(dt);
+
+      // Increase level slowly over time
+      levelRef.current += dt * 0.05;
+
+      // Spawn enemies
+      spawnTimerRef.current += dt;
+      if (spawnTimerRef.current > 1.5) {
+        spawnTimerRef.current = 0;
+
+        const enemy = spawnEnemy(canvas.width, Math.floor(levelRef.current));
+        enemiesRef.current.push(enemy);
+      }
+
+      // Update enemies
+      enemiesRef.current = updateEnemies(
+        enemiesRef.current,
+        dt,
+        canvas.height,
+        (enemy) => {
+          console.log("Player hit!", enemy);
+        }
+      );
+
+      // Cleanup enemies
+      enemiesRef.current = cleanupEnemies(enemiesRef.current);
+
+      // --- RENDER ---
+
+      drawBackground(ctx, canvas);
+      drawPlayer();
+      drawEnemies(ctx, enemiesRef.current);
+
+      // HUD
+      ctx.fillStyle = "white";
+      ctx.font = "18px monospace";
+      ctx.fillText("Typed: " + typedRef.current, 16, 36);
+
+      animationRef.current = requestAnimationFrame(loop);
+    }
+
+    return () => {
+      running = false;
+      window.removeEventListener("resize", resize);
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      document.body.style.overflow = prevOverflow || "";
+    };
+  }, [initStars, drawBackground, controls]);
 
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h2>Galaxy Challenges</h2>
-        <button onClick={fetchChallenges}>Refresh</button>
-      </div>
+    <div
+      style={{
+        position: "fixed",
+        top: "var(--navbar-height, 64px)",
+        left: 0,
+        right: 0,
+        bottom: 0,
+        overflow: "hidden",
+      }}
+    >
+      <canvas
+        ref={canvasRef}
+        style={{
+          display: "block",
+          width: "100%",
+          height: "100%",
+          background: "black",
+        }}
+      />
 
-      {challenges.length === 0 ? (
-        <div>No challenges available.</div>
-      ) : (
-        <ul style={{ listStyle: "none", padding: 0 }}>
-          {challenges.map((c) => {
-            const desc = c.description || "";
-            const isLong = desc.length > 200;
-            const isExpanded = !!expanded[c.id];
-            return (
-              <li key={c.id} style={{ borderBottom: "1px solid #333", padding: "12px 0" }}>
-                <div style={{ fontWeight: 700 }}>{c.title || `Challenge #${c.id}`}</div>
-
-                {desc && (
-                  <div style={{ color: "#000", marginTop: 6 }}>
-                    {isLong ? (isExpanded ? desc : desc.slice(0, 200) + "...") : desc}
-                    {isLong && (
-                      <div style={{ marginTop: 6 }}>
-                        <button
-                          onClick={() => toggleDesc(c.id)}
-                          aria-expanded={isExpanded}
-                          style={{ background: "transparent", color: "#9cf", border: "none", cursor: "pointer", padding: 0 }}
-                        >
-                          {isExpanded ? "Show less" : "Show more"}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div style={{ marginTop: 8 }}>
-                  <Link to={`/play/galaxy/${c.id}`}>Play</Link>{" "}
-                  <button style={{ marginLeft: 12 }} onClick={() => { /* TODO: show score */ }}>
-                    Score
-                  </button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+      {!gameReady && (
+        <div style={{ color: "white", padding: 20 }}>
+          Loading game…
+        </div>
       )}
     </div>
   );
-}
+};
+
+export default GalaxyMainGame;
