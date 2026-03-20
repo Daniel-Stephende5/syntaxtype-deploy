@@ -205,11 +205,24 @@ const GalaxyMainGame = () => {
         spawnTimerRef.current += dt;
         if (spawnTimerRef.current > 1.8) {
           spawnTimerRef.current = 0;
-          const en = spawnEnemy(canvas.width, now);
-          if (en) {
-            en.y = 60 + Math.random() * (canvas.height - 160); // avoid UI overlap
-            enemiesRef.current.push(en);
-          }
+        const en = spawnEnemy(canvas.width, now);
+if (en) {
+  const padding = 60; // space between enemies
+  const maxAttempts = 10;
+  let attempt = 0;
+  let yPos;
+
+  do {
+    yPos = 60 + Math.random() * (canvas.height - 160); // avoid UI at top & bottom
+    attempt++;
+  } while (
+    enemiesRef.current.some(other => !other.remove && Math.abs(other.y - yPos) < padding) &&
+    attempt < maxAttempts
+  );
+
+  en.y = yPos;
+  enemiesRef.current.push(en);
+}
         }
 
         // Update enemies & collisions
