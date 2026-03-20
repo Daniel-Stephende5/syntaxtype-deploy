@@ -78,30 +78,25 @@ int calculateDamage(Player player, Enemy enemy) {
 };
 
 // --- Combined library based on level ---
-export function getEnemiesByLevel(level, currentTime = 0) {
+export function getEnemiesByLevel(currentTime = 0) {
   const enemies = [];
 
-  // Easy levels → normal typing
-  if (level < 5) {
-    enemies.push(...easyEnemies);
-  }
+  // Random spawn pool: easy + shield
+  const spawnPool = [...easyEnemies, ...shieldEnemies];
 
-  // Medium → normal + shield
-  else if (level < 10) {
-    enemies.push(...easyEnemies, ...shieldEnemies);
-  }
+  // Pick one random enemy from the pool
+  const randomIndex = Math.floor(Math.random() * spawnPool.length);
+  enemies.push({ ...spawnPool[randomIndex] });
 
-  // Boss logic: only spawn if enough time has passed
-  else {
-    enemies.push(...easyEnemies, ...shieldEnemies);
+  // Boss spawn logic: only every 90 seconds
+  const bossDue =
+    currentTime - (bossEnemy.lastSpawn || 0) >= bossEnemy.spawnInterval;
 
-    const bossDue =
-      currentTime - (bossEnemy.lastSpawn || 0) >= bossEnemy.spawnInterval;
-    if (bossDue) {
-      bossEnemy.lastSpawn = currentTime;
-      enemies.push(bossEnemy);
-    }
+  if (bossDue) {
+    bossEnemy.lastSpawn = currentTime;
+    enemies.push({ ...bossEnemy });
   }
 
   return enemies;
 }
+
