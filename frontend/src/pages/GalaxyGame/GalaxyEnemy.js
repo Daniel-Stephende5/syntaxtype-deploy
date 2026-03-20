@@ -1,16 +1,16 @@
 // GalaxyEnemy.js
 import { getEnemiesByLevel } from "./GalaxyLibrary";
 
-export function spawnEnemy(canvasWidth, level, currentTime) {
-  const library = getEnemiesByLevel(level, currentTime);
-  if (library.length === 0) return null; // fail safe
+export function spawnEnemy(canvasWidth, currentTime) {
+  const library = getEnemiesByLevel(currentTime);
+  if (library.length === 0) return null;
 
   const template = library[Math.floor(Math.random() * library.length)];
 
   return {
     ...template,
     x: canvasWidth + 50,           // start offscreen right
-    y: 0,                          // will set in loop
+    y: 0,                          // will randomize in loop
     typed: "",
     shieldIndex: 0,
     answerTyped: "",
@@ -19,6 +19,7 @@ export function spawnEnemy(canvasWidth, level, currentTime) {
     remove: false,
   };
 }
+
 // Update position & check if hits player
 export function updateEnemies(enemies, dt, canvasWidth, onHitPlayer) {
   return enemies.map((e) => {
