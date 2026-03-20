@@ -36,92 +36,91 @@ const GalaxyMainGame = () => {
     });
   };
 
-// --- CONSOLIDATED INPUT ---
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (isPaused) return;
-      const key = e.key;
+useEffect(() => {
+  const handleKeyDown = (e) => {
+    if (isPaused) return;
+    const key = e.key;
 
-      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) {
-        e.preventDefault();
-        keysPressed.current[key] = true;
-        return;
+    // 1. Movement
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) {
+      e.preventDefault();
+      keysPressed.current[key] = true;
+      return;
+    }
+
+    // 2. Tab Targeting (Manual switch)
+    if (key === "Tab") {
+      e.preventDefault();
+      if (enemiesRef.current.length === 0) return;
+      const idx = enemiesRef.current.indexOf(targetEnemyRef.current);
+      targetEnemyRef.current = enemiesRef.current[(idx + 1) % enemiesRef.current.length];
+      return;
+    }
+
+    // 3. Typing Logic
+    if (key.length === 1) {
+      const char = key.toLowerCase();
+
+      // Acquire Target if none exists (Auto-lock on first matching letter)
+      if (!targetEnemyRef.current) {
+        const match = enemiesRef.current.find((en) => {
+          const toCheck = en.type === "shield" && en.shield 
+            ? en.questions[en.shieldIndex].answer 
+            : en.word;
+          return toCheck.toLowerCase().startsWith(char);
+        });
+        if (match) targetEnemyRef.current = match;
+        else return;
       }
 
-      if (key === "Tab") {
-        e.preventDefault();
-        if (enemiesRef.current.length === 0) return;
-        const idx = enemiesRef.current.indexOf(targetEnemyRef.current);
-        targetEnemyRef.current = enemiesRef.current[(idx + 1) % enemiesRef.current.length];
-        return;
-      }
+      const target = targetEnemyRef.current;
 
-      // Typing Logic
-      if (key.length === 1) {
-        const char = key.toLowerCase();
-        
-        // 1. Acquire Target if none exists
-        if (!targetEnemyRef.current) {
-          const match = enemiesRef.current.find(en => {
-            const toCheck = (en.type === "shield" && en.shield) 
-               ? en.questions[en.shieldIndex].answer 
-               : en.word;
-            return toCheck.toLowerCase().startsWith(char);
-          });
-          if (match) targetEnemyRef.current = match;
-          else return;
-        }
+      // Logic: If the key matches the NEXT character, advance. 
+      // If it doesn't match, we do NOTHING (keep target, keep progress).
+      if (target.type === "shield" && target.shield) {
+        const q = target.questions[target.shieldIndex];
+        const nextCharIndex = target.answerTyped.length;
+        const expectedChar = q.answer[nextCharIndex]?.toLowerCase();
 
-        const target = targetEnemyRef.current;
-
-        // 2. Process Type against Target
-        if (target.type === "shield" && target.shield) {
-          const q = target.questions[target.shieldIndex];
-          const currentProgress = target.answerTyped.toLowerCase();
-          
-          if (q.answer.toLowerCase().startsWith(currentProgress + char)) {
-            target.answerTyped += key;
-            shootBullet(target);
-            if (target.answerTyped.toLowerCase() === q.answer.toLowerCase()) {
-              target.shieldIndex++;
-              target.answerTyped = "";
-              if (target.shieldIndex >= target.questions.length) target.shield = false;
-            }
-          } else {
-             target.answerTyped = ""; // Reset on error
-             targetEnemyRef.current = null; // Drop target on error
+        if (char === expectedChar) {
+          target.answerTyped += key; // Match original casing or just use 'key'
+          shootBullet(target);
+          if (target.answerTyped.toLowerCase() === q.answer.toLowerCase()) {
+            target.shieldIndex++;
+            target.answerTyped = "";
+            if (target.shieldIndex >= target.questions.length) target.shield = false;
           }
-        } else {
-          const currentProgress = (target.typed || "").toLowerCase();
-          if (target.word.toLowerCase().startsWith(currentProgress + char)) {
-            target.typed += key;
-            shootBullet(target);
-            if (target.typed.toLowerCase() === target.word.toLowerCase()) {
-              target.destroyed = true;
-              target.remove = true;
-              targetEnemyRef.current = null;
-            }
-          } else {
-            target.typed = ""; // Reset on error
-            targetEnemyRef.current = null; // Drop target on error
+        }
+      } else {
+        const nextCharIndex = (target.typed || "").length;
+        const expectedChar = target.word[nextCharIndex]?.toLowerCase();
+
+        if (char === expectedChar) {
+          target.typed = (target.typed || "") + key;
+          shootBullet(target);
+          if (target.typed.toLowerCase() === target.word.toLowerCase()) {
+            target.destroyed = true;
+            target.remove = true;
+            targetEnemyRef.current = null; // Target dead, release lock
           }
         }
       }
-    };
+    }
+  };
 
-    const handleKeyUp = (e) => {
-      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
-        keysPressed.current[e.key] = false;
-      }
-    };
+  const handleKeyUp = (e) => {
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+      keysPressed.current[e.key] = false;
+    }
+  };
 
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-    };
-  }, [isPaused]);
+  window.addEventListener("keydown", handleKeyDown);
+  window.addEventListener("keyup", handleKeyUp);
+  return () => {
+    window.removeEventListener("keydown", handleKeyDown);
+    window.removeEventListener("keyup", handleKeyUp);
+  };
+}, [isPaused]);
 
 
   // --- MAIN GAME LOOP ---
