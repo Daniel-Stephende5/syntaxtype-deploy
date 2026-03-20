@@ -17,7 +17,6 @@ export function spawnEnemy(canvasWidth, canvasHeight, currentTime) {
     shield: template.type === "shield",
     destroyed: false,
     remove: false,
-    _offsetY: (Math.random() - 0.5) * 120,
   }));
 }
 
@@ -30,7 +29,7 @@ export function updateEnemies(enemies, dt, canvasWidth, playerPos, onHitPlayer) 
     // 2. The Slow Creep (Gravitation)
     if (!e.destroyed) {
       const creepSpeed = 30; // Slow vertical drift
-     const targetY = playerPos.y + (e._offsetY || 0); // Aim for the middle of the ship
+      const targetY = playerPos.y + 10; // Aim for the middle of the ship
       const diffY = targetY - e.y;
 
       // Only move if the enemy is more than 5 pixels away (prevents jitter)
