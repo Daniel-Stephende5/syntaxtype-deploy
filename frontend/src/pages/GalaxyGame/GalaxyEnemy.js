@@ -22,30 +22,32 @@ export function spawnEnemy(canvasWidth, currentTime) {
 
 // Update position & check if hits player
 export function updateEnemies(enemies, dt, canvasWidth, playerPos, onHitPlayer) {
-  for (let i = 0; i < enemies.length; i++) {
-    const e = enemies[i];
-    
-    // 1. Standard Horizontal Movement
+  enemies.forEach((e) => {
+    // 1. Constant Forward Momentum (X-axis)
     e.x -= e.speed * dt;
 
-    // 2. Gravitational Steering (The New Part)
-    // We only steer if the enemy isn't already destroyed
+    // 2. The "Slow Creep" (Y-axis)
+    // We only track the player if the enemy is still alive
     if (!e.destroyed) {
-      const steerSpeed = 40; // Adjust this: 10 is subtle, 100 is aggressive
+      // Adjust this number: 20 is a very slow drift, 50 is a noticeable track
+      const creepSpeed = 25; 
       
-      if (e.y < playerPos.y) {
-        e.y += steerSpeed * dt;
-      } else if (e.y > playerPos.y) {
-        e.y -= steerSpeed * dt;
+      // Calculate the difference in height
+      const distY = playerPos.y - e.y;
+      
+      // Move slightly toward the player's Y position
+      if (Math.abs(distY) > 5) { // Small buffer to prevent jittering
+        const direction = distY > 0 ? 1 : -1;
+        e.y += direction * creepSpeed * dt;
       }
     }
 
-    // 3. Wall Collision
-    if (e.x < -100) {
-      onHitPlayer(e);
+    // 3. Left Wall Collision
+    if (e.x < -100 && !e.remove) {
       e.remove = true;
+      onHitPlayer(e);
     }
-  }
+  });
   return enemies;
 }
 
