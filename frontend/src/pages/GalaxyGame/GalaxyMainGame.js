@@ -16,6 +16,8 @@ const GalaxyMainGame = () => {
   const animationRef = useRef(null);
   const typedRef = useRef("");
   const assetsRef = useRef({});
+  const lastKeyRef = useRef(null);
+
   const [gameReady, setGameReady] = useState(false);
 
   // Player
@@ -28,16 +30,34 @@ const GalaxyMainGame = () => {
 
   const { initStars, drawBackground } = useBackground();
 
-  // Controls (typing affects enemies directly)
+  // ✅ Controls (fixed typing duplication + invalid keys)
   const controls = useControls({
     onTyped: (key) => {
+      if (key.length !== 1) return; // ignore Shift, Arrow, etc.
+      if (lastKeyRef.current === key) return; // prevent repeat spam
+
+      lastKeyRef.current = key;
+
       typedRef.current += key;
       enemiesRef.current = handleTyping(enemiesRef.current, key);
     },
     onBackspace: () => {
       typedRef.current = typedRef.current.slice(0, -1);
+      lastKeyRef.current = null;
     },
   });
+
+  useEffect(() => {
+    const resetKey = () => {
+      lastKeyRef.current = null;
+    };
+
+    window.addEventListener("keyup", resetKey);
+
+    return () => {
+      window.removeEventListener("keyup", resetKey);
+    };
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -124,7 +144,7 @@ const GalaxyMainGame = () => {
 
       updatePlayer(dt);
 
-      // Increase level slowly over time
+      // Level progression
       levelRef.current += dt * 0.05;
 
       // Spawn enemies
@@ -132,11 +152,18 @@ const GalaxyMainGame = () => {
       if (spawnTimerRef.current > 1.5) {
         spawnTimerRef.current = 0;
 
-        const enemy = spawnEnemy(canvas.width, Math.floor(levelRef.current));
+        const enemy = spawnEnemy(
+          canvas.width,
+          Math.floor(levelRef.current)
+        );
+
+        // ✅ ensure stable X (prevents weird drift feeling)
+        enemy.x = Math.max(50, Math.min(canvas.width - 200, enemy.x));
+
         enemiesRef.current.push(enemy);
       }
 
-      // Update enemies
+      // Update enemies (vertical only)
       enemiesRef.current = updateEnemies(
         enemiesRef.current,
         dt,
@@ -146,12 +173,17 @@ const GalaxyMainGame = () => {
         }
       );
 
-      // Cleanup enemies
+      // Cleanup
       enemiesRef.current = cleanupEnemies(enemiesRef.current);
 
       // --- RENDER ---
 
       drawBackground(ctx, canvas);
+
+      // ✅ fix text rendering drift illusion
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+
       drawPlayer();
       drawEnemies(ctx, enemiesRef.current);
 
