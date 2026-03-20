@@ -22,53 +22,53 @@ export function spawnEnemy(canvasWidth, currentTime) {
 
 // Update position & check if hits player
 export function updateEnemies(enemies, dt, canvasWidth, onHitPlayer) {
-  return enemies.map((e) => {
-    const newX = e.x - e.speed * dt; // move left
+  for (let i = 0; i < enemies.length; i++) {
+    const e = enemies[i];
+    e.x -= e.speed * dt;
 
-    if (newX < -100) {
+    if (e.x < -100) {
       onHitPlayer(e);
-      return { ...e, remove: true };
+      e.remove = true;
     }
-
-    return { ...e, x: newX };
-  });
+  }
+  return enemies;
 }
 
-// Typing input handling
-
-
-
-// Draw enemies
-export function drawEnemies(ctx, enemies) {
+export function drawEnemies(ctx, enemies, targetEnemy) {
   enemies.forEach((e) => {
-    ctx.font = e.type === "shield" ? "16px monospace" : "18px monospace";
+    // Optional: Highlight the target so you know who you are typing at
+    if (e === targetEnemy) {
+      ctx.strokeStyle = "rgba(0, 255, 255, 0.5)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(e.x - 5, e.y - 20, ctx.measureText(e.word || "shield").width + 10, 30);
+    }
+
+    ctx.font = e.type === "shield" ? "bold 16px monospace" : "bold 18px monospace";
 
     if (e.type === "shield" && e.shield) {
       const q = e.questions[e.shieldIndex];
       if (!q) return;
 
-      ctx.fillStyle = "red";
+      ctx.fillStyle = "#ff4444";
       ctx.fillText("🛡 " + q.prompt, e.x, e.y);
 
-      const hidden = q.answer
+      const display = q.answer
         .split("")
         .map((c, i) => (i < e.answerTyped.length ? c : "_"))
         .join(" ");
 
-      ctx.fillStyle = "yellow";
-      ctx.fillText(hidden, e.x, e.y + 20);
-      return;
+      ctx.fillStyle = "#ffff00";
+      ctx.fillText(display, e.x, e.y + 20);
+    } else {
+      const typedPart = e.typed || "";
+      const remaining = e.word.slice(typedPart.length);
+
+      ctx.fillStyle = "#00ff00"; // Green for correct letters
+      ctx.fillText(typedPart, e.x, e.y);
+
+      ctx.fillStyle = "#ffffff"; // White for the rest
+      ctx.fillText(remaining, e.x + ctx.measureText(typedPart).width, e.y);
     }
-
-    // Normal enemy
-    const typedPart = e.typed || "";
-    const remaining = e.word.slice(typedPart.length);
-
-    ctx.fillStyle = "#0f0";
-    ctx.fillText(typedPart, e.x, e.y);
-
-    ctx.fillStyle = "#fff";
-    ctx.fillText(remaining, e.x + ctx.measureText(typedPart).width, e.y);
   });
 }
 
