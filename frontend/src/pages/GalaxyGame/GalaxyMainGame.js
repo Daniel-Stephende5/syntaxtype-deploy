@@ -164,14 +164,19 @@ const GalaxyMainGame = () => {
 
     // Update player using arrow keys
     function updatePlayer(dt) {
-      const keys = controls.keysPressed.current;
-      const speed = playerRef.current.speed;
+  const keys = controls.keysPressed.current;
+  const p = playerRef.current;
+  const speed = p.speed;
 
-      if (keys["ArrowLeft"]) playerRef.current.x -= speed * dt;
-      if (keys["ArrowRight"]) playerRef.current.x += speed * dt;
-      if (keys["ArrowUp"]) playerRef.current.y -= speed * dt;
-      if (keys["ArrowDown"]) playerRef.current.y += speed * dt;
-    }
+  if (keys["ArrowLeft"]) p.x -= speed * dt;
+  if (keys["ArrowRight"]) p.x += speed * dt;
+  if (keys["ArrowUp"]) p.y -= speed * dt;
+  if (keys["ArrowDown"]) p.y += speed * dt;
+
+  // Clamp inside canvas
+  p.x = Math.max(0, Math.min(canvas.width - p.width, p.x));
+  p.y = Math.max(0, Math.min(canvas.height - p.height, p.y));
+}
 
     // Update bullets
     function updateBullets(dt) {
@@ -215,13 +220,17 @@ const GalaxyMainGame = () => {
 
       levelRef.current += dt * 0.05;
 
-      spawnTimerRef.current += dt;
-      if (spawnTimerRef.current > 1.5) {
-        spawnTimerRef.current = 0;
-        const enemy = spawnEnemy(canvas.width, Math.floor(levelRef.current));
-        enemy.y = Math.random() * (canvas.height - 50); // vertical random
-        enemiesRef.current.push(enemy);
-      }
+     spawnTimerRef.current += dt;
+if (spawnTimerRef.current > 1.5) {
+  spawnTimerRef.current = 0;
+
+  // pass current time to library for boss logic
+  const enemy = spawnEnemy(canvas.width, Math.floor(levelRef.current), performance.now());
+  
+  // Random vertical position
+  enemy.y = Math.random() * (canvas.height - 50);
+  enemiesRef.current.push(enemy);
+}
 
       enemiesRef.current = updateEnemies(
         enemiesRef.current,
