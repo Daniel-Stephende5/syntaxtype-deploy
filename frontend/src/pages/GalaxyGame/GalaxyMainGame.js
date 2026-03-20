@@ -36,49 +36,50 @@ const GalaxyMainGame = () => {
     });
   };
 
-useEffect(() => {
+// --- CONSOLIDATED INPUT ---
+  useEffect(() => {
     const handleKeyDown = (e) => {
       if (isPaused) return;
       const key = e.key;
 
-      // 1. Movement
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) {
         e.preventDefault();
         keysPressed.current[key] = true;
         return;
       }
 
-      // 2. Tab Targeting
       if (key === "Tab") {
         e.preventDefault();
         if (enemiesRef.current.length === 0) return;
-        const index = enemiesRef.current.indexOf(targetEnemyRef.current);
-        targetEnemyRef.current = enemiesRef.current[(index + 1) % enemiesRef.current.length];
+        const idx = enemiesRef.current.indexOf(targetEnemyRef.current);
+        targetEnemyRef.current = enemiesRef.current[(idx + 1) % enemiesRef.current.length];
         return;
       }
 
-      // 3. Typing Logic
+      // Typing Logic
       if (key.length === 1) {
         const char = key.toLowerCase();
-
-        // Lock onto a target if we don't have one
+        
+        // 1. Acquire Target if none exists
         if (!targetEnemyRef.current) {
-          const found = enemiesRef.current.find((en) => {
-            const word = (en.type === "shield" && en.shield) 
-              ? en.questions[en.shieldIndex].answer 
-              : en.word;
-            return word.toLowerCase().startsWith(char);
+          const match = enemiesRef.current.find(en => {
+            const toCheck = (en.type === "shield" && en.shield) 
+               ? en.questions[en.shieldIndex].answer 
+               : en.word;
+            return toCheck.toLowerCase().startsWith(char);
           });
-          if (found) targetEnemyRef.current = found;
+          if (match) targetEnemyRef.current = match;
           else return;
         }
 
         const target = targetEnemyRef.current;
 
-        // Process typing for Shield vs Normal
+        // 2. Process Type against Target
         if (target.type === "shield" && target.shield) {
           const q = target.questions[target.shieldIndex];
-          if (q.answer.toLowerCase().startsWith((target.answerTyped + char).toLowerCase())) {
+          const currentProgress = target.answerTyped.toLowerCase();
+          
+          if (q.answer.toLowerCase().startsWith(currentProgress + char)) {
             target.answerTyped += key;
             shootBullet(target);
             if (target.answerTyped.toLowerCase() === q.answer.toLowerCase()) {
@@ -87,10 +88,12 @@ useEffect(() => {
               if (target.shieldIndex >= target.questions.length) target.shield = false;
             }
           } else {
-            target.answerTyped = ""; // Penalty reset
+             target.answerTyped = ""; // Reset on error
+             targetEnemyRef.current = null; // Drop target on error
           }
         } else {
-          if (target.word.toLowerCase().startsWith((target.typed + char).toLowerCase())) {
+          const currentProgress = (target.typed || "").toLowerCase();
+          if (target.word.toLowerCase().startsWith(currentProgress + char)) {
             target.typed += key;
             shootBullet(target);
             if (target.typed.toLowerCase() === target.word.toLowerCase()) {
@@ -99,7 +102,8 @@ useEffect(() => {
               targetEnemyRef.current = null;
             }
           } else {
-            target.typed = ""; // Penalty reset
+            target.typed = ""; // Reset on error
+            targetEnemyRef.current = null; // Drop target on error
           }
         }
       }
