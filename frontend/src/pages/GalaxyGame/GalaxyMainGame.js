@@ -21,7 +21,6 @@ const GalaxyMainGame = () => {
 
   // Enemies
   const enemiesRef = useRef([]);
-  const levelRef = useRef(1);
   const spawnTimerRef = useRef(0);
 
   // Target + Bullets
@@ -151,34 +150,31 @@ const GalaxyMainGame = () => {
     let running = true;
     let last = performance.now();
 
-   loadAssets({ images: { ship: "/images/nightraider.png" }, sounds: {} })
-  .then((loaded) => {
-    assetsRef.current = loaded;
-    setGameReady(true);
-    loop(performance.now());
-  })
-  .catch(() => {
-    setGameReady(true);
-    loop(performance.now());
-  });
+    loadAssets({ images: { ship: "/images/nightraider.png" }, sounds: {} })
+      .then((loaded) => {
+        assetsRef.current = loaded;
+        setGameReady(true);
+        loop(performance.now());
+      })
+      .catch(() => {
+        setGameReady(true);
+        loop(performance.now());
+      });
 
-    // Update player using arrow keys
     function updatePlayer(dt) {
-  const keys = controls.keysPressed.current;
-  const p = playerRef.current;
-  const speed = p.speed;
+      const keys = controls.keysPressed.current;
+      const p = playerRef.current;
+      const speed = p.speed;
 
-  if (keys["ArrowLeft"]) p.x -= speed * dt;
-  if (keys["ArrowRight"]) p.x += speed * dt;
-  if (keys["ArrowUp"]) p.y -= speed * dt;
-  if (keys["ArrowDown"]) p.y += speed * dt;
+      if (keys["ArrowLeft"]) p.x -= speed * dt;
+      if (keys["ArrowRight"]) p.x += speed * dt;
+      if (keys["ArrowUp"]) p.y -= speed * dt;
+      if (keys["ArrowDown"]) p.y += speed * dt;
 
-  // Clamp inside canvas
-  p.x = Math.max(0, Math.min(canvas.width - p.width, p.x));
-  p.y = Math.max(0, Math.min(canvas.height - p.height, p.y));
-}
+      p.x = Math.max(0, Math.min(canvas.width - p.width, p.x));
+      p.y = Math.max(0, Math.min(canvas.height - p.height, p.y));
+    }
 
-    // Update bullets
     function updateBullets(dt) {
       bulletsRef.current = bulletsRef.current.filter((b) => {
         if (!b.target || b.target.remove) return false;
@@ -218,27 +214,18 @@ const GalaxyMainGame = () => {
       // --- UPDATE ---
       updatePlayer(dt);
 
-      levelRef.current += dt * 0.05;
+      // Spawn enemies every 1.5s
+      spawnTimerRef.current += dt;
+      if (spawnTimerRef.current > 1.5) {
+        spawnTimerRef.current = 0;
+        const enemy = spawnEnemy(canvas.width, performance.now());
+        if (enemy) {
+          enemy.y = Math.random() * (canvas.height - 50);
+          enemiesRef.current.push(enemy);
+        }
+      }
 
-    spawnTimerRef.current += dt;
-if (spawnTimerRef.current > 1.5) {
-  spawnTimerRef.current = 0;
-
-  const enemy = spawnEnemy(canvas.width, performance.now());
-  if (enemy) {
-    // Random vertical position
-    enemy.y = Math.random() * (canvas.height - 50);
-
-    enemiesRef.current.push(enemy);
-  }
-}
-
-  // Random vertical position
-  enemy.y = Math.random() * (canvas.height - 50);
-
-  enemiesRef.current.push(enemy);
-}
-
+      // Update enemy positions
       enemiesRef.current = updateEnemies(
         enemiesRef.current,
         dt,
