@@ -15,14 +15,13 @@ const GalaxyMainGame = () => {
 
   const [gameReady, setGameReady] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
   const [gameOver, setGameOver] = useState(false);
 
   const playerRef = useRef({ x: 50, y: 0, width: 80, height: 60, speed: 450 });
   const enemiesRef = useRef([]);
-  const spawnTimerRef = useRef(0);
+  const spawnTimerRef = useRef(-1.5); // delayed first spawn
   const targetEnemyRef = useRef(null);
   const bulletsRef = useRef([]);
   const keysPressed = useRef({});
@@ -58,19 +57,18 @@ const GalaxyMainGame = () => {
   // CONTROLS
   // -------------------------
   useEffect(() => {
-    // Reset body margin to prevent canvas overlap
     document.body.style.margin = "0";
 
     const handleKeyDown = (e) => {
       if (isPaused || gameOver) return;
       const key = e.key;
 
-      // Movement & TAB target switch
+      // Movement + TAB target switch
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Tab"].includes(key)) {
         e.preventDefault();
         if (key === "Tab") {
           const aliveEnemies = enemiesRef.current.filter((en) => !en.destroyed && !en.remove);
-          if (aliveEnemies.length === 0) return;
+          if (!aliveEnemies.length) return;
           const idx = aliveEnemies.indexOf(targetEnemyRef.current);
           targetEnemyRef.current = aliveEnemies[(idx + 1) % aliveEnemies.length];
         } else {
@@ -79,25 +77,21 @@ const GalaxyMainGame = () => {
         return;
       }
 
-      // Typing logic
+      // Typing
       if (key.length === 1) {
         const char = key.toLowerCase();
 
-        // Auto-acquire target if none
         if (!targetEnemyRef.current || targetEnemyRef.current.remove) {
           const match = enemiesRef.current.find((en) => {
             if (en.destroyed || en.remove) return false;
-            const toCheck = en.type === "shield" && en.shield
-              ? en.questions[en.shieldIndex].answer
-              : en.word;
-            return toCheck.toLowerCase().startsWith(char);
+            const word = en.type === "shield" && en.shield ? en.questions[en.shieldIndex].answer : en.word;
+            return word.toLowerCase().startsWith(char);
           });
           if (!match) return;
           targetEnemyRef.current = match;
         }
 
         const target = targetEnemyRef.current;
-
         if (!target || target.remove || target.destroyed) {
           targetEnemyRef.current = null;
           return;
@@ -107,7 +101,6 @@ const GalaxyMainGame = () => {
         if (target.type === "shield" && target.shield) {
           const q = target.questions[target.shieldIndex];
           const expectedChar = q.answer[target.answerTyped.length]?.toLowerCase();
-
           if (char === expectedChar) {
             target.answerTyped += key;
             shootBullet(target);
@@ -118,40 +111,29 @@ const GalaxyMainGame = () => {
               if (target.shieldIndex >= target.questions.length) target.shield = false;
             }
           }
-        } 
-        // Normal / Boss enemy
-        else {
+        } else {
+          // Normal / boss
           const nextIdx = (target.typed || "").length;
           const expectedChar = target.word[nextIdx]?.toLowerCase();
-
           if (char === expectedChar) {
             target.typed = (target.typed || "") + key;
             shootBullet(target);
 
-            // Word complete
             if (target.typed.toLowerCase() === target.word.toLowerCase()) {
               addScore(target);
               target.destroyed = true;
-
-              // Smooth removal after bullets reach target
-              setTimeout(() => {
-                target.remove = true;
-              }, 300);
-
-              targetEnemyRef.current = null; // unlock next target
+              setTimeout(() => { target.remove = true; }, 300);
+              targetEnemyRef.current = null;
             }
           }
         }
       }
     };
 
-    const handleKeyUp = (e) => {
-      keysPressed.current[e.key] = false;
-    };
+    const handleKeyUp = (e) => { keysPressed.current[e.key] = false; };
 
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
-
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
@@ -165,6 +147,8 @@ const GalaxyMainGame = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
 
+    const paddingTop = 100; // reserve top space for score & lives
+
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -174,7 +158,7 @@ const GalaxyMainGame = () => {
     window.addEventListener("resize", resize);
     resize();
 
-    // Load ship asset
+    // Load assets
     loadAssets({ images: { ship: "/images/nightraider.png" } })
       .then((loaded) => { assetsRef.current = loaded; })
       .catch(() => console.error("Asset load failed"))
@@ -182,13 +166,13 @@ const GalaxyMainGame = () => {
 
     let last = performance.now();
 
-    function loop(now) {
-      if (gameOver) return;
+    const loop = (now) => {
       const dt = (now - last) / 1000;
       last = now;
 
       const p = playerRef.current;
-      if (!isPaused && gameReady) {
+
+      if (!isPaused && gameReady && !gameOver) {
         const keys = keysPressed.current;
 
         // Player movement
@@ -199,47 +183,49 @@ const GalaxyMainGame = () => {
 
         // Clamp player
         p.x = Math.max(0, Math.min(canvas.width - p.width, p.x));
-        p.y = Math.max(0, Math.min(canvas.height - p.height, p.y));
+        p.y = Math.max(paddingTop, Math.min(canvas.height - p.height, p.y));
 
         // Enemy spawn
         spawnTimerRef.current += dt;
         if (spawnTimerRef.current > 1.8) {
           spawnTimerRef.current = 0;
-        const en = spawnEnemy(canvas.width, now);
-if (en) {
-  const padding = 60; // space between enemies
-  const maxAttempts = 10;
-  let attempt = 0;
-  let yPos;
-
-  do {
-    yPos = 60 + Math.random() * (canvas.height - 160); // avoid UI at top & bottom
-    attempt++;
-  } while (
-    enemiesRef.current.some(other => !other.remove && Math.abs(other.y - yPos) < padding) &&
-    attempt < maxAttempts
-  );
-
-  en.y = yPos;
-  enemiesRef.current.push(en);
-}
+          const en = spawnEnemy(canvas.width, now);
+          if (en) {
+            // Ensure vertical spacing between enemies
+            const padding = 80;
+            let yPos, attempts = 0;
+            do {
+              yPos = paddingTop + Math.random() * (canvas.height - paddingTop - 100);
+              attempts++;
+            } while (
+              enemiesRef.current.some(other => !other.remove && Math.abs(other.y - yPos) < padding) &&
+              attempts < 20
+            );
+            en.y = yPos;
+            enemiesRef.current.push(en);
+          }
         }
 
         // Update enemies & collisions
         updateEnemies(enemiesRef.current, dt, canvas.width, p, handlePlayerHit);
+
         enemiesRef.current.forEach((en) => {
-          if (!en.remove && !en.destroyed && Math.abs(en.x - p.x) < 60 && Math.abs(en.y - p.y) < 40) {
-            en.remove = true; handlePlayerHit();
+          if (!en.remove && !en.destroyed &&
+            Math.abs(en.x - p.x) < 60 &&
+            Math.abs(en.y - p.y) < 40) {
+            en.remove = true;
+            handlePlayerHit();
           }
         });
+
         enemiesRef.current = cleanupEnemies(enemiesRef.current);
 
-        // Bullet movement
+        // Update bullets
         bulletsRef.current = bulletsRef.current.filter((b) => {
           if (!b.target || b.target.remove) return false;
           const dx = b.target.x - b.x;
           const dy = b.target.y - b.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
+          const dist = Math.sqrt(dx*dx + dy*dy);
           if (dist < 20) return false;
           b.x += (dx / dist) * b.speed * dt;
           b.y += (dy / dist) * b.speed * dt;
@@ -249,7 +235,7 @@ if (en) {
 
       // Draw background & enemies
       drawBackground(ctx, canvas);
-      drawEnemies(ctx, enemiesRef.current, targetEnemyRef.current);
+      if (enemiesRef.current.length > 0) drawEnemies(ctx, enemiesRef.current, targetEnemyRef.current);
 
       // Draw bullets
       ctx.fillStyle = "#00ffff";
@@ -271,9 +257,9 @@ if (en) {
       }
 
       animationRef.current = requestAnimationFrame(loop);
-    }
+    };
 
-    animationRef.current = requestAnimationFrame(loop);
+    if (gameReady) animationRef.current = requestAnimationFrame(loop);
 
     return () => {
       window.removeEventListener("resize", resize);
@@ -288,7 +274,7 @@ if (en) {
     <div style={{ position: "fixed", inset: 0, background: "black", overflow: "hidden" }}>
       <canvas
         ref={canvasRef}
-        style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", zIndex: 0, display: "block" }}
+        style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", display: "block" }}
       />
 
       {/* UI */}
