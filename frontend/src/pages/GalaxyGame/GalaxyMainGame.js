@@ -13,15 +13,18 @@ const GalaxyMainGame = () => {
   const animationRef = useRef(null);
   const assetsRef = useRef({ ship: null });
 
+  // Game loop variables (moved out of React state to prevent render lag)
+  const scoreRef = useRef(0);
+  const livesRef = useRef(3);
+  
   const [gameReady, setGameReady] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [score, setScore] = useState(0);
-  const [lives, setLives] = useState(3);
   const [gameOver, setGameOver] = useState(false);
 
-  const playerRef = useRef({ x: 50, y: 0, width: 80, height: 60, speed: 450 });
+  // Player and Game state refs
+  const playerRef = useRef({ x: 50, y: 300, width: 80, height: 60, speed: 500 });
   const enemiesRef = useRef([]);
-  const spawnTimerRef = useRef(-1.5); // delayed first spawn
+  const spawnTimerRef = useRef(-1.5);
   const targetEnemyRef = useRef(null);
   const bulletsRef = useRef([]);
   const keysPressed = useRef({});
@@ -29,41 +32,55 @@ const GalaxyMainGame = () => {
   const { initStars, drawBackground } = useBackground();
 
   // -------------------------
-  // SCORE & PLAYER HIT
+  // UI UPDATERS (Bypasses React State for zero-lag performance)
   // -------------------------
-  const addScore = (enemy) => {
-    const pts = enemy.type === "boss" ? 10 : enemy.type === "shield" ? 2 : 1;
-    setScore((s) => s + pts);
+  const updateScoreUI = (pts) => {
+    scoreRef.current += pts;
+    const scoreEl = document.getElementById("ui-score");
+    if (scoreEl) scoreEl.innerText = `SCORE: ${scoreRef.current}`;
   };
 
-  const handlePlayerHit = () => {
-    setLives((prev) => {
-      if (prev <= 1) setGameOver(true);
-      return prev - 1;
-    });
+  const updateLivesUI = () => {
+    livesRef.current -= 1;
+    const livesEl = document.getElementById("ui-lives");
+    if (livesEl) {
+      // Create heart string based on remaining lives
+      let hearts = "";
+      for (let i = 0; i < 3; i++) {
+        hearts += i < livesRef.current ? "❤️ " : "🖤 ";
+      }
+      livesEl.innerText = hearts;
+    }
+    if (livesRef.current <= 0) setGameOver(true);
   };
 
+  // -------------------------
+  // GAME LOGIC
+  // -------------------------
   const shootBullet = (target) => {
     const p = playerRef.current;
     bulletsRef.current.push({
       x: p.x + p.width,
       y: p.y + p.height / 2,
       target,
-      speed: 1100,
+      speed: 1400, // Slightly faster bullets feel better
     });
   };
 
-  // -------------------------
-  // CONTROLS
-  // -------------------------
   useEffect(() => {
-    document.body.style.margin = "0";
+    loadAssets({ images: { ship: "/images/nightraider.png" } })
+      .then((loaded) => {
+        assetsRef.current = loaded;
+        setGameReady(true);
+      })
+      .catch((err) => console.error("Asset load failed", err));
+  }, []);
 
+  useEffect(() => {
     const handleKeyDown = (e) => {
       if (isPaused || gameOver) return;
       const key = e.key;
 
-      // Movement + TAB target switch
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Tab"].includes(key)) {
         e.preventDefault();
         if (key === "Tab") {
@@ -77,34 +94,29 @@ const GalaxyMainGame = () => {
         return;
       }
 
-      // Typing
       if (key.length === 1) {
         const char = key.toLowerCase();
-
+        
+        // Target selection
         if (!targetEnemyRef.current || targetEnemyRef.current.remove) {
           const match = enemiesRef.current.find((en) => {
             if (en.destroyed || en.remove) return false;
             const word = en.type === "shield" && en.shield ? en.questions[en.shieldIndex].answer : en.word;
             return word.toLowerCase().startsWith(char);
           });
-          if (!match) return;
-          targetEnemyRef.current = match;
+          if (match) targetEnemyRef.current = match;
         }
 
         const target = targetEnemyRef.current;
-        if (!target || target.remove || target.destroyed) {
-          targetEnemyRef.current = null;
-          return;
-        }
+        if (!target || target.remove || target.destroyed) return;
 
-        // Shielded enemy
+        // Typing logic
         if (target.type === "shield" && target.shield) {
           const q = target.questions[target.shieldIndex];
           const expectedChar = q.answer[target.answerTyped.length]?.toLowerCase();
           if (char === expectedChar) {
             target.answerTyped += key;
             shootBullet(target);
-
             if (target.answerTyped.toLowerCase() === q.answer.toLowerCase()) {
               target.shieldIndex++;
               target.answerTyped = "";
@@ -112,17 +124,16 @@ const GalaxyMainGame = () => {
             }
           }
         } else {
-          // Normal / boss
           const nextIdx = (target.typed || "").length;
           const expectedChar = target.word[nextIdx]?.toLowerCase();
           if (char === expectedChar) {
             target.typed = (target.typed || "") + key;
             shootBullet(target);
-
             if (target.typed.toLowerCase() === target.word.toLowerCase()) {
-              addScore(target);
+              const pts = target.type === "boss" ? 10 : target.type === "shield" ? 2 : 1;
+              updateScoreUI(pts);
               target.destroyed = true;
-              setTimeout(() => { target.remove = true; }, 300);
+              setTimeout(() => { target.remove = true; }, 100);
               targetEnemyRef.current = null;
             }
           }
@@ -131,7 +142,6 @@ const GalaxyMainGame = () => {
     };
 
     const handleKeyUp = (e) => { keysPressed.current[e.key] = false; };
-
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
     return () => {
@@ -144,77 +154,87 @@ const GalaxyMainGame = () => {
   // MAIN LOOP
   // -------------------------
   useEffect(() => {
+    if (!gameReady) return;
+
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
+    
+    // Strict Screen Boundaries
+    const UI_HEIGHT = 90; 
+    let PLAY_AREA_BOTTOM = window.innerHeight - 60;
 
-    const paddingTop = 100; // reserve top space for score & lives
+    // Pre-warm canvas fonts to stop initial stutter
+    ctx.font = "20px monospace";
+    ctx.fillText("pre-warm", -100, -100);
 
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      PLAY_AREA_BOTTOM = canvas.height - 60;
       initStars(canvas, 150);
-      playerRef.current.y = canvas.height / 2;
     };
     window.addEventListener("resize", resize);
     resize();
 
-    // Load assets
-    loadAssets({ images: { ship: "/images/nightraider.png" } })
-      .then((loaded) => { assetsRef.current = loaded; })
-      .catch(() => console.error("Asset load failed"))
-      .finally(() => setGameReady(true));
-
     let last = performance.now();
 
     const loop = (now) => {
-      const dt = (now - last) / 1000;
+      const dt = Math.min((now - last) / 1000, 0.1);
       last = now;
 
-      const p = playerRef.current;
-
-      if (!isPaused && gameReady && !gameOver) {
+      if (!isPaused && !gameOver) {
+        const p = playerRef.current;
         const keys = keysPressed.current;
 
-        // Player movement
+        // Player Movement
         if (keys["ArrowLeft"]) p.x -= p.speed * dt;
         if (keys["ArrowRight"]) p.x += p.speed * dt;
         if (keys["ArrowUp"]) p.y -= p.speed * dt;
         if (keys["ArrowDown"]) p.y += p.speed * dt;
 
-        // Clamp player
-        p.x = Math.max(0, Math.min(canvas.width - p.width, p.x));
-        p.y = Math.max(paddingTop, Math.min(canvas.height - p.height, p.y));
+        // Strict Player Clamping (Prevents overshooting offscreen/UI)
+        p.x = Math.max(10, Math.min(canvas.width - p.width - 10, p.x));
+        p.y = Math.max(UI_HEIGHT, Math.min(PLAY_AREA_BOTTOM - p.height, p.y));
 
-        // Enemy spawn
+        // Enemy Spawn Logic with Lane System (Prevents Bundling)
         spawnTimerRef.current += dt;
         if (spawnTimerRef.current > 1.8) {
           spawnTimerRef.current = 0;
           const en = spawnEnemy(canvas.width, now);
+          
           if (en) {
-            // Ensure vertical spacing between enemies
-            const padding = 80;
-            let yPos, attempts = 0;
-            do {
-              yPos = paddingTop + Math.random() * (canvas.height - paddingTop - 100);
-              attempts++;
-            } while (
-              enemiesRef.current.some(other => !other.remove && Math.abs(other.y - yPos) < padding) &&
-              attempts < 20
-            );
-            en.y = yPos;
-            enemiesRef.current.push(en);
+            const laneHeight = 70; // Height per enemy lane
+            const maxLanes = Math.max(1, Math.floor((PLAY_AREA_BOTTOM - UI_HEIGHT) / laneHeight));
+            
+            // Check which lanes have an enemy currently spawning (near the right edge)
+            const occupiedLanes = enemiesRef.current
+              .filter(other => !other.remove && other.x > canvas.width - 250)
+              .map(other => other.lane);
+
+            const availableLanes = [];
+            for (let i = 0; i < maxLanes; i++) {
+              if (!occupiedLanes.includes(i)) availableLanes.push(i);
+            }
+
+            // Only spawn if there is a free horizontal lane
+            if (availableLanes.length > 0) {
+              const chosenLane = availableLanes[Math.floor(Math.random() * availableLanes.length)];
+              en.lane = chosenLane; 
+              en.y = UI_HEIGHT + (chosenLane * laneHeight) + 10;
+              enemiesRef.current.push(en);
+            }
           }
         }
 
-        // Update enemies & collisions
-        updateEnemies(enemiesRef.current, dt, canvas.width, p, handlePlayerHit);
+        // Update and check collisions
+        updateEnemies(enemiesRef.current, dt, canvas.width, p, updateLivesUI);
 
         enemiesRef.current.forEach((en) => {
           if (!en.remove && !en.destroyed &&
-            Math.abs(en.x - p.x) < 60 &&
+            Math.abs(en.x - p.x) < 50 &&
             Math.abs(en.y - p.y) < 40) {
             en.remove = true;
-            handlePlayerHit();
+            updateLivesUI();
           }
         });
 
@@ -224,8 +244,8 @@ const GalaxyMainGame = () => {
         bulletsRef.current = bulletsRef.current.filter((b) => {
           if (!b.target || b.target.remove) return false;
           const dx = b.target.x - b.x;
-          const dy = b.target.y - b.y;
-          const dist = Math.sqrt(dx*dx + dy*dy);
+          const dy = (b.target.y + 30) - b.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < 20) return false;
           b.x += (dx / dist) * b.speed * dt;
           b.y += (dy / dist) * b.speed * dt;
@@ -233,11 +253,10 @@ const GalaxyMainGame = () => {
         });
       }
 
-      // Draw background & enemies
+      // DRAWING
       drawBackground(ctx, canvas);
-      if (enemiesRef.current.length > 0) drawEnemies(ctx, enemiesRef.current, targetEnemyRef.current);
+      drawEnemies(ctx, enemiesRef.current, targetEnemyRef.current);
 
-      // Draw bullets
       ctx.fillStyle = "#00ffff";
       bulletsRef.current.forEach((b) => {
         ctx.beginPath();
@@ -245,57 +264,49 @@ const GalaxyMainGame = () => {
         ctx.fill();
       });
 
-      // Draw player ship
       if (assetsRef.current.ship) {
-        ctx.drawImage(assetsRef.current.ship, p.x, p.y, p.width, p.height);
+        ctx.drawImage(assetsRef.current.ship, playerRef.current.x, playerRef.current.y, playerRef.current.width, playerRef.current.height);
       } else {
-        ctx.strokeStyle = "white";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(p.x, p.y, p.width, p.height);
         ctx.fillStyle = "blue";
-        ctx.fillRect(p.x, p.y, p.width, p.height);
+        ctx.fillRect(playerRef.current.x, playerRef.current.y, playerRef.current.width, playerRef.current.height);
       }
 
       animationRef.current = requestAnimationFrame(loop);
     };
 
-    if (gameReady) animationRef.current = requestAnimationFrame(loop);
+    animationRef.current = requestAnimationFrame(loop);
 
     return () => {
       window.removeEventListener("resize", resize);
       cancelAnimationFrame(animationRef.current);
     };
-  }, [isPaused, gameOver, gameReady, initStars, drawBackground]);
+  }, [gameReady, isPaused, gameOver, initStars, drawBackground]);
 
-  // -------------------------
-  // RENDER
-  // -------------------------
   return (
-    <div style={{ position: "fixed", inset: 0, background: "black", overflow: "hidden" }}>
-      <canvas
-        ref={canvasRef}
-        style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", display: "block" }}
-      />
+    <div style={{ position: "fixed", inset: 0, width: "100vw", height: "100vh", background: "black", overflow: "hidden" }}>
+      <canvas ref={canvasRef} style={{ display: "block", width: "100%", height: "100%" }} />
 
-      {/* UI */}
+      {/* UI Overlay */}
       <div style={{
         position: "absolute",
-        top: 20,
+        top: 0,
         left: 0,
         width: "100%",
+        height: "90px",
         display: "flex",
         justifyContent: "space-between",
+        alignItems: "center",
         padding: "0 50px",
         pointerEvents: "none",
-        zIndex: 100
+        zIndex: 100,
+        boxSizing: "border-box",
+        background: "linear-gradient(to bottom, rgba(0,0,0,0.9), transparent)"
       }}>
-        <div style={{ color: "white", fontSize: "32px", fontFamily: "monospace", textShadow: "2px 2px #000" }}>
-          SCORE: {score}
+        <div id="ui-score" style={{ color: "white", fontSize: "28px", fontFamily: "monospace", fontWeight: "bold", textShadow: "2px 2px 0px #000" }}>
+          SCORE: 0
         </div>
-        <div style={{ color: "white", fontSize: "32px", fontFamily: "monospace", textShadow: "2px 2px #000" }}>
-          {Array.from({ length: 3 }).map((_, i) => (
-            <span key={i} style={{ opacity: i < lives ? 1 : 0.2, marginLeft: "10px" }}>❤️</span>
-          ))}
+        <div id="ui-lives" style={{ fontSize: "28px" }}>
+          ❤️ ❤️ ❤️ 
         </div>
       </div>
 
@@ -303,7 +314,7 @@ const GalaxyMainGame = () => {
         <div style={{
           position: "absolute",
           inset: 0,
-          background: "rgba(0,0,0,0.9)",
+          background: "rgba(0,0,0,0.85)",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -311,13 +322,13 @@ const GalaxyMainGame = () => {
           zIndex: 200,
           color: "white"
         }}>
-          <h1 style={{ fontSize: "5rem", color: "#ff4444" }}>GAME OVER</h1>
-          <p style={{ fontSize: "2rem" }}>SCORE: {score}</p>
+          <h1 style={{ fontSize: "5rem", margin: 0, color: "#ff4444" }}>MISSION FAILED</h1>
+          <p style={{ fontSize: "2rem" }}>FINAL SCORE: {scoreRef.current}</p>
           <button
             onClick={() => window.location.reload()}
-            style={{ padding: "15px 40px", fontSize: "1.5rem", cursor: "pointer", background: "white", border: "none", borderRadius: "8px" }}
+            style={{ padding: "15px 40px", fontSize: "1.5rem", cursor: "pointer", borderRadius: "8px", border: "none", fontWeight: "bold" }}
           >
-            TRY AGAIN
+            REDEPLOY
           </button>
         </div>
       )}
