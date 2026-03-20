@@ -148,7 +148,7 @@ const GalaxyMainGame = () => {
     resize();
 
     // Use absolute path from public folder
-    loadAssets({ images: { ship: "/assets/nightraider.png" } })
+    loadAssets({ images: { ship: "/images/nightraider.png" } })
       .then(loaded => { assetsRef.current = loaded; })
       .catch(() => console.error("Asset failed. Check: public/assets/nightraider.png"))
       .finally(() => setGameReady(true));
