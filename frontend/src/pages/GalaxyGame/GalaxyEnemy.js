@@ -22,32 +22,28 @@ export function spawnEnemy(canvasWidth, currentTime) {
 
 // Update position & check if hits player
 export function updateEnemies(enemies, dt, canvasWidth, playerPos, onHitPlayer) {
-  enemies.forEach((e) => {
-    // 1. Constant Forward Momentum (X-axis)
+  for (let e of enemies) {
+    // 1. Move Left
     e.x -= e.speed * dt;
 
-    // 2. The "Slow Creep" (Y-axis)
-    // We only track the player if the enemy is still alive
+    // 2. The Slow Creep (Gravitation)
     if (!e.destroyed) {
-      // Adjust this number: 20 is a very slow drift, 50 is a noticeable track
-      const creepSpeed = 25; 
-      
-      // Calculate the difference in height
-      const distY = playerPos.y - e.y;
-      
-      // Move slightly toward the player's Y position
-      if (Math.abs(distY) > 5) { // Small buffer to prevent jittering
-        const direction = distY > 0 ? 1 : -1;
-        e.y += direction * creepSpeed * dt;
+      const creepSpeed = 30; // Slow vertical drift
+      const targetY = playerPos.y + 10; // Aim for the middle of the ship
+      const diffY = targetY - e.y;
+
+      // Only move if the enemy is more than 5 pixels away (prevents jitter)
+      if (Math.abs(diffY) > 5) {
+        e.y += (diffY > 0 ? 1 : -1) * creepSpeed * dt;
       }
     }
 
-    // 3. Left Wall Collision
+    // 3. Collision with left wall
     if (e.x < -100 && !e.remove) {
       e.remove = true;
       onHitPlayer(e);
     }
-  });
+  }
   return enemies;
 }
 
