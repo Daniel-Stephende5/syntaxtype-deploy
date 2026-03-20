@@ -111,22 +111,45 @@ const GalaxyMainGame = () => {
   });
 
   // TAB to switch target
-  useEffect(() => {
-    const handleTab = (e) => {
-      if (e.key === "Tab") {
-        e.preventDefault();
-        if (enemiesRef.current.length === 0) return;
+useEffect(() => {
+  const handleKeyDown = (e) => {
+    // --- TAB key: switch target enemy ---
+    if (e.key === "Tab") {
+      e.preventDefault();
+      if (enemiesRef.current.length === 0) return;
 
-        const current = targetEnemyRef.current;
-        const index = enemiesRef.current.indexOf(current);
-        const next =
-          enemiesRef.current[(index + 1) % enemiesRef.current.length];
-        targetEnemyRef.current = next;
-      }
-    };
-    window.addEventListener("keydown", handleTab);
-    return () => window.removeEventListener("keydown", handleTab);
-  }, []);
+      const current = targetEnemyRef.current;
+      const index = enemiesRef.current.indexOf(current);
+      const next =
+        enemiesRef.current[(index + 1) % enemiesRef.current.length];
+      targetEnemyRef.current = next;
+      return;
+    }
+
+    // --- Typing for enemies ---
+    if (e.key.length === 1) {
+      enemiesRef.current = handleTyping(enemiesRef.current, e.key);
+    }
+
+    // --- Backspace handling ---
+    if (e.key === "Backspace") {
+      enemiesRef.current.forEach((enemy) => {
+        if (enemy.type === "shield" && enemy.shield) {
+          enemy.answerTyped = enemy.answerTyped.slice(0, -1);
+        } else if (!enemy.shield) {
+          enemy.typed = enemy.typed.slice(0, -1);
+        }
+      });
+    }
+  };
+
+  window.addEventListener("keydown", handleKeyDown);
+
+  return () => {
+    window.removeEventListener("keydown", handleKeyDown);
+  };
+}, []);
+
 
   useEffect(() => {
     const canvas = canvasRef.current;
