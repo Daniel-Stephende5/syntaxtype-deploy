@@ -1,14 +1,14 @@
+// GalaxyEnemy.js
 import { getEnemiesByLevel } from "./GalaxyLibrary";
 
-// Spawn enemy from right to left
 export function spawnEnemy(canvasWidth, level) {
   const library = getEnemiesByLevel(level);
   const template = library[Math.floor(Math.random() * library.length)];
 
   return {
     ...template,
-    x: canvasWidth + 50,                // start off-screen right
-    y: 0,                               // will assign random later
+    x: canvasWidth + 50,           // start right offscreen
+    y: Math.random() * (500 - 50), // adjust to canvas height dynamically
     typed: "",
     shieldIndex: 0,
     answerTyped: "",
@@ -18,10 +18,10 @@ export function spawnEnemy(canvasWidth, level) {
   };
 }
 
-// Update enemies horizontally
+// Update position & check if hits player
 export function updateEnemies(enemies, dt, canvasWidth, onHitPlayer) {
   return enemies.map((e) => {
-    const newX = e.x - e.speed * dt;
+    const newX = e.x - e.speed * dt; // move left
 
     if (newX < -100) {
       onHitPlayer(e);
@@ -32,50 +32,47 @@ export function updateEnemies(enemies, dt, canvasWidth, onHitPlayer) {
   });
 }
 
-// Typing handler (per-character)
+// Typing input handling
 export function handleTyping(enemies, key) {
   return enemies.map((e) => {
     if (e.type === "shield" && e.shield) {
       const q = e.questions[e.shieldIndex];
-      if (!q) return e;
+      if (!q) return e; // all shields cleared
 
       if (q.answer.startsWith(e.answerTyped + key)) {
-        e.answerTyped += key;
-        if (e.answerTyped === q.answer) {
-          e.shieldIndex++;
-          e.answerTyped = "";
-          if (e.shieldIndex >= e.questions.length) e.shield = false;
+        const newTyped = e.answerTyped + key;
+
+        if (newTyped === q.answer) {
+          // shield cleared, go to next
+          const nextShield = e.shieldIndex + 1;
+          return {
+            ...e,
+            shieldIndex: nextShield,
+            answerTyped: "",
+            shield: nextShield < e.questions.length,
+          };
         }
+
+        return { ...e, answerTyped: newTyped };
       } else {
-        e.answerTyped = "";
+        return { ...e, answerTyped: "" };
       }
-      return e;
     }
 
-    if (e.word.toLowerCase().startsWith(e.typed + key)) {
-      e.typed += key;
-      if (e.typed === e.word) {
-        e.destroyed = true;
-        e.remove = true;
-      }
-    } else {
-      e.typed = "";
+    // Normal typing enemy
+    if (e.word.startsWith(e.typed + key)) {
+      const newTyped = e.typed + key;
+      if (newTyped === e.word) return { ...e, typed: newTyped, remove: true, destroyed: true };
+      return { ...e, typed: newTyped };
     }
 
-    return e;
+    return { ...e, typed: "" };
   });
 }
 
-// Draw enemies and highlight target
-export function drawEnemies(ctx, enemies, targetEnemy = null) {
+// Draw enemies
+export function drawEnemies(ctx, enemies) {
   enemies.forEach((e) => {
-    // Highlight target enemy
-    if (e === targetEnemy) {
-      ctx.strokeStyle = "yellow";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(e.x - 5, e.y - 5, 100 + 10, 20 + 10); // box around text
-    }
-
     ctx.font = e.type === "shield" ? "16px monospace" : "18px monospace";
 
     if (e.type === "shield" && e.shield) {
@@ -106,7 +103,7 @@ export function drawEnemies(ctx, enemies, targetEnemy = null) {
   });
 }
 
-// Cleanup
+// Remove dead enemies
 export function cleanupEnemies(enemies) {
   return enemies.filter((e) => !e.remove);
 }
