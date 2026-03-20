@@ -40,7 +40,7 @@ export function useControls({ onTyped = null, onBackspace = null } = {}) {
       // Single character typing (letters/numbers/punctuation)
       if (key.length === 1) {
         typedLetters.current += key;
-        onTyped && onTyped(typedLetters.current);
+       onTyped && onTyped(key);
       }
     };
 
