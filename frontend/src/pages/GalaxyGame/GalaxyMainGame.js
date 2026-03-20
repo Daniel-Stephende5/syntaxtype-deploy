@@ -1,12 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useBackground } from "./GalaxyBackground";
 import { loadAssets } from "./assets";
-import {
-  spawnEnemy,
-  updateEnemies,
-  drawEnemies,
-  cleanupEnemies,
-} from "./GalaxyEnemy";
+import { spawnEnemy, updateEnemies, drawEnemies, cleanupEnemies } from "./GalaxyEnemy";
 
 const GalaxyMainGame = () => {
   const canvasRef = useRef(null);
@@ -20,14 +15,7 @@ const GalaxyMainGame = () => {
   const [lives, setLives] = useState(3);
   const [gameOver, setGameOver] = useState(false);
 
-  const playerRef = useRef({
-    x: 50,
-    y: 0,
-    width: 80,
-    height: 60,
-    speed: 450,
-  });
-
+  const playerRef = useRef({ x: 50, y: 0, width: 80, height: 60, speed: 450 });
   const enemiesRef = useRef([]);
   const spawnTimerRef = useRef(0);
   const targetEnemyRef = useRef(null);
@@ -36,12 +24,9 @@ const GalaxyMainGame = () => {
 
   const { initStars, drawBackground } = useBackground();
 
-  // -------------------------
-  // GAME LOGIC
-  // -------------------------
+  // --- GAME LOGIC ---
   const addScore = (enemy) => {
-    const pts =
-      enemy.type === "boss" ? 10 : enemy.type === "shield" ? 2 : 1;
+    const pts = enemy.type === "boss" ? 10 : enemy.type === "shield" ? 2 : 1;
     setScore((s) => s + pts);
   };
 
@@ -62,9 +47,7 @@ const GalaxyMainGame = () => {
     });
   };
 
-  // -------------------------
-  // CONTROLS
-  // -------------------------
+  // --- CONTROLS ---
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (isPaused || gameOver) return;
@@ -80,9 +63,7 @@ const GalaxyMainGame = () => {
       // TAB target switch
       if (key === "Tab") {
         e.preventDefault();
-        const alive = enemiesRef.current.filter(
-          (en) => !en.remove && !en.destroyed
-        );
+        const alive = enemiesRef.current.filter(en => !en.remove && !en.destroyed);
         if (alive.length === 0) return;
 
         const idx = alive.indexOf(targetEnemyRef.current);
@@ -94,15 +75,14 @@ const GalaxyMainGame = () => {
       if (key.length === 1) {
         const char = key.toLowerCase();
 
-        // Acquire target if none
+        // Only acquire target if NONE exists
         if (!targetEnemyRef.current) {
-          const match = enemiesRef.current.find((en) => {
+          const match = enemiesRef.current.find(en => {
             if (en.remove || en.destroyed) return false;
 
-            const word =
-              en.type === "shield" && en.shield
-                ? en.questions[en.shieldIndex].answer
-                : en.word;
+            const word = en.type === "shield" && en.shield
+              ? en.questions[en.shieldIndex].answer
+              : en.word;
 
             return word.toLowerCase().startsWith(char);
           });
@@ -121,17 +101,13 @@ const GalaxyMainGame = () => {
         // SHIELD ENEMY
         if (target.type === "shield" && target.shield) {
           const q = target.questions[target.shieldIndex];
-          const expected =
-            q.answer[target.answerTyped.length]?.toLowerCase();
+          const expected = q.answer[target.answerTyped.length]?.toLowerCase();
 
           if (char === expected) {
             target.answerTyped += key;
             shootBullet(target);
 
-            if (
-              target.answerTyped.toLowerCase() ===
-              q.answer.toLowerCase()
-            ) {
+            if (target.answerTyped.toLowerCase() === q.answer.toLowerCase()) {
               target.shieldIndex++;
               target.answerTyped = "";
 
@@ -151,23 +127,19 @@ const GalaxyMainGame = () => {
             target.typed = (target.typed || "") + key;
             shootBullet(target);
 
-            if (
-              target.typed.toLowerCase() ===
-              target.word.toLowerCase()
-            ) {
+            if (target.typed.toLowerCase() === target.word.toLowerCase()) {
               addScore(target);
+
               target.destroyed = true;
 
+              // Smooth removal
               setTimeout(() => {
                 target.remove = true;
               }, 120);
 
-              // instantly pick next target
-              const nextTarget = enemiesRef.current.find(
-                (en) =>
-                  !en.remove &&
-                  !en.destroyed &&
-                  en !== target
+              // 🔥 instantly pick next target (NO PAUSE)
+              const nextTarget = enemiesRef.current.find(en =>
+                !en.remove && !en.destroyed && en !== target
               );
 
               targetEnemyRef.current = nextTarget || null;
@@ -190,9 +162,7 @@ const GalaxyMainGame = () => {
     };
   }, [isPaused, gameOver]);
 
-  // -------------------------
-  // MAIN LOOP
-  // -------------------------
+  // --- MAIN LOOP ---
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
@@ -200,9 +170,6 @@ const GalaxyMainGame = () => {
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-
-      document.body.style.margin = "0";
-
       initStars(canvas, 150);
       playerRef.current.y = canvas.height / 2;
     };
@@ -210,13 +177,15 @@ const GalaxyMainGame = () => {
     window.addEventListener("resize", resize);
     resize();
 
-    // Load assets
+    // LOAD ASSETS
     loadAssets({
-      images: { ship: "/images/nightraider.png" },
+      images: { ship: "/images/nightraider.png?v=" + Date.now() }
     })
       .then((loaded) => {
+        console.log("ASSETS:", loaded);
         assetsRef.current = loaded;
       })
+      .catch((err) => console.error("Asset failed:", err))
       .finally(() => setGameReady(true));
 
     let last = performance.now();
@@ -231,7 +200,6 @@ const GalaxyMainGame = () => {
         const p = playerRef.current;
         const keys = keysPressed.current;
 
-        // Movement
         if (keys["ArrowLeft"]) p.x -= p.speed * dt;
         if (keys["ArrowRight"]) p.x += p.speed * dt;
         if (keys["ArrowUp"]) p.y -= p.speed * dt;
@@ -240,35 +208,24 @@ const GalaxyMainGame = () => {
         p.x = Math.max(0, Math.min(canvas.width - p.width, p.x));
         p.y = Math.max(0, Math.min(canvas.height - p.height, p.y));
 
-        // SPAWN
+        // Spawn enemies
         spawnTimerRef.current += dt;
         if (spawnTimerRef.current > 1.8) {
           spawnTimerRef.current = 0;
-
-          const newEnemy = spawnEnemy(canvas.width, now);
-          if (newEnemy) {
-            newEnemy.y =
-              Math.random() * (canvas.height - 100);
-            enemiesRef.current.push(newEnemy);
+          const en = spawnEnemy(canvas.width, now);
+          if (en) {
+            en.y = Math.random() * (canvas.height - 100);
+            enemiesRef.current.push(en);
           }
         }
 
-        updateEnemies(
-          enemiesRef.current,
-          dt,
-          canvas.width,
-          p,
-          handlePlayerHit
-        );
+        updateEnemies(enemiesRef.current, dt, canvas.width, p, handlePlayerHit);
 
-        // Collision
-        enemiesRef.current.forEach((en) => {
-          if (
-            !en.remove &&
-            !en.destroyed &&
-            Math.abs(en.x - p.x) < 60 &&
-            Math.abs(en.y - p.y) < 40
-          ) {
+        // Collisions
+        enemiesRef.current.forEach(en => {
+          if (!en.remove && !en.destroyed &&
+              Math.abs(en.x - p.x) < 60 &&
+              Math.abs(en.y - p.y) < 40) {
             en.remove = true;
             handlePlayerHit();
           }
@@ -277,9 +234,8 @@ const GalaxyMainGame = () => {
         enemiesRef.current = cleanupEnemies(enemiesRef.current);
 
         // Bullets
-        bulletsRef.current = bulletsRef.current.filter((b) => {
-          if (!b.target || b.target.remove || b.target.destroyed)
-            return false;
+        bulletsRef.current = bulletsRef.current.filter(b => {
+          if (!b.target || b.target.remove || b.target.destroyed) return false;
 
           const dx = b.target.x - b.x;
           const dy = b.target.y - b.y;
@@ -299,7 +255,7 @@ const GalaxyMainGame = () => {
 
       // Bullets
       ctx.fillStyle = "#00ffff";
-      bulletsRef.current.forEach((b) => {
+      bulletsRef.current.forEach(b => {
         ctx.beginPath();
         ctx.arc(b.x, b.y, 4, 0, Math.PI * 2);
         ctx.fill();
@@ -308,14 +264,13 @@ const GalaxyMainGame = () => {
       // Ship
       const p = playerRef.current;
       if (assetsRef.current?.ship) {
-        ctx.drawImage(
-          assetsRef.current.ship,
-          p.x,
-          p.y,
-          p.width,
-          p.height
-        );
+        ctx.drawImage(assetsRef.current.ship, p.x, p.y, p.width, p.height);
+      } else {
+        ctx.fillStyle = "blue";
+        ctx.fillRect(p.x, p.y, p.width, p.height);
       }
+
+      animationRef.current = requestAnimationFrame(loop);
     };
 
     animationRef.current = requestAnimationFrame(loop);
@@ -326,48 +281,39 @@ const GalaxyMainGame = () => {
     };
   }, [isPaused, gameOver, gameReady, initStars, drawBackground]);
 
-  // -------------------------
-  // RENDER
-  // -------------------------
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "black",
-        overflow: "hidden",
-      }}
-    >
-      <canvas
-        ref={canvasRef}
-        style={{
-          position: "absolute",
-          inset: 0,
-          zIndex: 0,
-        }}
-      />
+    <div style={{ position: "fixed", inset: 0, background: "black" }}>
+      <canvas ref={canvasRef} />
 
       {/* UI */}
-      <div
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100%",
-          display: "flex",
-          justifyContent: "space-between",
-          padding: "20px 40px",
-          zIndex: 9999,
-          pointerEvents: "none",
-        }}
-      >
-        <div style={{ color: "#fff", fontSize: 28 }}>
+      <div style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100%",
+        display: "flex",
+        justifyContent: "space-between",
+        padding: "20px 50px",
+        zIndex: 9999,
+        pointerEvents: "none"
+      }}>
+        <div style={{
+          color: "#fff",
+          fontSize: "32px",
+          fontFamily: "monospace",
+          textShadow: "0 0 10px black"
+        }}>
           SCORE: {score}
         </div>
 
-        <div style={{ fontSize: 28 }}>
+        <div style={{
+          color: "#fff",
+          fontSize: "32px",
+          fontFamily: "monospace",
+          textShadow: "0 0 10px black"
+        }}>
           {Array.from({ length: 3 }).map((_, i) => (
-            <span key={i} style={{ opacity: i < lives ? 1 : 0.2 }}>
+            <span key={i} style={{ opacity: i < lives ? 1 : 0.2, marginLeft: 10 }}>
               ❤️
             </span>
           ))}
@@ -375,21 +321,19 @@ const GalaxyMainGame = () => {
       </div>
 
       {gameOver && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.9)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexDirection: "column",
-            zIndex: 10000,
-            color: "white",
-          }}
-        >
-          <h1>GAME OVER</h1>
-          <p>SCORE: {score}</p>
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.9)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 10000,
+          color: "white"
+        }}>
+          <h1 style={{ fontSize: "5rem", color: "#ff4444" }}>GAME OVER</h1>
+          <p style={{ fontSize: "2rem" }}>SCORE: {score}</p>
           <button onClick={() => window.location.reload()}>
             TRY AGAIN
           </button>
