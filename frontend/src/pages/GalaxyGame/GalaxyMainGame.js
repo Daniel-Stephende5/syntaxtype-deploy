@@ -71,7 +71,7 @@ const GalaxyMainGame = () => {
     const char = key.toLowerCase();
 
     // Auto-lock onto a new target if none is active
-    if (!targetEnemyRef.current || targetEnemyRef.current.destroyed) {
+    if (!targetEnemyRef.current || targetEnemyRef.current.remove) {
       const match = enemiesRef.current.find((en) => {
         if (en.destroyed || en.remove) return false;
         const toCheck = en.type === "shield" && en.shield 
@@ -110,12 +110,19 @@ const GalaxyMainGame = () => {
         shootBullet(target);
         
         // WORD COMPLETE
-        if (target.typed.toLowerCase() === target.word.toLowerCase()) {
-          addScore(target);
-          target.destroyed = true; 
-          target.remove = true; 
-          targetEnemyRef.current = null; // Clear lock so player can start new word
-        }
+   if (target.typed.toLowerCase() === target.word.toLowerCase()) {
+  addScore(target);
+
+  target.destroyed = true;
+
+  // Delay removal so it doesn't feel like a reset
+  setTimeout(() => {
+    target.remove = true;
+  }, 150);
+
+  // Only clear target AFTER next frame
+  targetEnemyRef.current = null;
+}
       }
     }
   }
