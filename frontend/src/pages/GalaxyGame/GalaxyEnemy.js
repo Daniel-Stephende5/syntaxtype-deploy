@@ -25,35 +25,36 @@ export function spawnEnemy(canvasWidth, currentTime) {
 /**
  * Update position & check if hits player
  */
+// Update position & check if hits player
 export function updateEnemies(enemies, dt, canvasWidth, playerPos, onHitPlayer) {
   for (let e of enemies) {
     if (e.remove) continue;
 
-    // 1. Move Left (Standard horizontal movement)
+    // 1. Move Left (Constant)
     e.x -= e.speed * dt;
 
-    // 2. The Gravitational Creep
-    // Enemies slowly drift toward the player's Y position
-    if (!e.destroyed) {
-      const creepSpeed = 45; // Slightly faster drift for more "risk"
-      const targetY = playerPos.y + (playerPos.height / 2); // Target ship center
+    // 2. Conditional Gravitation (The "Danger Zone" Logic)
+    // Only start creeping vertically when the enemy is close to the player
+    const DANGER_ZONE = canvasWidth * 0.4; // e.g., only when in the left 40% of the screen
+    
+    if (!e.destroyed && e.x < DANGER_ZONE) {
+      const creepSpeed = 80; // Faster creep since they have less time to move
+      const targetY = playerPos.y + (playerPos.height / 2);
       const diffY = targetY - e.y;
 
-      // Vertical movement logic
-      if (Math.abs(diffY) > 4) {
+      if (Math.abs(diffY) > 5) {
         e.y += (diffY > 0 ? 1 : -1) * creepSpeed * dt;
       }
     }
 
-    // 3. Offscreen Left check (Player misses the word)
+    // 3. Collision with left wall
     if (e.x < -150 && !e.remove) {
       e.remove = true;
-      onHitPlayer(); // Trigger damage
+      onHitPlayer(); 
     }
   }
   return enemies;
 }
-
 /**
  * Render enemies and their words/prompts
  */
