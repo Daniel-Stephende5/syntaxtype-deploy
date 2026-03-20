@@ -286,29 +286,29 @@ if (spawnTimerRef.current > 1.8) {
     <div style={{ position: "fixed", inset: 0, width: "100vw", height: "100vh", background: "black", overflow: "hidden" }}>
       <canvas ref={canvasRef} style={{ display: "block", width: "100%", height: "100%" }} />
 
-      {/* UI Overlay */}
-      <div style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "90px",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "0 50px",
-        pointerEvents: "none",
-        zIndex: 100,
-        boxSizing: "border-box",
-        background: "linear-gradient(to bottom, rgba(0,0,0,0.9), transparent)"
-      }}>
-        <div id="ui-score" style={{ color: "white", fontSize: "28px", fontFamily: "monospace", fontWeight: "bold", textShadow: "2px 2px 0px #000" }}>
-          SCORE: 0
-        </div>
-        <div id="ui-lives" style={{ fontSize: "28px" }}>
-          ❤️ ❤️ ❤️ 
-        </div>
-      </div>
+     {/* UI Overlay at Bottom */}
+<div style={{
+  position: "absolute",
+  bottom: 0,
+  left: 0,
+  width: "100%",
+  height: "90px",
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  padding: "0 50px",
+  pointerEvents: "none",
+  zIndex: 100,
+  boxSizing: "border-box",
+  background: "linear-gradient(to top, rgba(0,0,0,0.9), transparent)" // fade upwards
+}}>
+  <div id="ui-score" style={{ color: "white", fontSize: "28px", fontFamily: "monospace", fontWeight: "bold", textShadow: "2px 2px 0px #000" }}>
+    SCORE: 0
+  </div>
+  <div id="ui-lives" style={{ fontSize: "28px" }}>
+    ❤️ ❤️ ❤️ 
+  </div>
+</div>
 
       {gameOver && (
         <div style={{
