@@ -198,33 +198,33 @@ const GalaxyMainGame = () => {
 
         // Enemy Spawn Logic with Lane System (Prevents Bundling)
         spawnTimerRef.current += dt;
-        if (spawnTimerRef.current > 1.8) {
-          spawnTimerRef.current = 0;
-          const en = spawnEnemy(canvas.width, now);
-          
-          if (en) {
-            const laneHeight = 70; // Height per enemy lane
-            const maxLanes = Math.max(1, Math.floor((PLAY_AREA_BOTTOM - UI_HEIGHT) / laneHeight));
-            
-            // Check which lanes have an enemy currently spawning (near the right edge)
-            const occupiedLanes = enemiesRef.current
-              .filter(other => !other.remove && other.x > canvas.width - 250)
-              .map(other => other.lane);
+if (spawnTimerRef.current > 1.8) {
+  spawnTimerRef.current = 0;
+  const en = spawnEnemy(canvas.width, now);
+  
+  if (en) {
+    const laneHeight = 80; // Increased spacing for readability
+    const maxLanes = Math.floor((PLAY_AREA_BOTTOM - UI_HEIGHT) / laneHeight);
+    
+    // Find lanes that don't have an enemy currently in the "entry" area
+    const occupiedLanes = enemiesRef.current
+      .filter(other => !other.remove && other.x > canvas.width - 400)
+      .map(other => other.lane);
 
-            const availableLanes = [];
-            for (let i = 0; i < maxLanes; i++) {
-              if (!occupiedLanes.includes(i)) availableLanes.push(i);
-            }
+    const availableLanes = [];
+    for (let i = 0; i < maxLanes; i++) {
+      if (!occupiedLanes.includes(i)) availableLanes.push(i);
+    }
 
-            // Only spawn if there is a free horizontal lane
-            if (availableLanes.length > 0) {
-              const chosenLane = availableLanes[Math.floor(Math.random() * availableLanes.length)];
-              en.lane = chosenLane; 
-              en.y = UI_HEIGHT + (chosenLane * laneHeight) + 10;
-              enemiesRef.current.push(en);
-            }
-          }
-        }
+    if (availableLanes.length > 0) {
+      const chosenLane = availableLanes[Math.floor(Math.random() * availableLanes.length)];
+      en.lane = chosenLane; 
+      // Force the Y to be exactly in the center of the lane
+      en.y = UI_HEIGHT + (chosenLane * laneHeight) + (laneHeight / 2);
+      enemiesRef.current.push(en);
+    }
+  }
+}
 
         // Update and check collisions
         updateEnemies(enemiesRef.current, dt, canvas.width, p, updateLivesUI);
