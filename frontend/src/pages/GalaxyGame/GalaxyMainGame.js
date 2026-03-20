@@ -151,16 +151,16 @@ const GalaxyMainGame = () => {
     let running = true;
     let last = performance.now();
 
-    loadAssets({ images: { ship: "/images/nightraider.png" }, sounds: {} })
-      .then((loaded) => {
-        assetsRef.current = loaded;
-        setGameReady(true);
-        loop(performance.now());
-      })
-      .catch(() => {
-        setGameReady(true);
-        loop(performance.now());
-      });
+   loadAssets({ images: { ship: "/images/nightraider.png" }, sounds: {} })
+  .then((loaded) => {
+    assetsRef.current = loaded;
+    setGameReady(true);
+    loop(performance.now());
+  })
+  .catch(() => {
+    setGameReady(true);
+    loop(performance.now());
+  });
 
     // Update player using arrow keys
     function updatePlayer(dt) {
