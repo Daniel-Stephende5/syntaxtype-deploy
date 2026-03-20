@@ -37,118 +37,112 @@ const GalaxyMainGame = () => {
   };
 
   // --- MASTER INPUT CONTROLLER ---
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (isPaused) return;
-      const key = e.key;
+  // --- MASTER INPUT CONTROLLER ---
+useEffect(() => {
+  const handleKeyDown = (e) => {
+    if (isPaused) return;
+    const key = e.key;
 
-      // 1. Movement
-      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) {
-        e.preventDefault();
-        keysPressed.current[key] = true;
-        return;
+    // 1. Movement & System Keys
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) {
+      e.preventDefault();
+      keysPressed.current[key] = true;
+      return;
+    }
+
+    if (key === "Tab") {
+      e.preventDefault();
+      if (enemiesRef.current.length === 0) return;
+      const index = enemiesRef.current.indexOf(targetEnemyRef.current);
+      targetEnemyRef.current = enemiesRef.current[(index + 1) % enemiesRef.current.length];
+      return;
+    }
+
+    if (key === "Backspace") {
+      e.preventDefault();
+      const target = targetEnemyRef.current;
+      if (!target) return;
+      if (target.type === "shield" && target.shield) {
+        target.answerTyped = target.answerTyped.slice(0, -1);
+      } else {
+        target.typed = target.typed.slice(0, -1);
       }
+      return;
+    }
 
-      // 2. Switch Targets (TAB)
-      if (key === "Tab") {
-        e.preventDefault();
-        if (enemiesRef.current.length === 0) return;
-        const current = targetEnemyRef.current;
-        const index = enemiesRef.current.indexOf(current);
-        targetEnemyRef.current = enemiesRef.current[(index + 1) % enemiesRef.current.length];
-        return;
-      }
+    // 2. Typing Logic
+    if (key.length === 1) {
+      const char = key.toLowerCase();
 
-      // 3. Backspace Correction
-      if (key === "Backspace") {
-        e.preventDefault();
-        const target = targetEnemyRef.current;
-        if (!target) return;
+      // If no target, try to find one that starts with this character
+      if (!targetEnemyRef.current) {
+        const potentialTarget = enemiesRef.current.find((en) => {
+          if (en.type === "shield" && en.shield) {
+            const q = en.questions[en.shieldIndex];
+            return q && q.answer.toLowerCase().startsWith(char);
+          }
+          return en.word.toLowerCase().startsWith(char);
+        });
 
-        if (target.type === "shield" && target.shield) {
-          target.answerTyped = target.answerTyped.slice(0, -1);
+        if (potentialTarget) {
+          targetEnemyRef.current = potentialTarget;
         } else {
-          target.typed = target.typed.slice(0, -1);
+          return; // No match found, ignore input
         }
-        return;
       }
 
-      // 4. Typing & Targeting (Letters/Numbers)
-      if (key.length === 1) {
-        const char = key.toLowerCase();
+      const target = targetEnemyRef.current;
 
-        // Acquire target if none exists
-        if (!targetEnemyRef.current) {
-          const newTarget = enemiesRef.current.find((e) => {
-            if (e.type === "shield" && e.shield) {
-              const q = e.questions[e.shieldIndex];
-              return q && q.answer.startsWith(char);
-            }
-            return e.word.toLowerCase().startsWith(char);
-          });
-          if (!newTarget) return; // Ignore typo if it matches no enemies
-          targetEnemyRef.current = newTarget;
-        }
-
-        const target = targetEnemyRef.current;
-
-        // Process typing against current target
-        if (target.type === "shield" && target.shield) {
-          const q = target.questions[target.shieldIndex];
-          if (!q) return;
-
-          if (q.answer.startsWith(target.answerTyped + char)) {
-            target.answerTyped += char;
-            shootBullet(target); // Shoot on successful keystroke
-
-            // Word completed
-            if (target.answerTyped === q.answer) {
-              target.shieldIndex++;
-              target.answerTyped = "";
-              if (target.shieldIndex >= target.questions.length) {
-                target.shield = false;
-              }
-            }
-          } else {
-            // Mistake resets target
+      // 3. Update the Target
+      if (target.type === "shield" && target.shield) {
+        const q = target.questions[target.shieldIndex];
+        const nextMatch = (target.answerTyped + char).toLowerCase();
+        
+        if (q.answer.toLowerCase().startsWith(nextMatch)) {
+          target.answerTyped += key; // Keep original casing if needed
+          shootBullet(target);
+          if (target.answerTyped.toLowerCase() === q.answer.toLowerCase()) {
+            target.shieldIndex++;
             target.answerTyped = "";
-            targetEnemyRef.current = null;
+            if (target.shieldIndex >= target.questions.length) target.shield = false;
           }
         } else {
-          // Normal Enemy
-          if (target.word.toLowerCase().startsWith(target.typed + char)) {
-            target.typed += char;
-            shootBullet(target); // Shoot on successful keystroke
-
-            // Word completed
-            if (target.typed.toLowerCase() === target.word.toLowerCase()) {
-              target.destroyed = true;
-              target.remove = true;
-              targetEnemyRef.current = null;
-            }
-          } else {
-            // Mistake resets target
-            target.typed = "";
-            targetEnemyRef.current = null;
+          // Mistake: Reset progress but keep target (standard typing game feel)
+          target.answerTyped = ""; 
+        }
+      } else {
+        // Normal Enemy Logic
+        const nextMatch = (target.typed + char).toLowerCase();
+        
+        if (target.word.toLowerCase().startsWith(nextMatch)) {
+          target.typed += key; 
+          shootBullet(target);
+          if (target.typed.toLowerCase() === target.word.toLowerCase()) {
+            target.destroyed = true;
+            target.remove = true;
+            targetEnemyRef.current = null; // Kill confirmed, drop target
           }
+        } else {
+          // Mistake: Reset typed progress
+          target.typed = "";
         }
       }
-    };
+    }
+  };
 
-    const handleKeyUp = (e) => {
-      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
-        keysPressed.current[e.key] = false;
-      }
-    };
+  const handleKeyUp = (e) => {
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+      keysPressed.current[e.key] = false;
+    }
+  };
 
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-    };
-  }, [isPaused]); // Only re-bind if paused state changes
+  window.addEventListener("keydown", handleKeyDown);
+  window.addEventListener("keyup", handleKeyUp);
+  return () => {
+    window.removeEventListener("keydown", handleKeyDown);
+    window.removeEventListener("keyup", handleKeyUp);
+  };
+}, [isPaused]); // isPaused is the only dependency needed
 
 
   // --- MAIN GAME LOOP ---
