@@ -35,17 +35,18 @@ export function updateEnemies(enemies, dt, canvasWidth, onHitPlayer) {
 }
 
 // Typing input handling
-export function handleTyping(enemies, key) {
+export function handleTyping(enemies, key, targetEnemy) {
   return enemies.map((e) => {
+    // Only process the current target
+    if (e !== targetEnemy) return e;
+
     // Shield enemy
     if (e.type === "shield" && e.shield) {
       const q = e.questions[e.shieldIndex];
-      if (!q) return e; // all shields cleared
+      if (!q) return e;
 
       if (q.answer.startsWith(e.answerTyped + key)) {
         const newTyped = e.answerTyped + key;
-
-        // Full answer typed
         if (newTyped === q.answer) {
           const nextShield = e.shieldIndex + 1;
           return {
@@ -55,13 +56,24 @@ export function handleTyping(enemies, key) {
             shield: nextShield < e.questions.length,
           };
         }
-
         return { ...e, answerTyped: newTyped };
       } else {
-        // Wrong key resets typed letters
+        // Mistyped, reset only this enemy
         return { ...e, answerTyped: "" };
       }
     }
+
+    // Normal enemy
+    if (e.word.startsWith(e.typed + key)) {
+      const newTyped = e.typed + key;
+      if (newTyped === e.word) return { ...e, typed: newTyped, remove: true, destroyed: true };
+      return { ...e, typed: newTyped };
+    }
+
+    // Mistyped, reset only this enemy
+    return { ...e, typed: "" };
+  });
+}
 
     // Normal enemy
     if (e.word.toLowerCase().startsWith((e.typed || "") + key.toLowerCase())) {
