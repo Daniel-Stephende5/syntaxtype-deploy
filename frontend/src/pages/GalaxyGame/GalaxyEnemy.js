@@ -21,11 +21,26 @@ export function spawnEnemy(canvasWidth, currentTime) {
 }
 
 // Update position & check if hits player
-export function updateEnemies(enemies, dt, canvasWidth, onHitPlayer) {
+export function updateEnemies(enemies, dt, canvasWidth, playerPos, onHitPlayer) {
   for (let i = 0; i < enemies.length; i++) {
     const e = enemies[i];
+    
+    // 1. Standard Horizontal Movement
     e.x -= e.speed * dt;
 
+    // 2. Gravitational Steering (The New Part)
+    // We only steer if the enemy isn't already destroyed
+    if (!e.destroyed) {
+      const steerSpeed = 40; // Adjust this: 10 is subtle, 100 is aggressive
+      
+      if (e.y < playerPos.y) {
+        e.y += steerSpeed * dt;
+      } else if (e.y > playerPos.y) {
+        e.y -= steerSpeed * dt;
+      }
+    }
+
+    // 3. Wall Collision
     if (e.x < -100) {
       onHitPlayer(e);
       e.remove = true;
