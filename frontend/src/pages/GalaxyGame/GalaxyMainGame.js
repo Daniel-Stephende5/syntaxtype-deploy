@@ -220,15 +220,16 @@ const GalaxyMainGame = () => {
 
       levelRef.current += dt * 0.05;
 
-     spawnTimerRef.current += dt;
+    spawnTimerRef.current += dt;
 if (spawnTimerRef.current > 1.5) {
   spawnTimerRef.current = 0;
 
-  // pass current time to library for boss logic
-  const enemy = spawnEnemy(canvas.width, Math.floor(levelRef.current), performance.now());
-  
+  const enemy = spawnEnemy(canvas.width, performance.now());
+  if (!enemy) return;
+
   // Random vertical position
   enemy.y = Math.random() * (canvas.height - 50);
+
   enemiesRef.current.push(enemy);
 }
 
