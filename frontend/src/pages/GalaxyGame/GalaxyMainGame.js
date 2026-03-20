@@ -224,8 +224,12 @@ const GalaxyMainGame = () => {
 if (spawnTimerRef.current > 1.5) {
   spawnTimerRef.current = 0;
 
-  const enemy = spawnEnemy(canvas.width, performance.now());
-  if (!enemy) return;
+ const enemy = spawnEnemy(canvas.width, performance.now());
+if (enemy) {
+  // Random vertical position
+  enemy.y = Math.random() * (canvas.height - 50);
+  enemiesRef.current.push(enemy);
+}
 
   // Random vertical position
   enemy.y = Math.random() * (canvas.height - 50);
