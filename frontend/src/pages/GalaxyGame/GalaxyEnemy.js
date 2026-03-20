@@ -7,11 +7,11 @@ export function spawnEnemy(canvasWidth, level) {
 
   return {
     ...template,
-    x: Math.random() * (canvasWidth - 300),
-    y: -50,
+    x: canvasWidth + 50,           // start right offscreen
+    y: Math.random() * (500 - 50), // adjust to canvas height dynamically
     typed: "",
-    shieldIndex: 0,         // For multi-shield enemies
-    answerTyped: "",        // Current question typing
+    shieldIndex: 0,
+    answerTyped: "",
     shield: template.type === "shield",
     destroyed: false,
     remove: false,
@@ -19,16 +19,16 @@ export function spawnEnemy(canvasWidth, level) {
 }
 
 // Update position & check if hits player
-export function updateEnemies(enemies, dt, canvasHeight, onHitPlayer) {
+export function updateEnemies(enemies, dt, canvasWidth, onHitPlayer) {
   return enemies.map((e) => {
-    const newY = e.y + e.speed * dt;
+    const newX = e.x - e.speed * dt; // move left
 
-    if (newY > canvasHeight - 80) {
+    if (newX < -100) {
       onHitPlayer(e);
       return { ...e, remove: true };
     }
 
-    return { ...e, y: newY };
+    return { ...e, x: newX };
   });
 }
 
