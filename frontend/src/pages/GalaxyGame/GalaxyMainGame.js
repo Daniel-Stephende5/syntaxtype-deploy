@@ -1,8 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useControls } from "./GalaxyControls";
 import { useBackground } from "./GalaxyBackground";
 import { loadAssets } from "./assets";
-
 import {
   spawnEnemy,
   updateEnemies,
@@ -15,21 +13,19 @@ const GalaxyMainGame = () => {
   const animationRef = useRef(null);
   const assetsRef = useRef({});
   const [gameReady, setGameReady] = useState(false);
+  const [isPaused, setIsPaused] = useState(false); // Brought over from useControls
 
-  // Player
+  // Game State Refs
   const playerRef = useRef({ x: 0, y: 0, width: 100, height: 80, speed: 300 });
-
-  // Enemies
   const enemiesRef = useRef([]);
   const spawnTimerRef = useRef(0);
-
-  // Target + Bullets
   const targetEnemyRef = useRef(null);
   const bulletsRef = useRef([]);
+  const keysPressed = useRef({}); // Brought over from useControls
 
   const { initStars, drawBackground } = useBackground();
 
-  // Shoot bullet towards target
+  // --- ACTIONS ---
   const shootBullet = (target) => {
     const p = playerRef.current;
     bulletsRef.current.push({
@@ -40,102 +36,122 @@ const GalaxyMainGame = () => {
     });
   };
 
-  // Controls
-  const controls = useControls({
-    onTyped: (char) => {
-      if (char.length !== 1) return;
-      char = char.toLowerCase();
+  // --- MASTER INPUT CONTROLLER ---
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (isPaused) return;
+      const key = e.key;
 
-      // Acquire target if none
-      if (!targetEnemyRef.current) {
-        const target = enemiesRef.current.find((e) => {
-          if (e.type === "shield" && e.shield) {
-            const q = e.questions[e.shieldIndex];
-            return q && q.answer.startsWith(char);
-          }
-          return e.word.toLowerCase().startsWith(char);
-        });
+      // 1. Movement
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) {
+        e.preventDefault();
+        keysPressed.current[key] = true;
+        return;
+      }
+
+      // 2. Switch Targets (TAB)
+      if (key === "Tab") {
+        e.preventDefault();
+        if (enemiesRef.current.length === 0) return;
+        const current = targetEnemyRef.current;
+        const index = enemiesRef.current.indexOf(current);
+        targetEnemyRef.current = enemiesRef.current[(index + 1) % enemiesRef.current.length];
+        return;
+      }
+
+      // 3. Backspace Correction
+      if (key === "Backspace") {
+        e.preventDefault();
+        const target = targetEnemyRef.current;
         if (!target) return;
-        targetEnemyRef.current = target;
-      }
 
-      const target = targetEnemyRef.current;
-
-      // Shoot bullet on keystroke
-      shootBullet(target);
-
-      // Shield typing
-      if (target.type === "shield" && target.shield) {
-        const q = target.questions[target.shieldIndex];
-        if (!q) return;
-
-        if (q.answer.startsWith(target.answerTyped + char)) {
-          target.answerTyped += char;
-          if (target.answerTyped === q.answer) {
-            target.shieldIndex++;
-            target.answerTyped = "";
-            if (target.shieldIndex >= target.questions.length) {
-              target.shield = false;
-            }
-          }
+        if (target.type === "shield" && target.shield) {
+          target.answerTyped = target.answerTyped.slice(0, -1);
         } else {
-          target.answerTyped = "";
-          targetEnemyRef.current = null;
+          target.typed = target.typed.slice(0, -1);
         }
+        return;
       }
-      // Normal enemy typing
-      else {
-        if (target.word.toLowerCase().startsWith(target.typed + char)) {
-          target.typed += char;
-          if (target.typed === target.word) {
-            target.destroyed = true;
-            target.remove = true;
+
+      // 4. Typing & Targeting (Letters/Numbers)
+      if (key.length === 1) {
+        const char = key.toLowerCase();
+
+        // Acquire target if none exists
+        if (!targetEnemyRef.current) {
+          const newTarget = enemiesRef.current.find((e) => {
+            if (e.type === "shield" && e.shield) {
+              const q = e.questions[e.shieldIndex];
+              return q && q.answer.startsWith(char);
+            }
+            return e.word.toLowerCase().startsWith(char);
+          });
+          if (!newTarget) return; // Ignore typo if it matches no enemies
+          targetEnemyRef.current = newTarget;
+        }
+
+        const target = targetEnemyRef.current;
+
+        // Process typing against current target
+        if (target.type === "shield" && target.shield) {
+          const q = target.questions[target.shieldIndex];
+          if (!q) return;
+
+          if (q.answer.startsWith(target.answerTyped + char)) {
+            target.answerTyped += char;
+            shootBullet(target); // Shoot on successful keystroke
+
+            // Word completed
+            if (target.answerTyped === q.answer) {
+              target.shieldIndex++;
+              target.answerTyped = "";
+              if (target.shieldIndex >= target.questions.length) {
+                target.shield = false;
+              }
+            }
+          } else {
+            // Mistake resets target
+            target.answerTyped = "";
             targetEnemyRef.current = null;
           }
         } else {
-          target.typed = "";
-          targetEnemyRef.current = null;
+          // Normal Enemy
+          if (target.word.toLowerCase().startsWith(target.typed + char)) {
+            target.typed += char;
+            shootBullet(target); // Shoot on successful keystroke
+
+            // Word completed
+            if (target.typed.toLowerCase() === target.word.toLowerCase()) {
+              target.destroyed = true;
+              target.remove = true;
+              targetEnemyRef.current = null;
+            }
+          } else {
+            // Mistake resets target
+            target.typed = "";
+            targetEnemyRef.current = null;
+          }
         }
       }
-    },
+    };
 
-    onBackspace: () => {
-      const target = targetEnemyRef.current;
-      if (!target) return;
-      if (target.type === "shield" && target.shield) {
-        target.answerTyped = target.answerTyped.slice(0, -1);
-      } else {
-        target.typed = target.typed.slice(0, -1);
+    const handleKeyUp = (e) => {
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+        keysPressed.current[e.key] = false;
       }
-    },
-  });
+    };
 
-useEffect(() => {
-  const handleKeyDown = (e) => {
-    // Keep the TAB key logic to switch targets
-    if (e.key === "Tab") {
-      e.preventDefault();
-      if (enemiesRef.current.length === 0) return;
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
 
-      const current = targetEnemyRef.current;
-      const index = enemiesRef.current.indexOf(current);
-      const next = enemiesRef.current[(index + 1) % enemiesRef.current.length];
-      targetEnemyRef.current = next;
-      return;
-    }
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [isPaused]); // Only re-bind if paused state changes
 
-    // ❌ DELETE the 'e.key.length === 1' block that calls handleTyping
-    // ❌ DELETE the 'Backspace' block
-    // Your useControls setup is already handling both perfectly via refs!
-  };
 
-  window.addEventListener("keydown", handleKeyDown);
-
-  return () => {
-    window.removeEventListener("keydown", handleKeyDown);
-  };
-}, []);
-
+  // --- MAIN GAME LOOP ---
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -147,9 +163,8 @@ useEffect(() => {
       canvas.width = canvas.offsetWidth;
       canvas.height = canvas.offsetHeight;
       initStars(canvas, 160);
-
       playerRef.current.x = canvas.width / 2 - 50;
-      playerRef.current.y = canvas.height / 2 - 50; // center
+      playerRef.current.y = canvas.height / 2 - 50;
     }
 
     resize();
@@ -170,7 +185,7 @@ useEffect(() => {
       });
 
     function updatePlayer(dt) {
-      const keys = controls.keysPressed.current;
+      const keys = keysPressed.current;
       const p = playerRef.current;
       const speed = p.speed;
 
@@ -185,22 +200,21 @@ useEffect(() => {
 
     function updateBullets(dt) {
       bulletsRef.current = bulletsRef.current.filter((b) => {
+        // If target was destroyed, bullets just disappear (or you could let them fly off-screen)
         if (!b.target || b.target.remove) return false;
 
         const dx = b.target.x - b.x;
         const dy = b.target.y - b.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
+        // Bullet hits target
         if (dist < 10) {
-          b.target.destroyed = true;
-          b.target.remove = true;
-          if (b.target === targetEnemyRef.current) targetEnemyRef.current = null;
+          // If the enemy is marked destroyed by typing, the bullet arriving confirms the kill visually
           return false;
         }
 
         b.x += (dx / dist) * b.speed * dt;
         b.y += (dy / dist) * b.speed * dt;
-
         return true;
       });
     }
@@ -216,13 +230,18 @@ useEffect(() => {
 
     function loop(now) {
       if (!running) return;
+      if (isPaused) {
+        last = now;
+        animationRef.current = requestAnimationFrame(loop);
+        return;
+      }
+
       const dt = (now - last) / 1000;
       last = now;
 
       // --- UPDATE ---
       updatePlayer(dt);
 
-      // Spawn enemies every 1.5s
       spawnTimerRef.current += dt;
       if (spawnTimerRef.current > 1.5) {
         spawnTimerRef.current = 0;
@@ -233,16 +252,16 @@ useEffect(() => {
         }
       }
 
-      // Update enemy positions
       enemiesRef.current = updateEnemies(
         enemiesRef.current,
         dt,
         canvas.width,
-        () => {}
+        () => {} // handle hit player logic here later
       );
 
       enemiesRef.current = cleanupEnemies(enemiesRef.current);
 
+      // If the targeted enemy flew off screen, clear the target
       if (targetEnemyRef.current && targetEnemyRef.current.remove) {
         targetEnemyRef.current = null;
       }
@@ -251,12 +270,18 @@ useEffect(() => {
 
       // --- RENDER ---
       drawBackground(ctx, canvas);
-      drawEnemies(ctx, enemiesRef.current, targetEnemyRef.current);
+      drawEnemies(ctx, enemiesRef.current, targetEnemyRef.current); // Make sure GalaxyEnemy.js is updated to highlight target if needed
       drawBullets(ctx);
 
       const p = playerRef.current;
       const ship = assetsRef.current.ship;
-      if (ship) ctx.drawImage(ship, p.x, p.y, p.width, p.height);
+      if (ship) {
+        ctx.drawImage(ship, p.x, p.y, p.width, p.height);
+      } else {
+        // Fallback drawing if image fails to load
+        ctx.fillStyle = "blue";
+        ctx.fillRect(p.x, p.y, p.width, p.height);
+      }
 
       animationRef.current = requestAnimationFrame(loop);
     }
@@ -266,7 +291,7 @@ useEffect(() => {
       window.removeEventListener("resize", resize);
       cancelAnimationFrame(animationRef.current);
     };
-  }, [initStars, drawBackground, controls]);
+  }, [initStars, drawBackground, isPaused]);
 
   return (
     <div style={{ position: "fixed", inset: 0 }}>
@@ -275,7 +300,14 @@ useEffect(() => {
         style={{ width: "100%", height: "100%", background: "black" }}
       />
       {!gameReady && (
-        <div style={{ color: "white", padding: 20 }}>Loading game…</div>
+        <div style={{ position: "absolute", top: 20, left: 20, color: "white" }}>
+          Loading game…
+        </div>
+      )}
+      {isPaused && (
+        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", color: "white", fontSize: "2rem" }}>
+          PAUSED
+        </div>
       )}
     </div>
   );
