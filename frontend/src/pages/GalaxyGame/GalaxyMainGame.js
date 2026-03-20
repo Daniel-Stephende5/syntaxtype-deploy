@@ -24,61 +24,57 @@ const GalaxyMainGame = () => {
   const levelRef = useRef(1);
   const spawnTimerRef = useRef(0);
 
-  // 🎯 Target + Bullets
+  // Target + Bullets
   const targetEnemyRef = useRef(null);
   const bulletsRef = useRef([]);
 
   const { initStars, drawBackground } = useBackground();
 
-  // 🔫 Fire bullet
-  function shootBullet(target) {
+  // Shoot bullet towards target
+  const shootBullet = (target) => {
     const p = playerRef.current;
-
     bulletsRef.current.push({
       x: p.x + p.width / 2,
-      y: p.y,
+      y: p.y + p.height / 2,
       target,
       speed: 500,
     });
-  }
+  };
 
-  // 🎮 Controls
+  // Controls
   const controls = useControls({
-    onTyped: (key) => {
-      if (key.length !== 1) return;
-      key = key.toLowerCase();
+    onTyped: (char) => {
+      if (char.length !== 1) return;
+      char = char.toLowerCase();
 
-      // 🎯 Acquire target
+      // Acquire target if none
       if (!targetEnemyRef.current) {
         const target = enemiesRef.current.find((e) => {
           if (e.type === "shield" && e.shield) {
             const q = e.questions[e.shieldIndex];
-            return q && q.answer.startsWith(key);
+            return q && q.answer.startsWith(char);
           }
-          return e.word.toLowerCase().startsWith(key);
+          return e.word.toLowerCase().startsWith(char);
         });
-
         if (!target) return;
         targetEnemyRef.current = target;
       }
 
       const target = targetEnemyRef.current;
 
-      // 🔫 Shoot on correct attempt
+      // Shoot bullet on keystroke
       shootBullet(target);
 
-      // 🛡 Shield enemy
+      // Shield typing
       if (target.type === "shield" && target.shield) {
         const q = target.questions[target.shieldIndex];
         if (!q) return;
 
-        if (q.answer.startsWith(target.answerTyped + key)) {
-          target.answerTyped += key;
-
+        if (q.answer.startsWith(target.answerTyped + char)) {
+          target.answerTyped += char;
           if (target.answerTyped === q.answer) {
             target.shieldIndex++;
             target.answerTyped = "";
-
             if (target.shieldIndex >= target.questions.length) {
               target.shield = false;
             }
@@ -88,12 +84,10 @@ const GalaxyMainGame = () => {
           targetEnemyRef.current = null;
         }
       }
-
-      // 🧠 Normal enemy
+      // Normal enemy typing
       else {
-        if (target.word.toLowerCase().startsWith(target.typed + key)) {
-          target.typed += key;
-
+        if (target.word.toLowerCase().startsWith(target.typed + char)) {
+          target.typed += char;
           if (target.typed === target.word) {
             target.destroyed = true;
             target.remove = true;
@@ -109,7 +103,6 @@ const GalaxyMainGame = () => {
     onBackspace: () => {
       const target = targetEnemyRef.current;
       if (!target) return;
-
       if (target.type === "shield" && target.shield) {
         target.answerTyped = target.answerTyped.slice(0, -1);
       } else {
@@ -118,24 +111,20 @@ const GalaxyMainGame = () => {
     },
   });
 
-  // 🔄 TAB to switch target
+  // TAB to switch target
   useEffect(() => {
     const handleTab = (e) => {
       if (e.key === "Tab") {
         e.preventDefault();
-
         if (enemiesRef.current.length === 0) return;
 
         const current = targetEnemyRef.current;
         const index = enemiesRef.current.indexOf(current);
-
         const next =
           enemiesRef.current[(index + 1) % enemiesRef.current.length];
-
         targetEnemyRef.current = next;
       }
     };
-
     window.addEventListener("keydown", handleTab);
     return () => window.removeEventListener("keydown", handleTab);
   }, []);
@@ -150,11 +139,10 @@ const GalaxyMainGame = () => {
     function resize() {
       canvas.width = canvas.offsetWidth;
       canvas.height = canvas.offsetHeight;
-
       initStars(canvas, 160);
 
       playerRef.current.x = canvas.width / 2 - 50;
-      playerRef.current.y = canvas.height - 120;
+      playerRef.current.y = canvas.height / 2 - 50; // center
     }
 
     resize();
@@ -174,17 +162,18 @@ const GalaxyMainGame = () => {
         loop(performance.now());
       });
 
+    // Update player using arrow keys
     function updatePlayer(dt) {
       const keys = controls.keysPressed.current;
       const speed = playerRef.current.speed;
 
-      if (keys["ArrowLeft"])
-        playerRef.current.x -= speed * dt;
-      if (keys["ArrowRight"])
-        playerRef.current.x += speed * dt;
+      if (keys["ArrowLeft"]) playerRef.current.x -= speed * dt;
+      if (keys["ArrowRight"]) playerRef.current.x += speed * dt;
+      if (keys["ArrowUp"]) playerRef.current.y -= speed * dt;
+      if (keys["ArrowDown"]) playerRef.current.y += speed * dt;
     }
 
-    // 🔫 Update bullets
+    // Update bullets
     function updateBullets(dt) {
       bulletsRef.current = bulletsRef.current.filter((b) => {
         if (!b.target || b.target.remove) return false;
@@ -193,7 +182,12 @@ const GalaxyMainGame = () => {
         const dy = b.target.y - b.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (dist < 10) return false;
+        if (dist < 10) {
+          b.target.destroyed = true;
+          b.target.remove = true;
+          if (b.target === targetEnemyRef.current) targetEnemyRef.current = null;
+          return false;
+        }
 
         b.x += (dx / dist) * b.speed * dt;
         b.y += (dy / dist) * b.speed * dt;
@@ -213,7 +207,6 @@ const GalaxyMainGame = () => {
 
     function loop(now) {
       if (!running) return;
-
       const dt = (now - last) / 1000;
       last = now;
 
@@ -226,23 +219,20 @@ const GalaxyMainGame = () => {
       if (spawnTimerRef.current > 1.5) {
         spawnTimerRef.current = 0;
         const enemy = spawnEnemy(canvas.width, Math.floor(levelRef.current));
+        enemy.y = Math.random() * (canvas.height - 50); // vertical random
         enemiesRef.current.push(enemy);
       }
 
       enemiesRef.current = updateEnemies(
         enemiesRef.current,
         dt,
-        canvas.height,
+        canvas.width,
         () => {}
       );
 
       enemiesRef.current = cleanupEnemies(enemiesRef.current);
 
-      // unlock if dead
-      if (
-        targetEnemyRef.current &&
-        targetEnemyRef.current.remove
-      ) {
+      if (targetEnemyRef.current && targetEnemyRef.current.remove) {
         targetEnemyRef.current = null;
       }
 
@@ -250,16 +240,11 @@ const GalaxyMainGame = () => {
 
       // --- RENDER ---
       drawBackground(ctx, canvas);
-
-      ctx.textAlign = "left";
-      ctx.textBaseline = "top";
-
       drawEnemies(ctx, enemiesRef.current, targetEnemyRef.current);
       drawBullets(ctx);
 
       const p = playerRef.current;
       const ship = assetsRef.current.ship;
-
       if (ship) ctx.drawImage(ship, p.x, p.y, p.width, p.height);
 
       animationRef.current = requestAnimationFrame(loop);
@@ -279,9 +264,7 @@ const GalaxyMainGame = () => {
         style={{ width: "100%", height: "100%", background: "black" }}
       />
       {!gameReady && (
-        <div style={{ color: "white", padding: 20 }}>
-          Loading game…
-        </div>
+        <div style={{ color: "white", padding: 20 }}>Loading game…</div>
       )}
     </div>
   );
