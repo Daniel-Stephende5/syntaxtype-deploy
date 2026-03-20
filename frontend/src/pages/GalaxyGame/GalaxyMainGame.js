@@ -110,37 +110,23 @@ const GalaxyMainGame = () => {
     },
   });
 
-  // TAB to switch target
 useEffect(() => {
   const handleKeyDown = (e) => {
-    // --- TAB key: switch target enemy ---
+    // Keep the TAB key logic to switch targets
     if (e.key === "Tab") {
       e.preventDefault();
       if (enemiesRef.current.length === 0) return;
 
       const current = targetEnemyRef.current;
       const index = enemiesRef.current.indexOf(current);
-      const next =
-        enemiesRef.current[(index + 1) % enemiesRef.current.length];
+      const next = enemiesRef.current[(index + 1) % enemiesRef.current.length];
       targetEnemyRef.current = next;
       return;
     }
 
-    // --- Typing for enemies ---
-    if (e.key.length === 1) {
-      enemiesRef.current = handleTyping(enemiesRef.current, e.key);
-    }
-
-    // --- Backspace handling ---
-    if (e.key === "Backspace") {
-      enemiesRef.current.forEach((enemy) => {
-        if (enemy.type === "shield" && enemy.shield) {
-          enemy.answerTyped = enemy.answerTyped.slice(0, -1);
-        } else if (!enemy.shield) {
-          enemy.typed = enemy.typed.slice(0, -1);
-        }
-      });
-    }
+    // ❌ DELETE the 'e.key.length === 1' block that calls handleTyping
+    // ❌ DELETE the 'Backspace' block
+    // Your useControls setup is already handling both perfectly via refs!
   };
 
   window.addEventListener("keydown", handleKeyDown);
@@ -149,7 +135,6 @@ useEffect(() => {
     window.removeEventListener("keydown", handleKeyDown);
   };
 }, []);
-
 
   useEffect(() => {
     const canvas = canvasRef.current;
