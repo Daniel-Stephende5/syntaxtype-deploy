@@ -37,6 +37,7 @@ export function updateEnemies(enemies, dt, canvasWidth, onHitPlayer) {
 // Typing input handling
 export function handleTyping(enemies, key) {
   return enemies.map((e) => {
+    // Shield enemy
     if (e.type === "shield" && e.shield) {
       const q = e.questions[e.shieldIndex];
       if (!q) return e; // all shields cleared
@@ -44,8 +45,8 @@ export function handleTyping(enemies, key) {
       if (q.answer.startsWith(e.answerTyped + key)) {
         const newTyped = e.answerTyped + key;
 
+        // Full answer typed
         if (newTyped === q.answer) {
-          // shield cleared, go to next
           const nextShield = e.shieldIndex + 1;
           return {
             ...e,
@@ -57,20 +58,25 @@ export function handleTyping(enemies, key) {
 
         return { ...e, answerTyped: newTyped };
       } else {
+        // Wrong key resets typed letters
         return { ...e, answerTyped: "" };
       }
     }
 
-    // Normal typing enemy
-    if (e.word.startsWith(e.typed + key)) {
-      const newTyped = e.typed + key;
-      if (newTyped === e.word) return { ...e, typed: newTyped, remove: true, destroyed: true };
+    // Normal enemy
+    if (e.word.toLowerCase().startsWith((e.typed || "") + key.toLowerCase())) {
+      const newTyped = (e.typed || "") + key.toLowerCase();
+      if (newTyped === e.word.toLowerCase()) {
+        return { ...e, typed: newTyped, remove: true, destroyed: true };
+      }
       return { ...e, typed: newTyped };
     }
 
+    // Wrong key resets typed letters
     return { ...e, typed: "" };
   });
 }
+
 
 // Draw enemies
 export function drawEnemies(ctx, enemies) {
@@ -94,7 +100,8 @@ export function drawEnemies(ctx, enemies) {
       return;
     }
 
-    const typedPart = e.typed;
+    // Normal enemy
+    const typedPart = e.typed || "";
     const remaining = e.word.slice(typedPart.length);
 
     ctx.fillStyle = "#0f0";
