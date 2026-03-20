@@ -224,12 +224,18 @@ useEffect(() => {
         }
       }
 
-      enemiesRef.current = updateEnemies(
-        enemiesRef.current,
-        dt,
-        canvas.width,
-        () => {} // handle hit player logic here later
-      );
+     enemiesRef.current = updateEnemies(
+  enemiesRef.current,
+  dt,
+  canvas.width,
+  playerRef.current, // Pass the player position here
+  (enemy) => {
+    setLives((l) => {
+      if (l <= 1) setGameOver(true);
+      return l - 1;
+    });
+  }
+);
 
       enemiesRef.current = cleanupEnemies(enemiesRef.current);
 
