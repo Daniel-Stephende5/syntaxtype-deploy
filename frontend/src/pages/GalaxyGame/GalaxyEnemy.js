@@ -1,24 +1,21 @@
 // GalaxyEnemy.js
 import { getEnemiesByLevel } from "./GalaxyLibrary";
 
-export function spawnEnemy(canvasWidth, currentTime) {
-  const library = getEnemiesByLevel(currentTime);
-  if (!library || library.length === 0) return null;
-
-  const template = library[Math.floor(Math.random() * library.length)];
+export function spawnEnemy(canvasWidth, enemyData) {
+  if (!enemyData) return null;
 
   return {
-    ...template,
-    x: canvasWidth + 100,           // Start further offscreen for smoother entry
-    y: 0,                           // Set by the lane system in GalaxyMainGame
-    lane: null,                     // Tracked for spawning logic
+    ...enemyData,
+    x: canvasWidth + 100,
+    y: 0,
+    lane: null,
     typed: "",
     shieldIndex: 0,
     answerTyped: "",
-    shield: template.type === "shield",
+    shield: enemyData.type === "shield",
     destroyed: false,
     remove: false,
-    speed: template.speed || 150,   // Fallback speed
+    speed: enemyData.speed || 150,
   };
 }
 
