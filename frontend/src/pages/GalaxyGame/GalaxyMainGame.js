@@ -212,11 +212,7 @@ const difficultyRef = useRef(1);
 
     if (spawnTimerRef.current > 1.8) {
       spawnTimerRef.current = 0;
-
-      const enemiesToSpawn = getEnemiesByLevel(gameTimeRef.current * 1000);
-
-      enemiesToSpawn.forEach((enemyData) => {
-        const en = spawnEnemy(canvas.width, enemyData);
+const en = spawnEnemy(canvas.width, gameTimeRef.current * 1000);
         if (!en) return;
 
         const laneHeight = 80;
