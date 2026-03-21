@@ -30,6 +30,13 @@ export function updateEnemies(enemies, dt, canvasWidth, playerPos, onHitPlayer) 
     // --- BASE MOVEMENT ---
     e.x -= e.speed * dt;
 
+   export function updateEnemies(enemies, dt, canvasWidth, playerPos, onHitPlayer) {
+  for (let e of enemies) {
+    if (e.remove) continue;
+
+    // --- BASE MOVEMENT ---
+    e.x -= e.speed * dt;
+
     const playerCenterY = playerPos.y + playerPos.height / 2;
 
     // DISTANCE ZONES
@@ -71,6 +78,23 @@ export function updateEnemies(enemies, dt, canvasWidth, playerPos, onHitPlayer) 
       const diff = playerCenterY - e.y;
       e.y += diff * 0.15 * dt * lockSpeed;
     }
+
+    // --- BOSS SPECIAL BEHAVIOR ---
+    if (e.type === "boss") {
+      // Bosses sway wider + slower but more deliberate
+      const bossWave = Math.sin(performance.now() * 0.001) * 25;
+      e.y += bossWave * dt;
+    }
+
+    // --- COLLISION LEFT WALL ---
+    if (e.x < -150 && !e.remove) {
+      e.remove = true;
+      onHitPlayer();
+    }
+  }
+
+  return enemies;
+}
 
     // --- BOSS SPECIAL BEHAVIOR ---
     if (e.type === "boss") {
