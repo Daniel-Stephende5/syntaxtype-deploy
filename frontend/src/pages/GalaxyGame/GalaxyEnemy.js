@@ -103,7 +103,10 @@ export function drawEnemies(ctx, enemies, targetEnemy) {
     // --- SHIELD TYPE ---
     if (e.type === "shield" && e.shield) {
       const q = e.questions[e.shieldIndex];
-      if (!q) return;
+      if (!q) {
+    e.shield = false; // disable broken shield enemy
+    return;
+  }
 
       ctx.font = "bold 16px monospace";
       ctx.fillStyle = "#ff4444";
