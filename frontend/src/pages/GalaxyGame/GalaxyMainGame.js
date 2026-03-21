@@ -193,29 +193,40 @@ const GalaxyMainGame = () => {
         p.y = Math.max(90, Math.min(canvas.height - 120, p.y));
 
         // Spawning
-        spawnTimerRef.current += dt;
+       spawnTimerRef.current += dt;
         if (spawnTimerRef.current > 1.8) {
           spawnTimerRef.current = 0;
-          const en = spawnEnemy(canvas.width, gameTimeRef.current * 1000);
-          if (en) {
-            const laneHeight = 80;
-            const maxLanes = Math.floor((canvas.height - 180) / laneHeight);
-            const occupied = enemiesRef.current
-              .filter(o => !o.remove && o.x > canvas.width - 400)
-              .map(o => o.lane);
+          
+          // ✅ 1. Get the correct enemy data based on current game time
+          const enemiesToSpawn = getEnemiesByLevel(gameTimeRef.current * 1000);
 
-            const available = [];
-            for (let i = 0; i < maxLanes; i++) {
-              if (!occupied.includes(i)) available.push(i);
-            }
+          // ✅ 2. Loop through them (this allows normal enemies AND bosses to spawn at the same time)
+          enemiesToSpawn.forEach((enemyData) => {
+            const en = spawnEnemy(canvas.width, enemyData);
+            
+            if (en) {
+              const laneHeight = 80;
+              const maxLanes = Math.floor((canvas.height - 180) / laneHeight);
+              
+              // Find occupied lanes so enemies don't overlap
+              const occupied = enemiesRef.current
+                .filter(o => !o.remove && o.x > canvas.width - 400)
+                .map(o => o.lane);
 
-            if (available.length > 0) {
-              const lane = available[Math.floor(Math.random() * available.length)];
-              en.lane = lane;
-              en.y = 120 + lane * laneHeight; 
-              enemiesRef.current.push(en);
+              const available = [];
+              for (let i = 0; i < maxLanes; i++) {
+                if (!occupied.includes(i)) available.push(i);
+              }
+
+              // Assign a lane and push to the game loop
+              if (available.length > 0) {
+                const lane = available[Math.floor(Math.random() * available.length)];
+                en.lane = lane;
+                en.y = 120 + lane * laneHeight; 
+                enemiesRef.current.push(en);
+              }
             }
-          }
+          });
         }
 
         // Updates
