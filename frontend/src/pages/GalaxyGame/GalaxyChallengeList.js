@@ -38,7 +38,7 @@ export default function GalaxyChallengeList() {
     borderRadius: "4px",
     border: "1px solid #00ffff",
     background: "rgba(0, 128, 0)",
-    color: "#008000",
+    color: "#FFFFFF",
     cursor: "pointer",
     textDecoration: "none",
     fontSize: "14px",
