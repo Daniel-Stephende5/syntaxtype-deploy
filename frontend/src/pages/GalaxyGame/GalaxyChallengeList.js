@@ -37,8 +37,8 @@ export default function GalaxyChallengeList() {
     padding: "8px 16px",
     borderRadius: "4px",
     border: "1px solid #00ffff",
-    background: "rgba(0, 255, 255, 0.1)",
-    color: "#00ffff",
+    background: "rgba(0, 128, 0)",
+    color: "#008000",
     cursor: "pointer",
     textDecoration: "none",
     fontSize: "14px",
@@ -68,7 +68,7 @@ export default function GalaxyChallengeList() {
     }}>
       
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>
-        <h2 style={{ fontSize: "2rem", color: "#00ffff", margin: 0 }}>GALAXY CHALLENGES</h2>
+        <h2 style={{ fontSize: "2rem", color: "#008000", margin: 0 }}>GALAXY CHALLENGES</h2>
         <button style={btnStyle} onClick={fetchChallenges}>REFRESH</button>
       </div>
 
