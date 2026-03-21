@@ -96,11 +96,16 @@ const GalaxyMainGame = () => {
         
         // Target selection logic
         if (!targetEnemyRef.current || targetEnemyRef.current.remove || targetEnemyRef.current.destroyed) {
-          const match = enemiesRef.current.find((en) => {
-            if (en.destroyed || en.remove) return false;
-            const word = en.type === "shield" && en.shield ? en.questions[en.shieldIndex].answer : en.word;
-            return word.toLowerCase().startsWith(char);
-          });
+       const match = enemiesRef.current.find((en) => {
+  // Add !en.hitPlayer so you can't target enemies already crashing into you
+  if (en.destroyed || en.remove || en.hitPlayer) return false; 
+  
+  const word = en.type === "shield" && en.shield 
+    ? en.questions[en.shieldIndex].answer 
+    : en.word;
+    
+  return word.toLowerCase().startsWith(char);
+});
           if (match) targetEnemyRef.current = match;
         }
 
