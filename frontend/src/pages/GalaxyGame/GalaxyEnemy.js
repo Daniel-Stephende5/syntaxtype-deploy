@@ -26,7 +26,7 @@ export function updateEnemies(enemies, dt, canvasWidth, playerPos, onHitPlayer) 
   for (let e of enemies) {
     if (e.remove) continue;
 
-    // --- BASE MOVEMENT ---
+    // --- BASE HORIZONTAL MOVEMENT ---
     e.x -= e.speed * dt;
 
     const playerCenterY = playerPos.y + playerPos.height / 2;
@@ -40,25 +40,25 @@ export function updateEnemies(enemies, dt, canvasWidth, playerPos, onHitPlayer) 
     const FAR_ZONE = canvasWidth * 0.6;
     const MID_ZONE = canvasWidth * 0.4;
 
-    // Max deviation (prevents stacking)
+    // Max deviation from lane (prevents clustering)
     const MAX_OFFSET = 30;
 
     let targetY = e.baseY;
 
-    // MID RANGE tracking
+    // MID RANGE → slight tracking
     if (e.x < FAR_ZONE && e.x > MID_ZONE) {
       const diff = playerCenterY - e.baseY;
       const clamped = Math.max(-MAX_OFFSET, Math.min(MAX_OFFSET, diff));
       targetY = e.baseY + clamped;
     }
-    // CLOSE RANGE tracking
+    // CLOSE RANGE → stronger but limited tracking
     else if (e.x <= MID_ZONE) {
       const diff = playerCenterY - e.baseY;
       const clamped = Math.max(-MAX_OFFSET * 1.5, Math.min(MAX_OFFSET * 1.5, diff));
       targetY = e.baseY + clamped;
     }
 
-    // Smooth movement
+    // Smooth vertical movement
     const smoothFactor = 0.08;
     e.y += (targetY - e.y) * smoothFactor;
 
