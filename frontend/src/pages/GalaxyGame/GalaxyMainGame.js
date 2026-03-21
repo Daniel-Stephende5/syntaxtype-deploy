@@ -257,9 +257,17 @@ const GalaxyMainGame = () => {
         ctx.fill();
       });
 
-      if (assetsRef.current.ship) {
-        ctx.drawImage(assetsRef.current.ship, p.x, p.y, p.width, p.height);
-      }
+      const player = playerRef.current;
+
+if (assetsRef.current.ship) {
+  ctx.drawImage(
+    assetsRef.current.ship,
+    player.x,
+    player.y,
+    player.width,
+    player.height
+  );
+}
 
       animationRef.current = requestAnimationFrame(loop);
     };
