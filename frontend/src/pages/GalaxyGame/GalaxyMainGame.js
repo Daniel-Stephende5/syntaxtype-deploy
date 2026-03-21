@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useBackground } from "./GalaxyBackground";
 import { loadAssets } from "./assets";
+import { getEnemiesByLevel } from "./GalaxyLibrary";
 import {
   spawnEnemy,
   updateEnemies,
@@ -12,7 +13,8 @@ const GalaxyMainGame = () => {
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
   const assetsRef = useRef({ ship: null });
-
+const gameTimeRef = useRef(0);
+const difficultyRef = useRef(1);
   // Game loop variables (moved out of React state to prevent render lag)
   const scoreRef = useRef(0);
   const livesRef = useRef(3);
@@ -179,100 +181,115 @@ const GalaxyMainGame = () => {
     let last = performance.now();
 
     const loop = (now) => {
-      const dt = Math.min((now - last) / 1000, 0.1);
-      last = now;
+  const dt = Math.min((now - last) / 1000, 0.1);
+  last = now;
 
-      if (!isPaused && !gameOver) {
-        const p = playerRef.current;
-        const keys = keysPressed.current;
+  // ✅ TIME TRACKING
+  gameTimeRef.current += dt;
 
-        // Player Movement
-        if (keys["ArrowLeft"]) p.x -= p.speed * dt;
-        if (keys["ArrowRight"]) p.x += p.speed * dt;
-        if (keys["ArrowUp"]) p.y -= p.speed * dt;
-        if (keys["ArrowDown"]) p.y += p.speed * dt;
-
-        // Strict Player Clamping (Prevents overshooting offscreen/UI)
-        p.x = Math.max(10, Math.min(canvas.width - p.width - 10, p.x));
-        p.y = Math.max(UI_HEIGHT, Math.min(PLAY_AREA_BOTTOM - p.height, p.y));
-
-        // Enemy Spawn Logic with Lane System (Prevents Bundling)
-        spawnTimerRef.current += dt;
-if (spawnTimerRef.current > 1.8) {
-  spawnTimerRef.current = 0;
-  const en = spawnEnemy(canvas.width, now);
-  
-  if (en) {
-    const laneHeight = 80; // Increased spacing for readability
-    const maxLanes = Math.floor((PLAY_AREA_BOTTOM - UI_HEIGHT) / laneHeight);
-    
-    // Find lanes that don't have an enemy currently in the "entry" area
-    const occupiedLanes = enemiesRef.current
-      .filter(other => !other.remove && other.x > canvas.width - 400)
-      .map(other => other.lane);
-
-    const availableLanes = [];
-    for (let i = 0; i < maxLanes; i++) {
-      if (!occupiedLanes.includes(i)) availableLanes.push(i);
-    }
-
-    if (availableLanes.length > 0) {
-      const chosenLane = availableLanes[Math.floor(Math.random() * availableLanes.length)];
-      en.lane = chosenLane; 
-      // Force the Y to be exactly in the center of the lane
-      en.y = UI_HEIGHT + (chosenLane * laneHeight) + (laneHeight / 2);
-      enemiesRef.current.push(en);
-    }
+  // ✅ DIFFICULTY SCALE EVERY 60s
+  if (Math.floor(gameTimeRef.current / 60) + 1 > difficultyRef.current) {
+    difficultyRef.current += 1;
+    console.log("Difficulty:", difficultyRef.current);
   }
-}
 
-        // Update and check collisions
-        updateEnemies(enemiesRef.current, dt, canvas.width, p, updateLivesUI);
+  if (!isPaused && !gameOver) {
+    const p = playerRef.current;
+    const keys = keysPressed.current;
 
-        enemiesRef.current.forEach((en) => {
-          if (!en.remove && !en.destroyed &&
-            Math.abs(en.x - p.x) < 50 &&
-            Math.abs(en.y - p.y) < 40) {
-            en.remove = true;
-            updateLivesUI();
-          }
-        });
+    // PLAYER MOVEMENT
+    if (keys["ArrowLeft"]) p.x -= p.speed * dt;
+    if (keys["ArrowRight"]) p.x += p.speed * dt;
+    if (keys["ArrowUp"]) p.y -= p.speed * dt;
+    if (keys["ArrowDown"]) p.y += p.speed * dt;
 
-        enemiesRef.current = cleanupEnemies(enemiesRef.current);
+    // CLAMP
+    p.x = Math.max(10, Math.min(canvas.width - p.width - 10, p.x));
+    p.y = Math.max(90, Math.min(canvas.height - 120, p.y));
 
-        // Update bullets
-        bulletsRef.current = bulletsRef.current.filter((b) => {
-          if (!b.target || b.target.remove) return false;
-          const dx = b.target.x - b.x;
-          const dy = (b.target.y + 30) - b.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 20) return false;
-          b.x += (dx / dist) * b.speed * dt;
-          b.y += (dy / dist) * b.speed * dt;
-          return true;
-        });
-      }
+    // 🔥 SPAWN SYSTEM (FIXED)
+    spawnTimerRef.current += dt;
 
-      // DRAWING
-      drawBackground(ctx, canvas);
-      drawEnemies(ctx, enemiesRef.current, targetEnemyRef.current);
+    if (spawnTimerRef.current > 1.8) {
+      spawnTimerRef.current = 0;
 
-      ctx.fillStyle = "#00ffff";
-      bulletsRef.current.forEach((b) => {
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, 4, 0, Math.PI * 2);
-        ctx.fill();
+      const enemiesToSpawn = getEnemiesByLevel(gameTimeRef.current * 1000);
+
+      enemiesToSpawn.forEach((enemyData) => {
+        const en = spawnEnemy(canvas.width, enemyData);
+        if (!en) return;
+
+        const laneHeight = 80;
+        const maxLanes = Math.floor((canvas.height - 120) / laneHeight);
+
+        const occupied = enemiesRef.current
+          .filter(o => !o.remove && o.x > canvas.width - 400)
+          .map(o => o.lane);
+
+        const available = [];
+        for (let i = 0; i < maxLanes; i++) {
+          if (!occupied.includes(i)) available.push(i);
+        }
+
+        if (available.length > 0) {
+          const lane = available[Math.floor(Math.random() * available.length)];
+          en.lane = lane;
+          en.y = 90 + lane * laneHeight + laneHeight / 2;
+
+          enemiesRef.current.push(en);
+        }
       });
+    }
 
-      if (assetsRef.current.ship) {
-        ctx.drawImage(assetsRef.current.ship, playerRef.current.x, playerRef.current.y, playerRef.current.width, playerRef.current.height);
-      } else {
-        ctx.fillStyle = "blue";
-        ctx.fillRect(playerRef.current.x, playerRef.current.y, playerRef.current.width, playerRef.current.height);
-      }
+    // 🔥 UPDATE ENEMIES WITH DIFFICULTY SCALING
+    updateEnemies(
+      enemiesRef.current,
+      dt * difficultyRef.current,
+      canvas.width,
+      p,
+      updateLivesUI
+    );
 
-      animationRef.current = requestAnimationFrame(loop);
-    };
+    enemiesRef.current = cleanupEnemies(enemiesRef.current);
+
+    // BULLETS
+    bulletsRef.current = bulletsRef.current.filter((b) => {
+      if (!b.target || b.target.remove) return false;
+
+      const dx = b.target.x - b.x;
+      const dy = (b.target.y + 20) - b.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < 20) return false;
+
+      b.x += (dx / dist) * b.speed * dt;
+      b.y += (dy / dist) * b.speed * dt;
+
+      return true;
+    });
+  }
+
+  // DRAW
+  drawBackground(ctx, canvas);
+  drawEnemies(ctx, enemiesRef.current, targetEnemyRef.current);
+
+  ctx.fillStyle = "#00ffff";
+  bulletsRef.current.forEach((b) => {
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  ctx.drawImage(
+    assetsRef.current.ship,
+    playerRef.current.x,
+    playerRef.current.y,
+    playerRef.current.width,
+    playerRef.current.height
+  );
+
+  animationRef.current = requestAnimationFrame(loop);
+};
 
     animationRef.current = requestAnimationFrame(loop);
 
