@@ -12,7 +12,7 @@ export function spawnEnemy(canvasWidth, enemyData) {
     typed: "",
     shieldIndex: 0,
     answerTyped: "",
-    shield: enemyData.type === "shield",
+    shield: enemyData.type === "shield" && Array.isArray(enemyData.questions) && enemyData.questions.length > 0,
     destroyed: false,
     remove: false,
     speed: enemyData.speed || 150,
