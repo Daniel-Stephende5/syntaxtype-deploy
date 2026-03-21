@@ -26,51 +26,55 @@ export function updateEnemies(enemies, dt, canvasWidth, playerPos, onHitPlayer) 
   for (let e of enemies) {
     if (e.remove) continue;
 
-    // --- BASE HORIZONTAL MOVEMENT ---
+    // --- COLLAPSE STATE (after hitting player) ---
+    if (e.hitPlayer) {
+      e.collapseTimer += dt;
+
+      // shrink + fade handled in draw
+      if (e.collapseTimer > 0.4) {
+        e.remove = true;
+      }
+      continue;
+    }
+
+    // --- NORMAL MOVEMENT ---
     e.x -= e.speed * dt;
 
     const playerCenterY = playerPos.y + playerPos.height / 2;
 
-    // Store original lane position
     if (e.baseY === undefined) {
       e.baseY = e.y;
     }
 
-    // Distance zones
     const FAR_ZONE = canvasWidth * 0.6;
     const MID_ZONE = canvasWidth * 0.4;
-
-    // Max deviation from lane (prevents clustering)
     const MAX_OFFSET = 30;
 
     let targetY = e.baseY;
 
-    // MID RANGE → slight tracking
     if (e.x < FAR_ZONE && e.x > MID_ZONE) {
       const diff = playerCenterY - e.baseY;
       const clamped = Math.max(-MAX_OFFSET, Math.min(MAX_OFFSET, diff));
       targetY = e.baseY + clamped;
-    }
-    // CLOSE RANGE → stronger but limited tracking
-    else if (e.x <= MID_ZONE) {
+    } else if (e.x <= MID_ZONE) {
       const diff = playerCenterY - e.baseY;
       const clamped = Math.max(-MAX_OFFSET * 1.5, Math.min(MAX_OFFSET * 1.5, diff));
       targetY = e.baseY + clamped;
     }
 
-    // Smooth vertical movement
     const smoothFactor = 0.08;
     e.y += (targetY - e.y) * smoothFactor;
 
-    // --- BOSS SPECIAL BEHAVIOR ---
+    // Boss wobble
     if (e.type === "boss") {
       const bossWave = Math.sin(performance.now() * 0.001) * 25;
       e.y += bossWave * dt;
     }
 
-    // --- COLLISION LEFT WALL ---
-    if (e.x < -150 && !e.remove) {
-      e.remove = true;
+    // --- HIT PLAYER ---
+    if (e.x < -150 && !e.hitPlayer) {
+      e.hitPlayer = true;
+      e.collapseTimer = 0;
       onHitPlayer();
     }
   }
@@ -88,8 +92,24 @@ export function drawEnemies(ctx, enemies, targetEnemy) {
   enemies.forEach((e) => {
     if (e.remove) return;
 
+    ctx.save();
+
+    // --- COLLAPSE EFFECT ---
+    if (e.hitPlayer) {
+      const progress = e.collapseTimer / 0.4;
+
+      // shrink + fade
+      const scale = 1 - progress;
+      const alpha = 1 - progress;
+
+      ctx.globalAlpha = alpha;
+      ctx.translate(e.x, e.y);
+      ctx.scale(scale, scale);
+      ctx.translate(-e.x, -e.y);
+    }
+
     // --- TARGET HIGHLIGHT ---
-    if (e === targetEnemy) {
+    if (e === targetEnemy && !e.hitPlayer) {
       ctx.strokeStyle = "#00ffff";
       ctx.lineWidth = 2;
 
@@ -101,12 +121,13 @@ export function drawEnemies(ctx, enemies, targetEnemy) {
     }
 
     // --- SHIELD TYPE ---
-    if (e.type === "shield" && e.shield) {
+    if (e.type === "shield" && e.shield && !e.hitPlayer) {
       const q = e.questions[e.shieldIndex];
       if (!q) {
-    e.shield = false; // disable broken shield enemy
-    return;
-  }
+        e.shield = false;
+        ctx.restore();
+        return;
+      }
 
       ctx.font = "bold 16px monospace";
       ctx.fillStyle = "#ff4444";
@@ -140,8 +161,11 @@ export function drawEnemies(ctx, enemies, targetEnemy) {
         e.y
       );
     }
+
+    ctx.restore();
   });
 }
+
 
 export function cleanupEnemies(enemies) {
   return enemies.filter((e) => !e.remove);
