@@ -24,61 +24,36 @@ export function spawnEnemy(canvasWidth, enemyData) {
  */
 export function updateEnemies(enemies, dt, canvasWidth, playerPos, onHitPlayer) {
   for (let e of enemies) {
-    if (e.remove) continue;
+    if (e.remove || e.hitPlayer) continue; // Skip if already exploding
 
-    // --- COLLAPSE STATE (after hitting player) ---
-    if (e.hitPlayer) {
-      e.collapseTimer += dt;
-
-      // shrink + fade handled in draw
-      if (e.collapseTimer > 0.4) {
-        e.remove = true;
-      }
-      continue;
-    }
-
-    // --- NORMAL MOVEMENT ---
+    // --- 1. Movement Logic ---
     e.x -= e.speed * dt;
+    // ... (keep your existing tracking/baseY logic here) ...
 
-    const playerCenterY = playerPos.y + playerPos.height / 2;
+    // --- 2. Collision Detection (Enemy vs Player Ship) ---
+    // We treat the enemy as a small box based on its text position
+    const enemyWidth = 60; 
+    const enemyHeight = 20;
 
-    if (e.baseY === undefined) {
-      e.baseY = e.y;
-    }
+    const isColliding = (
+      e.x < playerPos.x + playerPos.width &&
+      e.x + enemyWidth > playerPos.x &&
+      e.y < playerPos.y + playerPos.height &&
+      e.y + enemyHeight > playerPos.y
+    );
 
-    const FAR_ZONE = canvasWidth * 0.6;
-    const MID_ZONE = canvasWidth * 0.4;
-    const MAX_OFFSET = 30;
-
-    let targetY = e.baseY;
-
-    if (e.x < FAR_ZONE && e.x > MID_ZONE) {
-      const diff = playerCenterY - e.baseY;
-      const clamped = Math.max(-MAX_OFFSET, Math.min(MAX_OFFSET, diff));
-      targetY = e.baseY + clamped;
-    } else if (e.x <= MID_ZONE) {
-      const diff = playerCenterY - e.baseY;
-      const clamped = Math.max(-MAX_OFFSET * 1.5, Math.min(MAX_OFFSET * 1.5, diff));
-      targetY = e.baseY + clamped;
-    }
-
-    const smoothFactor = 0.08;
-    e.y += (targetY - e.y) * smoothFactor;
-
-    // Boss wobble
-    if (e.type === "boss") {
-      const bossWave = Math.sin(performance.now() * 0.001) * 25;
-      e.y += bossWave * dt;
-    }
-
-    // --- HIT PLAYER ---
-    if (e.x < -150 && !e.hitPlayer) {
+    if (isColliding && !e.hitPlayer) {
       e.hitPlayer = true;
       e.collapseTimer = 0;
-      onHitPlayer();
+      onHitPlayer(); // Triggers the ❤️ reduction in MainGame
+    }
+
+    // --- 3. Optional: Silent removal if they miss the player ---
+    // If they go off-screen without hitting you, they just disappear (no life lost)
+    if (e.x < -200) {
+      e.remove = true;
     }
   }
-
   return enemies;
 }
 
