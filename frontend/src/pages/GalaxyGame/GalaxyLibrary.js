@@ -56,9 +56,27 @@ export const shieldEnemies = [
     ],
   },
 ];
+export const bossEnemy = {
+  type: "shield",
+  word: `
+void ultimateAttack(Player* p) {
+  if (p->hp > 0) {
+    p->hp -= 50;
+  }
+}
+`,
+  speed: 18,
+  questions: [
+    { prompt: "Keyword for function with no return", answer: "void" },
+    { prompt: "Pointer access operator in C", answer: "->" },
+    { prompt: "Keyword for condition", answer: "if" },
+  ],
+  spawnInterval: 60000, // 60 sec
+  lastSpawn: 0,
+};
 
 // ✅ Boss enemy with multiple shields & code snippet as word
-export const bossEnemy = {
+export const bossEnemy2 = {
   type: "shield",
   word: `
 int calculateDamage(Player player, Enemy enemy) {
@@ -77,26 +95,28 @@ int calculateDamage(Player player, Enemy enemy) {
   lastSpawn: 0,         // Timestamp tracker
 };
 
+
 // --- Combined library based on level ---
 export function getEnemiesByLevel(currentTime = 0) {
   const enemies = [];
 
-  // Random spawn pool: easy + shield
   const spawnPool = [...easyEnemies, ...shieldEnemies];
 
-  // Pick one random enemy from the pool
+  // Normal spawn
   const randomIndex = Math.floor(Math.random() * spawnPool.length);
   enemies.push({ ...spawnPool[randomIndex] });
 
-  // Boss spawn logic: only every 90 seconds
-  const bossDue =
-    currentTime - (bossEnemy.lastSpawn || 0) >= bossEnemy.spawnInterval;
-
-  if (bossDue) {
+  // 🔥 Boss 1 spawn (every 60s for testing)
+  if (currentTime - (bossEnemy.lastSpawn || 0) >= 60000) {
     bossEnemy.lastSpawn = currentTime;
     enemies.push({ ...bossEnemy });
   }
 
+  // 🔥 Boss 2 spawn (also every 60s)
+  if (currentTime - (bossEnemy2.lastSpawn || 0) >= 60000) {
+    bossEnemy2.lastSpawn = currentTime;
+    enemies.push({ ...bossEnemy2 });
+  }
+
   return enemies;
 }
-
