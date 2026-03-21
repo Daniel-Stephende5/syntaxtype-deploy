@@ -27,29 +27,65 @@ export function updateEnemies(enemies, dt, canvasWidth, playerPos, onHitPlayer) 
   for (let e of enemies) {
     if (e.remove) continue;
 
-    // 1. Move Left (Constant)
+    // --- BASE MOVEMENT ---
     e.x -= e.speed * dt;
 
-    // 2. Conditional Gravitation (The "Danger Zone" Logic)
-    // Only start creeping vertically when the enemy is close to the player
-    const DANGER_ZONE = canvasWidth * 0.4; // e.g., only when in the left 40% of the screen
-    
-    if (!e.destroyed && e.x < DANGER_ZONE) {
-      const creepSpeed = 80; // Faster creep since they have less time to move
-      const targetY = playerPos.y + (playerPos.height / 2);
-      const diffY = targetY - e.y;
+    const playerCenterY = playerPos.y + playerPos.height / 2;
 
-      if (Math.abs(diffY) > 5) {
-        e.y += (diffY > 0 ? 1 : -1) * creepSpeed * dt;
-      }
+    // DISTANCE ZONES
+    const FAR_ZONE = canvasWidth * 0.6;
+    const MID_ZONE = canvasWidth * 0.4;
+    const CLOSE_ZONE = canvasWidth * 0.25;
+
+    // --- 1. FAR ZONE → Stay in lane but slight drift (alive feeling) ---
+    if (e.x > FAR_ZONE) {
+      if (!e.baseY) e.baseY = e.y;
+
+      const wave = Math.sin(performance.now() * 0.002 + e.x * 0.01) * 10;
+      e.y = e.baseY + wave;
     }
 
-    // 3. Collision with left wall
+    // --- 2. MID ZONE → Smooth tracking (not snapping) ---
+    else if (e.x > MID_ZONE) {
+      const trackingSpeed = 60;
+
+      const targetY = playerCenterY;
+      const diff = targetY - e.y;
+
+      e.y += diff * 0.05 * dt * trackingSpeed;
+    }
+
+    // --- 3. CLOSE ZONE → Aggressive attack movement ---
+    else if (e.x > CLOSE_ZONE) {
+      const attackSpeed = 140;
+
+      const diff = playerCenterY - e.y;
+
+      e.y += Math.sign(diff) * attackSpeed * dt;
+    }
+
+    // --- 4. VERY CLOSE → Lock-in (feels threatening) ---
+    else {
+      const lockSpeed = 200;
+
+      const diff = playerCenterY - e.y;
+      e.y += diff * 0.15 * dt * lockSpeed;
+    }
+
+    // --- BOSS SPECIAL BEHAVIOR ---
+    if (e.type === "boss") {
+      // Bosses sway wider + slower but more deliberate
+      const bossWave = Math.sin(performance.now() * 0.001) * 25;
+      e.y += bossWave * dt;
+    }
+
+    // --- COLLISION LEFT WALL ---
     if (e.x < -150 && !e.remove) {
       e.remove = true;
-      onHitPlayer(); 
+      onHitPlayer();
     }
   }
+
   return enemies;
 }
 /**
