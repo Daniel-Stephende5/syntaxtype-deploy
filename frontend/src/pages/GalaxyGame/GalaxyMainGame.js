@@ -13,9 +13,10 @@ const GalaxyMainGame = () => {
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
   const assetsRef = useRef({ ship: null });
-const gameTimeRef = useRef(0);
-const difficultyRef = useRef(1);
-  // Game loop variables (moved out of React state to prevent render lag)
+  const gameTimeRef = useRef(0);
+  const difficultyRef = useRef(1);
+  
+  // Game loop variables
   const scoreRef = useRef(0);
   const livesRef = useRef(3);
   
@@ -23,7 +24,6 @@ const difficultyRef = useRef(1);
   const [isPaused, setIsPaused] = useState(false);
   const [gameOver, setGameOver] = useState(false);
 
-  // Player and Game state refs
   const playerRef = useRef({ x: 50, y: 300, width: 80, height: 60, speed: 500 });
   const enemiesRef = useRef([]);
   const spawnTimerRef = useRef(-1.5);
@@ -33,9 +33,6 @@ const difficultyRef = useRef(1);
 
   const { initStars, drawBackground } = useBackground();
 
-  // -------------------------
-  // UI UPDATERS (Bypasses React State for zero-lag performance)
-  // -------------------------
   const updateScoreUI = (pts) => {
     scoreRef.current += pts;
     const scoreEl = document.getElementById("ui-score");
@@ -46,7 +43,6 @@ const difficultyRef = useRef(1);
     livesRef.current -= 1;
     const livesEl = document.getElementById("ui-lives");
     if (livesEl) {
-      // Create heart string based on remaining lives
       let hearts = "";
       for (let i = 0; i < 3; i++) {
         hearts += i < livesRef.current ? "❤️ " : "🖤 ";
@@ -56,19 +52,17 @@ const difficultyRef = useRef(1);
     if (livesRef.current <= 0) setGameOver(true);
   };
 
-  // -------------------------
-  // GAME LOGIC
-  // -------------------------
   const shootBullet = (target) => {
     const p = playerRef.current;
     bulletsRef.current.push({
       x: p.x + p.width,
       y: p.y + p.height / 2,
       target,
-      speed: 1400, // Slightly faster bullets feel better
+      speed: 1400,
     });
   };
 
+  // Load Assets
   useEffect(() => {
     loadAssets({ images: { ship: "/images/nightraider.png" } })
       .then((loaded) => {
@@ -78,6 +72,7 @@ const difficultyRef = useRef(1);
       .catch((err) => console.error("Asset load failed", err));
   }, []);
 
+  // Keyboard Handling
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (isPaused || gameOver) return;
@@ -99,8 +94,8 @@ const difficultyRef = useRef(1);
       if (key.length === 1) {
         const char = key.toLowerCase();
         
-        // Target selection
-        if (!targetEnemyRef.current || targetEnemyRef.current.remove) {
+        // Target selection logic
+        if (!targetEnemyRef.current || targetEnemyRef.current.remove || targetEnemyRef.current.destroyed) {
           const match = enemiesRef.current.find((en) => {
             if (en.destroyed || en.remove) return false;
             const word = en.type === "shield" && en.shield ? en.questions[en.shieldIndex].answer : en.word;
@@ -112,7 +107,7 @@ const difficultyRef = useRef(1);
         const target = targetEnemyRef.current;
         if (!target || target.remove || target.destroyed) return;
 
-        // Typing logic
+        // Shield Enemy Logic
         if (target.type === "shield" && target.shield) {
           const q = target.questions[target.shieldIndex];
           const expectedChar = q.answer[target.answerTyped.length]?.toLowerCase();
@@ -126,6 +121,7 @@ const difficultyRef = useRef(1);
             }
           }
         } else {
+          // Standard Enemy Logic
           const nextIdx = (target.typed || "").length;
           const expectedChar = target.word[nextIdx]?.toLowerCase();
           if (char === expectedChar) {
@@ -152,22 +148,13 @@ const difficultyRef = useRef(1);
     };
   }, [isPaused, gameOver]);
 
-  // -------------------------
-  // MAIN LOOP
-  // -------------------------
+  // Main Game Loop
   useEffect(() => {
     if (!gameReady) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
-    
-    // Strict Screen Boundaries
-    const UI_HEIGHT = 90; 
     let PLAY_AREA_BOTTOM = window.innerHeight - 60;
-
-    // Pre-warm canvas fonts to stop initial stutter
-    ctx.font = "20px monospace";
-    ctx.fillText("pre-warm", -100, -100);
 
     const resize = () => {
       canvas.width = window.innerWidth;
@@ -181,111 +168,90 @@ const difficultyRef = useRef(1);
     let last = performance.now();
 
     const loop = (now) => {
-  const dt = Math.min((now - last) / 1000, 0.1);
-  last = now;
+      const dt = Math.min((now - last) / 1000, 0.1);
+      last = now;
 
-  // ✅ TIME TRACKING
-  gameTimeRef.current += dt;
+      if (!isPaused && !gameOver) {
+        gameTimeRef.current += dt;
 
-  // ✅ DIFFICULTY SCALE EVERY 60s
-  if (Math.floor(gameTimeRef.current / 60) + 1 > difficultyRef.current) {
-    difficultyRef.current += 1;
-    console.log("Difficulty:", difficultyRef.current);
-  }
-
-  if (!isPaused && !gameOver) {
-    const p = playerRef.current;
-    const keys = keysPressed.current;
-
-    // PLAYER MOVEMENT
-    if (keys["ArrowLeft"]) p.x -= p.speed * dt;
-    if (keys["ArrowRight"]) p.x += p.speed * dt;
-    if (keys["ArrowUp"]) p.y -= p.speed * dt;
-    if (keys["ArrowDown"]) p.y += p.speed * dt;
-
-    // CLAMP
-    p.x = Math.max(10, Math.min(canvas.width - p.width - 10, p.x));
-    p.y = Math.max(90, Math.min(canvas.height - 120, p.y));
-
-    // 🔥 SPAWN SYSTEM (FIXED)
-    spawnTimerRef.current += dt;
-
-    if (spawnTimerRef.current > 1.8) {
-      spawnTimerRef.current = 0;
-const en = spawnEnemy(canvas.width, gameTimeRef.current * 1000);
-        if (!en) return;
-
-        const laneHeight = 80;
-        const maxLanes = Math.floor((canvas.height - 120) / laneHeight);
-
-        const occupied = enemiesRef.current
-          .filter(o => !o.remove && o.x > canvas.width - 400)
-          .map(o => o.lane);
-
-        const available = [];
-        for (let i = 0; i < maxLanes; i++) {
-          if (!occupied.includes(i)) available.push(i);
+        // Difficulty scaling
+        if (Math.floor(gameTimeRef.current / 60) + 1 > difficultyRef.current) {
+          difficultyRef.current += 1;
         }
 
-        if (available.length > 0) {
-          const lane = available[Math.floor(Math.random() * available.length)];
-          en.lane = lane;
-          en.y = 90 + lane * laneHeight + laneHeight / 2;
+        const p = playerRef.current;
+        const keys = keysPressed.current;
 
-          enemiesRef.current.push(en);
+        // Player movement
+        if (keys["ArrowLeft"]) p.x -= p.speed * dt;
+        if (keys["ArrowRight"]) p.x += p.speed * dt;
+        if (keys["ArrowUp"]) p.y -= p.speed * dt;
+        if (keys["ArrowDown"]) p.y += p.speed * dt;
+
+        // Clamping
+        p.x = Math.max(10, Math.min(canvas.width - p.width - 10, p.x));
+        p.y = Math.max(90, Math.min(canvas.height - 120, p.y));
+
+        // Spawning
+        spawnTimerRef.current += dt;
+        if (spawnTimerRef.current > 1.8) {
+          spawnTimerRef.current = 0;
+          const en = spawnEnemy(canvas.width, gameTimeRef.current * 1000);
+          if (en) {
+            const laneHeight = 80;
+            const maxLanes = Math.floor((canvas.height - 180) / laneHeight);
+            const occupied = enemiesRef.current
+              .filter(o => !o.remove && o.x > canvas.width - 400)
+              .map(o => o.lane);
+
+            const available = [];
+            for (let i = 0; i < maxLanes; i++) {
+              if (!occupied.includes(i)) available.push(i);
+            }
+
+            if (available.length > 0) {
+              const lane = available[Math.floor(Math.random() * available.length)];
+              en.lane = lane;
+              en.y = 120 + lane * laneHeight; 
+              enemiesRef.current.push(en);
+            }
+          }
         }
+
+        // Updates
+        updateEnemies(enemiesRef.current, dt * (1 + (difficultyRef.current * 0.1)), canvas.width, p, updateLivesUI);
+        enemiesRef.current = cleanupEnemies(enemiesRef.current);
+
+        // Bullet Updates
+        bulletsRef.current = bulletsRef.current.filter((b) => {
+          if (!b.target || b.target.remove || b.target.destroyed) return false;
+          const dx = b.target.x - b.x;
+          const dy = (b.target.y + 20) - b.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 20) return false;
+          b.x += (dx / dist) * b.speed * dt;
+          b.y += (dy / dist) * b.speed * dt;
+          return true;
+        });
+      }
+
+      // Render
+      drawBackground(ctx, canvas);
+      drawEnemies(ctx, enemiesRef.current, targetEnemyRef.current);
+
+      ctx.fillStyle = "#00ffff";
+      bulletsRef.current.forEach((b) => {
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, 4, 0, Math.PI * 2);
+        ctx.fill();
       });
-    }
 
-    // 🔥 UPDATE ENEMIES WITH DIFFICULTY SCALING
-    updateEnemies(
-      enemiesRef.current,
-      dt * difficultyRef.current,
-      canvas.width,
-      p,
-      updateLivesUI
-    );
+      if (assetsRef.current.ship) {
+        ctx.drawImage(assetsRef.current.ship, p.x, p.y, p.width, p.height);
+      }
 
-    enemiesRef.current = cleanupEnemies(enemiesRef.current);
-
-    // BULLETS
-    bulletsRef.current = bulletsRef.current.filter((b) => {
-      if (!b.target || b.target.remove) return false;
-
-      const dx = b.target.x - b.x;
-      const dy = (b.target.y + 20) - b.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      if (dist < 20) return false;
-
-      b.x += (dx / dist) * b.speed * dt;
-      b.y += (dy / dist) * b.speed * dt;
-
-      return true;
-    });
-  }
-
-  // DRAW
-  drawBackground(ctx, canvas);
-  drawEnemies(ctx, enemiesRef.current, targetEnemyRef.current);
-
-  ctx.fillStyle = "#00ffff";
-  bulletsRef.current.forEach((b) => {
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, 4, 0, Math.PI * 2);
-    ctx.fill();
-  });
-
-  ctx.drawImage(
-    assetsRef.current.ship,
-    playerRef.current.x,
-    playerRef.current.y,
-    playerRef.current.width,
-    playerRef.current.height
-  );
-
-  animationRef.current = requestAnimationFrame(loop);
-};
+      animationRef.current = requestAnimationFrame(loop);
+    };
 
     animationRef.current = requestAnimationFrame(loop);
 
@@ -299,29 +265,28 @@ const en = spawnEnemy(canvas.width, gameTimeRef.current * 1000);
     <div style={{ position: "fixed", inset: 0, width: "100vw", height: "100vh", background: "black", overflow: "hidden" }}>
       <canvas ref={canvasRef} style={{ display: "block", width: "100%", height: "100%" }} />
 
-     {/* UI Overlay at Bottom */}
-<div style={{
-  position: "absolute",
-  bottom: 0,
-  left: 0,
-  width: "100%",
-  height: "90px",
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  padding: "0 50px",
-  pointerEvents: "none",
-  zIndex: 100,
-  boxSizing: "border-box",
-  background: "linear-gradient(to top, rgba(0,0,0,0.9), transparent)" // fade upwards
-}}>
-  <div id="ui-score" style={{ color: "white", fontSize: "28px", fontFamily: "monospace", fontWeight: "bold", textShadow: "2px 2px 0px #000" }}>
-    SCORE: 0
-  </div>
-  <div id="ui-lives" style={{ fontSize: "28px" }}>
-    ❤️ ❤️ ❤️ 
-  </div>
-</div>
+      <div style={{
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        width: "100%",
+        height: "90px",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "0 50px",
+        pointerEvents: "none",
+        zIndex: 100,
+        boxSizing: "border-box",
+        background: "linear-gradient(to top, rgba(0,0,0,0.9), transparent)"
+      }}>
+        <div id="ui-score" style={{ color: "white", fontSize: "28px", fontFamily: "monospace", fontWeight: "bold", textShadow: "2px 2px 0px #000" }}>
+          SCORE: 0
+        </div>
+        <div id="ui-lives" style={{ fontSize: "28px" }}>
+          ❤️ ❤️ ❤️ 
+        </div>
+      </div>
 
       {gameOver && (
         <div style={{
