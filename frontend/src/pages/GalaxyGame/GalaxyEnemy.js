@@ -30,54 +30,43 @@ export function updateEnemies(enemies, dt, canvasWidth, playerPos, onHitPlayer) 
     // --- BASE MOVEMENT ---
     e.x -= e.speed * dt;
 
-   export function updateEnemies(enemies, dt, canvasWidth, playerPos, onHitPlayer) {
-  for (let e of enemies) {
-    if (e.remove) continue;
+const playerCenterY = playerPos.y + playerPos.height / 2;
 
-    // --- BASE MOVEMENT ---
-    e.x -= e.speed * dt;
+// Store original lane position (important!)
+if (e.baseY === undefined) {
+  e.baseY = e.y;
+}
 
-    const playerCenterY = playerPos.y + playerPos.height / 2;
+// Distance zones
+const FAR_ZONE = canvasWidth * 0.6;
+const MID_ZONE = canvasWidth * 0.4;
+const CLOSE_ZONE = canvasWidth * 0.25;
 
-    // DISTANCE ZONES
-    const FAR_ZONE = canvasWidth * 0.6;
-    const MID_ZONE = canvasWidth * 0.4;
-    const CLOSE_ZONE = canvasWidth * 0.25;
+// Max deviation from lane (THIS FIXES CLUSTERING)
+const MAX_OFFSET = 30;
 
-    // --- 1. FAR ZONE → Stay in lane but slight drift (alive feeling) ---
-    if (e.x > FAR_ZONE) {
-      if (!e.baseY) e.baseY = e.y;
+let targetY = e.baseY;
 
-      const wave = Math.sin(performance.now() * 0.002 + e.x * 0.01) * 10;
-      e.y = e.baseY + wave;
-    }
+// 1. MID RANGE → slight tracking only
+if (e.x < FAR_ZONE && e.x > MID_ZONE) {
+  const diff = playerCenterY - e.baseY;
 
-    // --- 2. MID ZONE → Smooth tracking (not snapping) ---
-    else if (e.x > MID_ZONE) {
-      const trackingSpeed = 60;
+  // Clamp so enemies don't stack
+  const clamped = Math.max(-MAX_OFFSET, Math.min(MAX_OFFSET, diff));
+  targetY = e.baseY + clamped;
+}
 
-      const targetY = playerCenterY;
-      const diff = targetY - e.y;
+// 2. CLOSE RANGE → stronger but still limited tracking
+else if (e.x <= MID_ZONE) {
+  const diff = playerCenterY - e.baseY;
 
-      e.y += diff * 0.05 * dt * trackingSpeed;
-    }
+  const clamped = Math.max(-MAX_OFFSET * 1.5, Math.min(MAX_OFFSET * 1.5, diff));
+  targetY = e.baseY + clamped;
+}
 
-    // --- 3. CLOSE ZONE → Aggressive attack movement ---
-    else if (e.x > CLOSE_ZONE) {
-      const attackSpeed = 140;
-
-      const diff = playerCenterY - e.y;
-
-      e.y += Math.sign(diff) * attackSpeed * dt;
-    }
-
-    // --- 4. VERY CLOSE → Lock-in (feels threatening) ---
-    else {
-      const lockSpeed = 200;
-
-      const diff = playerCenterY - e.y;
-      e.y += diff * 0.15 * dt * lockSpeed;
-    }
+// Smooth movement (prevents jitter)
+const smoothFactor = 0.08;
+e.y += (targetY - e.y) * smoothFactor;
 
     // --- BOSS SPECIAL BEHAVIOR ---
     if (e.type === "boss") {
