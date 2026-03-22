@@ -1,68 +1,55 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import SyntaxSaverLesson from "./SyntaxSaverLesson";
-// import "./SyntaxSaverLesson.css";
-import { API_BASE } from '../utils/api';
+import FourPicsGame from "./FourPicsGame";
+import "./SyntaxSaverLesson.css";
+import Bookworm from "./Bookworm.js";
 
 export default function QuizMenu() {
-  const [selectedQuiz, setSelectedQuiz] = useState(null);
-  const [quizzes, setQuizzes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [selected, setSelected] = useState(null);
 
-  // Fetch quizzes from Spring Boot backend
-  useEffect(() => {
-    const fetchQuizzes = async () => {
-      try {
-        const response = await fetch(`${API_BASE}/api/quiz`);
-        if (!response.ok) throw new Error("Failed to load quizzes");
-        const data = await response.json();
-        setQuizzes(data);
-      } catch (err) {
-        console.error("Error fetching quizzes:", err);
-        setError("⚠️ Could not load quizzes from the server.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchQuizzes();
-  }, []);
+  // 👉 Navigation
+  if (selected === "syntax") {
+    return <SyntaxSaverLesson onBack={() => setSelected(null)} />;
+  }
 
-  // If user selected a quiz, show the quiz player
-  if (selectedQuiz) {
-    return (
-      <SyntaxSaverLesson
-        quizId={selectedQuiz}
-        onBack={() => setSelectedQuiz(null)}
-      />
-    );
+  if (selected === "fourpics") {
+    return <FourPicsGame onBack={() => setSelected(null)} />;
+  }
+  if (selected === "bookworm") {
+    return <Bookworm onBack={() => setSelected(null)} />;
   }
 
   return (
     <div className="quiz-menu">
-      <h2>🧠 Syntax Saver Quizzes</h2>
+      <h2>🧠 Quiz Games</h2>
       <p>Select a quiz to begin your coding journey!</p>
 
-      {loading ? (
-        <p>⏳ Loading quizzes...</p>
-      ) : error ? (
-        <p className="error">{error}</p>
-      ) : (
-        <div className="quiz-list">
-          {quizzes.length > 0 ? (
-            quizzes.map((quiz) => (
-              <button
-                key={quiz.id}
-                className="quiz-item"
-                onClick={() => setSelectedQuiz(quiz.id)}
-              >
-                {quiz.title}
-              </button>
-            ))
-          ) : (
-            <p>No quizzes available yet.</p>
-          )}
-        </div>
-      )}
+      <div className="quiz-list">
+        
+        {/* ✅ ITEM 1: Syntax Saver */}
+        <button
+          className="quiz-item"
+          onClick={() => setSelected("syntax")}
+        >
+          🧠 Syntax Saver Challenge
+        </button>
+
+        {/* ✅ ITEM 2: 4 Pics */}
+        <button
+          className="quiz-item special"
+          onClick={() => setSelected("fourpics")}
+        >
+          🖼️ 4 Pics 1 Word
+        </button>
+        {/* ✅ ITEM 2: 4 Pics */}
+        <button
+          className="bookworm"
+          onClick={() => setSelected("bookworm")}
+        >
+          🖼️ Bookworm
+        </button>
+
+      </div>
     </div>
   );
 }
