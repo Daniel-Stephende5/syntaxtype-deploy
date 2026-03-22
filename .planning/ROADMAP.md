@@ -36,7 +36,12 @@
 5. API response time < 200ms for leaderboard queries (indexed queries)
 6. Leaderboard data includes scores from all game types (TypingTest, FallingTypingTest, GalaxyGame, GridGame, Bookworm, CrosswordGame)
 
-**Plans:** TBD
+**Plans:** 3 plans
+
+Plans:
+- [x] 01-01-PLAN.md — LeaderboardEntry DTO + Repository ranking queries ✅
+- [ ] 01-02-PLAN.md — LeaderboardService aggregation logic
+- [ ] 01-03-PLAN.md — LeaderboardController endpoints + indexes
 
 ---
 
@@ -182,7 +187,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Leaderboard Data Layer | 0/1 | Not started | - |
+| 1. Leaderboard Data Layer | 1/3 | In Progress | 01-01 (2026-03-23) |
 | 2. Leaderboard Frontend | 0/1 | Not started | - |
 | 3. Security & Error Handling | 0/1 | Not started | - |
 | 4. Backend Quality & Testing | 0/1 | Not started | - |
