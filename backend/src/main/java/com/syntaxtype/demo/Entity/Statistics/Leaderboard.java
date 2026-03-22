@@ -11,7 +11,12 @@ import lombok.*;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "leaderboards")
+@Table(name = "leaderboards", indexes = {
+    @Index(name = "idx_category_wpm", columnList = "category, wordsPerMinute DESC"),
+    @Index(name = "idx_category_accuracy", columnList = "category, accuracy DESC"),
+    @Index(name = "idx_category", columnList = "category"),
+    @Index(name = "idx_user", columnList = "user_id")
+})
 @Builder
 public class Leaderboard {
     @Id
