@@ -7,17 +7,61 @@
 
 ## Phases
 
-- [ ] **Phase 1: Security & Error Handling** - Enable JWT auth, externalize secrets, configure exception handlers
-- [ ] **Phase 2: Backend Quality & Testing** - Fix data layer issues, add security tests
-- [ ] **Phase 3: Backend Modularization** - Restructure codebase into domain-based modules
-- [ ] **Phase 4: Frontend Improvements** - Migrate to Vite, fix quality issues
-- [ ] **Phase 5: Polish & Production Readiness** - Add logging, caching, integration tests
+- [ ] **Phase 1: Leaderboard Data Layer** - Create backend API and data models for best scores per game
+- [ ] **Phase 2: Leaderboard Frontend** - Build leaderboard page to display top scores by game
+- [ ] **Phase 3: Security & Error Handling** - Enable JWT auth, externalize secrets, configure exception handlers
+- [ ] **Phase 4: Backend Quality & Testing** - Fix data layer issues, add security tests
+- [ ] **Phase 5: Backend Modularization** - Restructure codebase into domain-based modules
+- [ ] **Phase 6: Frontend Improvements** - Migrate to Vite, fix quality issues
+- [ ] **Phase 7: Polish & Production Readiness** - Add logging, caching, integration tests
 
 ---
 
 ## Phase Details
 
-### Phase 1: Security & Error Handling
+### Phase 1: Leaderboard Data Layer
+
+**Goal:** Create backend infrastructure to track and retrieve best scores for each player across all games
+
+**Depends on:** Nothing (can be parallel with Phase 3)
+
+**Requirements:** LB-01, LB-02, LB-03, LB-04
+
+**Success Criteria** (what must be TRUE):
+
+1. Backend exposes `/api/leaderboard/global` endpoint returning top 10 scores across all games
+2. Backend exposes `/api/leaderboard/game/{gameId}` endpoint returning top 10 scores for specific game
+3. Backend exposes `/api/leaderboard/user/{userId}` endpoint returning best score per game for a user
+4. Each leaderboard entry includes: rank, username, score, game name, date achieved
+5. API response time < 200ms for leaderboard queries (indexed queries)
+6. Leaderboard data includes scores from all game types (TypingTest, FallingTypingTest, GalaxyGame, GridGame, Bookworm, CrosswordGame)
+
+**Plans:** TBD
+
+---
+
+### Phase 2: Leaderboard Frontend
+
+**Goal:** Build user-facing leaderboard page showing best scores per game with filtering and sorting
+
+**Depends on:** Phase 1
+
+**Requirements:** LB-05, LB-06, LB-07
+
+**Success Criteria** (what must be TRUE):
+
+1. `/leaderboard` route displays global leaderboard with top 10 scores
+2. User can filter leaderboard by game type (dropdown or tabs)
+3. User can view their own rank when logged in (highlighted row)
+4. Leaderboard updates after completing a game without page refresh
+5. Loading state shown while fetching leaderboard data
+6. Empty state displayed if no scores exist for a game
+
+**Plans:** TBD
+
+---
+
+### Phase 3: Security & Error Handling
 
 **Goal:** Users can securely access the application with JWT authentication, and API errors return proper responses
 
@@ -39,11 +83,11 @@
 
 ---
 
-### Phase 2: Backend Quality & Testing
+### Phase 4: Backend Quality & Testing
 
 **Goal:** Backend data layer is consistent and reliable; authentication is properly tested
 
-**Depends on:** Phase 1
+**Depends on:** Phase 3
 
 **Requirements:** BQ-01, BQ-02, BQ-03, BQ-04, BQ-05, TEST-01, TEST-02, TEST-03
 
@@ -62,11 +106,11 @@
 
 ---
 
-### Phase 3: Backend Modularization
+### Phase 5: Backend Modularization
 
 **Goal:** Codebase organized by domain for improved maintainability and clear boundaries
 
-**Depends on:** Phase 2
+**Depends on:** Phase 4
 
 **Requirements:** (Code restructuring - no new functional requirements)
 
@@ -82,11 +126,11 @@
 
 ---
 
-### Phase 4: Frontend Improvements
+### Phase 6: Frontend Improvements
 
 **Goal:** Modern build system with improved code quality and user experience
 
-**Depends on:** Phase 3
+**Depends on:** Phase 5
 
 **Requirements:** FQ-01, FQ-02, FQ-03, FQ-04
 
@@ -101,11 +145,11 @@
 
 ---
 
-### Phase 5: Polish & Production Readiness
+### Phase 7: Polish & Production Readiness
 
 **Goal:** Production-ready application with observability and comprehensive test coverage
 
-**Depends on:** Phase 4
+**Depends on:** Phase 6
 
 **Requirements:** (Final hardening - no new functional requirements)
 
@@ -124,11 +168,13 @@
 
 | Phase | Goal | Requirements | Success Criteria |
 |-------|------|--------------|------------------|
-| 1 - Security & Error Handling | Secure JWT auth with proper errors | SEC-01 to SEC-06, ERR-01 to ERR-05 | 7 criteria |
-| 2 - Backend Quality & Testing | Consistent data layer, tested auth | BQ-01 to BQ-05, TEST-01 to TEST-03 | 8 criteria |
-| 3 - Backend Modularization | Domain-based code organization | (restructuring) | 5 criteria |
-| 4 - Frontend Improvements | Modern build, quality fixes | FQ-01 to FQ-04 | 4 criteria |
-| 5 - Polish & Production Readiness | Production hardening | (observability) | 4 criteria |
+| 1 - Leaderboard Data Layer | Backend API for best scores | LB-01 to LB-04 | 6 criteria |
+| 2 - Leaderboard Frontend | User-facing leaderboard UI | LB-05 to LB-07 | 6 criteria |
+| 3 - Security & Error Handling | Secure JWT auth with proper errors | SEC-01 to SEC-06, ERR-01 to ERR-05 | 7 criteria |
+| 4 - Backend Quality & Testing | Consistent data layer, tested auth | BQ-01 to BQ-05, TEST-01 to TEST-03 | 8 criteria |
+| 5 - Backend Modularization | Domain-based code organization | (restructuring) | 5 criteria |
+| 6 - Frontend Improvements | Modern build, quality fixes | FQ-01 to FQ-04 | 4 criteria |
+| 7 - Polish & Production Readiness | Production hardening | (observability) | 4 criteria |
 
 ---
 
@@ -136,11 +182,13 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Security & Error Handling | 0/1 | Not started | - |
-| 2. Backend Quality & Testing | 0/1 | Not started | - |
-| 3. Backend Modularization | 0/1 | Not started | - |
-| 4. Frontend Improvements | 0/1 | Not started | - |
-| 5. Polish & Production Readiness | 0/1 | Not started | - |
+| 1. Leaderboard Data Layer | 0/1 | Not started | - |
+| 2. Leaderboard Frontend | 0/1 | Not started | - |
+| 3. Security & Error Handling | 0/1 | Not started | - |
+| 4. Backend Quality & Testing | 0/1 | Not started | - |
+| 5. Backend Modularization | 0/1 | Not started | - |
+| 6. Frontend Improvements | 0/1 | Not started | - |
+| 7. Polish & Production Readiness | 0/1 | Not started | - |
 
 ---
 

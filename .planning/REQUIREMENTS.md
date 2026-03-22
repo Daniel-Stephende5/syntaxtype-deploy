@@ -4,6 +4,16 @@
 
 ## v1 Requirements
 
+### Leaderboards (NEW)
+
+- [ ] **LB-01**: Create backend LeaderboardController with endpoints for global, game-specific, and user-specific leaderboards
+- [ ] **LB-02**: Create LeaderboardService to aggregate scores from all game types (TypingTest, FallingTypingTest, GalaxyGame, GridGame, Bookworm, CrosswordGame)
+- [ ] **LB-03**: Define LeaderboardEntry DTO with fields: rank, username, score, gameName, dateAchieved
+- [ ] **LB-04**: Optimize queries with database indexes for score-based sorting (top 10 per game)
+- [ ] **LB-05**: Create LeaderboardPage component with tabs/filters for different game types
+- [ ] **LB-06**: Display top 10 scores with rank, username, score, game, and date
+- [ ] **LB-07**: Highlight current user's row in leaderboard when logged in
+
 ### Security (CRITICAL - Must Fix)
 
 - [ ] **SEC-01**: Externalize all hardcoded credentials in application.properties to environment variables
@@ -70,31 +80,38 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SEC-01 | Phase 1 | Pending |
-| SEC-02 | Phase 1 | Pending |
-| SEC-03 | Phase 1 | Pending |
-| SEC-04 | Phase 1 | Pending |
-| SEC-05 | Phase 1 | Pending |
-| SEC-06 | Phase 1 | Pending |
-| ERR-01 | Phase 1 | Pending |
-| ERR-02 | Phase 1 | Pending |
-| ERR-03 | Phase 1 | Pending |
-| ERR-04 | Phase 1 | Pending |
-| ERR-05 | Phase 1 | Pending |
-| BQ-01 | Phase 2 | Pending |
-| BQ-02 | Phase 2 | Pending |
-| BQ-03 | Phase 2 | Pending |
-| BQ-04 | Phase 2 | Pending |
-| BQ-05 | Phase 2 | Pending |
-| TEST-01 | Phase 2 | Pending |
-| TEST-02 | Phase 2 | Pending |
-| TEST-03 | Phase 2 | Pending |
-| FQ-01 | Phase 4 | Pending |
-| FQ-02 | Phase 4 | Pending |
-| FQ-03 | Phase 4 | Pending |
-| FQ-04 | Phase 4 | Pending |
+| LB-01 | Phase 1 | Pending |
+| LB-02 | Phase 1 | Pending |
+| LB-03 | Phase 1 | Pending |
+| LB-04 | Phase 1 | Pending |
+| LB-05 | Phase 2 | Pending |
+| LB-06 | Phase 2 | Pending |
+| LB-07 | Phase 2 | Pending |
+| SEC-01 | Phase 3 | Pending |
+| SEC-02 | Phase 3 | Pending |
+| SEC-03 | Phase 3 | Pending |
+| SEC-04 | Phase 3 | Pending |
+| SEC-05 | Phase 3 | Pending |
+| SEC-06 | Phase 3 | Pending |
+| ERR-01 | Phase 3 | Pending |
+| ERR-02 | Phase 3 | Pending |
+| ERR-03 | Phase 3 | Pending |
+| ERR-04 | Phase 3 | Pending |
+| ERR-05 | Phase 3 | Pending |
+| BQ-01 | Phase 4 | Pending |
+| BQ-02 | Phase 4 | Pending |
+| BQ-03 | Phase 4 | Pending |
+| BQ-04 | Phase 4 | Pending |
+| BQ-05 | Phase 4 | Pending |
+| TEST-01 | Phase 4 | Pending |
+| TEST-02 | Phase 4 | Pending |
+| TEST-03 | Phase 4 | Pending |
+| FQ-01 | Phase 6 | Pending |
+| FQ-02 | Phase 6 | Pending |
+| FQ-03 | Phase 6 | Pending |
+| FQ-04 | Phase 6 | Pending |
 
-**Coverage:** 23/23 requirements mapped ✓
+**Coverage:** 30/30 requirements mapped ✓
 
 ---
 
