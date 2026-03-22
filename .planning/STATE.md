@@ -18,7 +18,7 @@
 |------|-------|
 | **Current Phase** | 2 - Leaderboard Frontend |
 | **Current Plan** | Not started |
-| **Status** | Phase 1 complete |
+| **Status** | Context gathered |
 | **Progress** | [====--------------------] 1/7 phases |
 
 ---
@@ -28,7 +28,7 @@
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | Leaderboard Data Layer | ✅ Complete |
-| 2 | Leaderboard Frontend | Pending |
+| 2 | Leaderboard Frontend | Context gathered |
 | 3 | Security & Error Handling | Pending |
 | 4 | Backend Quality & Testing | Pending |
 | 5 | Backend Modularization | Pending |
@@ -71,18 +71,35 @@
 
 ---
 
+## Phase 2 Context
+
+**Context file:** `.planning/phases/02-leaderboard-frontend/02-CONTEXT.md`
+
+### Key Decisions
+- Table layout with medal/trophy icons for top 3
+- Current user highlighted with background + border
+- All columns shown: Rank, Username, WPM, Accuracy, Combined Score, Game, Date
+- Metric toggle: Segmented button group at top of page, separate section, debounced
+- Best/Recent: Toggle switch above table, "All-time | Recent" labels, localStorage persistence
+- Loading: Spinner indicator
+- Empty state: Encouraging message
+- Error: Auto-retry after 5 seconds
+- Guest users: Show leaderboard + fixed top banner with Register/Login buttons
+
+---
+
 ## Session Continuity
 
 ### What's Been Done
 
 - [x] Read PROJECT.md, REQUIREMENTS.md, STATE.md
 - [x] Updated roadmap with leaderboard phases
-- [x] Created 01-CONTEXT.md
-- [x] Executed Phase 1 plans (01-01, 01-02, 01-03)
+- [x] Created 01-CONTEXT.md and executed Phase 1
+- [x] Created 02-CONTEXT.md
 
 ### What's Next
 
-1. Start Phase 2: `/gsd-discuss-phase 2`
+1. Start Phase 2 planning: `/gsd-plan-phase 2`
 
 ---
 
