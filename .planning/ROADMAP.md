@@ -62,7 +62,10 @@ Plans:
 5. Loading state shown while fetching leaderboard data
 6. Empty state displayed if no scores exist for a game
 
-**Plans:** TBD
+**Plans:** 1 plan
+
+Plans:
+- [ ] 02-01-PLAN.md — LeaderboardPage component with filters, table, auth integration
 
 ---
 
@@ -188,7 +191,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Leaderboard Data Layer | 1/3 | In Progress | 01-01 (2026-03-23) |
-| 2. Leaderboard Frontend | 0/1 | Not started | - |
+| 2. Leaderboard Frontend | 0/1 | Planned | - |
 | 3. Security & Error Handling | 0/1 | Not started | - |
 | 4. Backend Quality & Testing | 0/1 | Not started | - |
 | 5. Backend Modularization | 0/1 | Not started | - |

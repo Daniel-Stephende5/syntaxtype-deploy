@@ -47,6 +47,7 @@ const Navbar = () => {
         { text: "Quiz", link: "/quiz" },
         { text: "Grid Game", link: "/grid" },
         { text: "Crossword", link: "/crossword" },
+        { text: "Leaderboard", link: "/leaderboard" },
         // { text: "Instructor Module", link: "/instructor" },
         { text: "Challenges", link: "/challenges" },
         // { text: "Create Lesson", link: "/lesson" },

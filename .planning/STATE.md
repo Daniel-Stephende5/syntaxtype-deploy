@@ -17,8 +17,8 @@
 | Item | Value |
 |------|-------|
 | **Current Phase** | 2 - Leaderboard Frontend |
-| **Current Plan** | Not started |
-| **Status** | Context gathered |
+| **Current Plan** | 01 complete |
+| **Status** | Plan 01 executed |
 | **Progress** | [====--------------------] 1/7 phases |
 
 ---
@@ -42,7 +42,7 @@
 | Phase | Requirements | Status |
 |-------|--------------|--------|
 | 1 - Leaderboard Data Layer | LB-01 to LB-04 | ✅ Complete |
-| 2 - Leaderboard Frontend | LB-05 to LB-07 | Pending |
+| 2 - Leaderboard Frontend | LB-05 to LB-07 | ✅ Plan 01 complete |
 | 3 - Security & Error Handling | SEC-01 to SEC-06, ERR-01 to ERR-05 | Pending |
 | 4 - Backend Quality & Testing | BQ-01 to BQ-05, TEST-01 to TEST-03 | Pending |
 | 6 - Frontend Improvements | FQ-01 to FQ-04 | Pending |
@@ -71,6 +71,28 @@
 
 ---
 
+## Phase 2 Plan 1 Summary
+
+**Completed:** 1/3 plans
+
+### Deliverables
+- `LeaderboardPage.js` - Full component with game filter, metric toggle, best/recent toggle
+- Public `/leaderboard` route in App.js (no ProtectedRoute)
+- Leaderboard link added to Navbar sidebar
+
+### Features Implemented
+- Table layout with medal emojis (🥇🥈🥉) for top 3
+- Current user highlighting (blue background + border)
+- 7-column table: Rank, Username, WPM, Accuracy, Combined Score, Game, Date
+- ToggleButtonGroup for metric selection (WPM/Accuracy/Combined)
+- Switch for All-time/Recent with localStorage persistence
+- Loading spinner, empty state, error state with auto-retry
+- Guest banner with Register/Login buttons
+- Debounced filter changes (300ms)
+- Tooltip on Combined button with formula explanation
+
+---
+
 ## Phase 2 Context
 
 **Context file:** `.planning/phases/02-leaderboard-frontend/02-CONTEXT.md`
@@ -96,10 +118,12 @@
 - [x] Updated roadmap with leaderboard phases
 - [x] Created 01-CONTEXT.md and executed Phase 1
 - [x] Created 02-CONTEXT.md
+- [x] Executed Phase 2 Plan 01 (Leaderboard Frontend)
 
 ### What's Next
 
-1. Start Phase 2 planning: `/gsd-plan-phase 2`
+1. Phase 2 Plan 02: Add user rankings to PersonalStatsDashboard
+2. Phase 2 Plan 03: Leaderboard integration with game completion
 
 ---
 
