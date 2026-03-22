@@ -1,143 +1,339 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useControls } from "./GalaxyControls";
 import { useBackground } from "./GalaxyBackground";
 import { loadAssets } from "./assets";
+import { getEnemiesByLevel } from "./GalaxyLibrary";
+import {
+  spawnEnemy,
+  updateEnemies,
+  drawEnemies,
+  cleanupEnemies,
+} from "./GalaxyEnemy";
 
 const GalaxyMainGame = () => {
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
-  const typedRef = useRef("");
-  const assetsRef = useRef({});
+  const assetsRef = useRef({ ship: null });
+  const gameTimeRef = useRef(0);
+  const difficultyRef = useRef(1);
+  
+  // Game loop variables
+  const scoreRef = useRef(0);
+  const livesRef = useRef(3);
+  
   const [gameReady, setGameReady] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
 
-  // Player state
-  const playerRef = useRef({ x: 0, y: 0, width: 100, height: 80, speed: 300 });
+  const playerRef = useRef({ x: 50, y: 300, width: 80, height: 60, speed: 500 });
+  const enemiesRef = useRef([]);
+  const spawnTimerRef = useRef(-1.5);
+  const targetEnemyRef = useRef(null);
+  const bulletsRef = useRef([]);
+  const keysPressed = useRef({});
 
   const { initStars, drawBackground } = useBackground();
 
-  const controls = useControls({
-    onTyped: (t) => (typedRef.current = t),
-    onBackspace: (t) => (typedRef.current = t),
-  });
+  const updateScoreUI = (pts) => {
+    scoreRef.current += pts;
+    const scoreEl = document.getElementById("ui-score");
+    if (scoreEl) scoreEl.innerText = `SCORE: ${scoreRef.current}`;
+  };
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-
-    // prevent page scroll while game is active
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    function resize() {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-      initStars(canvas, 160);
-      // center player in the middle of the canvas
-      playerRef.current.x = canvas.width / 2 - playerRef.current.width / 2;
-      playerRef.current.y = canvas.height / 2 - playerRef.current.height / 2;
+  const updateLivesUI = () => {
+    livesRef.current -= 1;
+    const livesEl = document.getElementById("ui-lives");
+    if (livesEl) {
+      let hearts = "";
+      for (let i = 0; i < 3; i++) {
+        hearts += i < livesRef.current ? "❤️ " : "🖤 ";
+      }
+      livesEl.innerText = hearts;
     }
-    resize();
-    window.addEventListener("resize", resize);
+    if (livesRef.current <= 0) setGameOver(true);
+  };
 
-    let running = true;
-    let last = performance.now();
+  const shootBullet = (target) => {
+    const p = playerRef.current;
+    bulletsRef.current.push({
+      x: p.x + p.width,
+      y: p.y + p.height / 2,
+      target,
+      speed: 1400,
+    });
+  };
 
-    // load assets including ship image
-    loadAssets({ images: { ship: "/images/nightraider.png" }, sounds: {} })
+  // Load Assets
+  useEffect(() => {
+    loadAssets({ images: { ship: "/images/nightraider.png" } })
       .then((loaded) => {
         assetsRef.current = loaded;
         setGameReady(true);
-        loop(performance.now());
       })
-      .catch((err) => {
-        console.error("Failed to load assets:", err);
-        setGameReady(true);
-        loop(performance.now());
-      });
+      .catch((err) => console.error("Asset load failed", err));
+  }, []);
 
-    function updatePlayer(dt) {
-      const keys = controls.keysPressed.current;
-      const speed = playerRef.current.speed;
+  // Keyboard Handling
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (isPaused || gameOver) return;
+      const key = e.key;
 
-      if (keys["ArrowLeft"]) {
-        playerRef.current.x = Math.max(0, playerRef.current.x - speed * dt);
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Tab"].includes(key)) {
+        e.preventDefault();
+        if (key === "Tab") {
+          const aliveEnemies = enemiesRef.current.filter((en) => !en.destroyed && !en.remove);
+          if (!aliveEnemies.length) return;
+          const idx = aliveEnemies.indexOf(targetEnemyRef.current);
+          targetEnemyRef.current = aliveEnemies[(idx + 1) % aliveEnemies.length];
+        } else {
+          keysPressed.current[key] = true;
+        }
+        return;
       }
-      if (keys["ArrowRight"]) {
-        playerRef.current.x = Math.min(
-          canvas.width - playerRef.current.width,
-          playerRef.current.x + speed * dt
-        );
-      }
-      if (keys["ArrowUp"]) {
-        playerRef.current.y = Math.max(0, playerRef.current.y - speed * dt);
-      }
-      if (keys["ArrowDown"]) {
-        playerRef.current.y = Math.min(
-          canvas.height - playerRef.current.height,
-          playerRef.current.y + speed * dt
-        );
-      }
-    }
 
-    function drawPlayer() {
-      const p = playerRef.current;
-      const shipImg = assetsRef.current.ship;
+      if (key.length === 1) {
+        const char = key.toLowerCase();
+        
+        // Target selection logic
+        if (!targetEnemyRef.current || targetEnemyRef.current.remove || targetEnemyRef.current.destroyed) {
+       const match = enemiesRef.current.find((en) => {
+  // Add !en.hitPlayer so you can't target enemies already crashing into you
+  if (en.destroyed || en.remove || en.hitPlayer) return false; 
+  
+  const word = en.type === "shield" && en.shield 
+    ? en.questions[en.shieldIndex].answer 
+    : en.word;
+    
+  return word.toLowerCase().startsWith(char);
+});
+          if (match) targetEnemyRef.current = match;
+        }
 
-      if (shipImg) {
-        // draw image
-        ctx.drawImage(shipImg, p.x, p.y, p.width, p.height);
-      } else {
-        // fallback: draw a simple rectangle if image not loaded
-        ctx.fillStyle = "#00ff00";
-        ctx.fillRect(p.x, p.y, p.width, p.height);
+        const target = targetEnemyRef.current;
+        if (!target || target.remove || target.destroyed) return;
+
+        // Shield Enemy Logic
+        if (target.type === "shield" && target.shield) {
+          const q = target.questions[target.shieldIndex];
+          const expectedChar = q.answer[target.answerTyped.length]?.toLowerCase();
+          if (char === expectedChar) {
+            target.answerTyped += key;
+            shootBullet(target);
+            if (target.answerTyped.toLowerCase() === q.answer.toLowerCase()) {
+              target.shieldIndex++;
+              target.answerTyped = "";
+              if (target.shieldIndex >= target.questions.length) target.shield = false;
+            }
+          }
+        } else {
+          // Standard Enemy Logic
+          const nextIdx = (target.typed || "").length;
+          const expectedChar = target.word[nextIdx]?.toLowerCase();
+          if (char === expectedChar) {
+            target.typed = (target.typed || "") + key;
+            shootBullet(target);
+            if (target.typed.toLowerCase() === target.word.toLowerCase()) {
+              const pts = target.type === "boss" ? 10 : target.type === "shield" ? 2 : 1;
+              updateScoreUI(pts);
+              target.destroyed = true;
+              setTimeout(() => { target.remove = true; }, 100);
+              targetEnemyRef.current = null;
+            }
+          }
+        }
       }
-    }
+    };
 
-    function loop(now) {
-      if (!running) return;
-      const dt = (now - last) / 1000;
+    const handleKeyUp = (e) => { keysPressed.current[e.key] = false; };
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [isPaused, gameOver]);
+
+  // Main Game Loop
+  useEffect(() => {
+    if (!gameReady) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    let PLAY_AREA_BOTTOM = window.innerHeight - 60;
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      PLAY_AREA_BOTTOM = canvas.height - 60;
+      initStars(canvas, 150);
+    };
+    window.addEventListener("resize", resize);
+    resize();
+
+    let last = performance.now();
+
+    const loop = (now) => {
+      const dt = Math.min((now - last) / 1000, 0.1);
       last = now;
 
-      // update
-      updatePlayer(dt);
+      if (!isPaused && !gameOver) {
+        gameTimeRef.current += dt;
 
-      // render
+        // Difficulty scaling
+        if (Math.floor(gameTimeRef.current / 60) + 1 > difficultyRef.current) {
+          difficultyRef.current += 1;
+        }
+
+        const p = playerRef.current;
+        const keys = keysPressed.current;
+
+        // Player movement
+        if (keys["ArrowLeft"]) p.x -= p.speed * dt;
+        if (keys["ArrowRight"]) p.x += p.speed * dt;
+        if (keys["ArrowUp"]) p.y -= p.speed * dt;
+        if (keys["ArrowDown"]) p.y += p.speed * dt;
+
+        // Clamping
+        p.x = Math.max(10, Math.min(canvas.width - p.width - 10, p.x));
+        p.y = Math.max(90, Math.min(canvas.height - 120, p.y));
+
+        // Spawning
+       spawnTimerRef.current += dt;
+        if (spawnTimerRef.current > 1.8) {
+          spawnTimerRef.current = 0;
+          
+          // ✅ 1. Get the correct enemy data based on current game time
+          const enemiesToSpawn = getEnemiesByLevel(gameTimeRef.current * 1000);
+
+          // ✅ 2. Loop through them (this allows normal enemies AND bosses to spawn at the same time)
+          enemiesToSpawn.forEach((enemyData) => {
+            const en = spawnEnemy(canvas.width, enemyData);
+            
+            if (en) {
+              const laneHeight = 80;
+              const maxLanes = Math.floor((canvas.height - 180) / laneHeight);
+              
+              // Find occupied lanes so enemies don't overlap
+              const occupied = enemiesRef.current
+                .filter(o => !o.remove && o.x > canvas.width - 400)
+                .map(o => o.lane);
+
+              const available = [];
+              for (let i = 0; i < maxLanes; i++) {
+                if (!occupied.includes(i)) available.push(i);
+              }
+
+              // Assign a lane and push to the game loop
+              if (available.length > 0) {
+                const lane = available[Math.floor(Math.random() * available.length)];
+                en.lane = lane;
+                en.y = 120 + lane * laneHeight; 
+                enemiesRef.current.push(en);
+              }
+            }
+          });
+        }
+
+        // Updates
+        updateEnemies(enemiesRef.current, dt * (1 + (difficultyRef.current * 0.1)), canvas.width, p, updateLivesUI);
+        enemiesRef.current = cleanupEnemies(enemiesRef.current);
+
+        // Bullet Updates
+        bulletsRef.current = bulletsRef.current.filter((b) => {
+          if (!b.target || b.target.remove || b.target.destroyed) return false;
+          const dx = b.target.x - b.x;
+          const dy = (b.target.y + 20) - b.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 20) return false;
+          b.x += (dx / dist) * b.speed * dt;
+          b.y += (dy / dist) * b.speed * dt;
+          return true;
+        });
+      }
+
+      // Render
       drawBackground(ctx, canvas);
-      drawPlayer();
+      drawEnemies(ctx, enemiesRef.current, targetEnemyRef.current);
 
-      // HUD / typed text
-      ctx.fillStyle = "white";
-      ctx.font = "18px monospace";
-      ctx.fillText("Typed: " + typedRef.current, 16, 36);
+      ctx.fillStyle = "#00ffff";
+      bulletsRef.current.forEach((b) => {
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      const player = playerRef.current;
+
+if (assetsRef.current.ship) {
+  ctx.drawImage(
+    assetsRef.current.ship,
+    player.x,
+    player.y,
+    player.width,
+    player.height
+  );
+}
 
       animationRef.current = requestAnimationFrame(loop);
-    }
+    };
+
+    animationRef.current = requestAnimationFrame(loop);
 
     return () => {
-      running = false;
       window.removeEventListener("resize", resize);
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-      document.body.style.overflow = prevOverflow || "";
+      cancelAnimationFrame(animationRef.current);
     };
-  }, [initStars, drawBackground, controls]);
+  }, [gameReady, isPaused, gameOver, initStars, drawBackground]);
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: "var(--navbar-height, 64px)",
-        left: 0,
-        right: 0,
+    <div style={{ position: "fixed", inset: 0, width: "100vw", height: "100vh", background: "black", overflow: "hidden" }}>
+      <canvas ref={canvasRef} style={{ display: "block", width: "100%", height: "100%" }} />
+
+      <div style={{
+        position: "absolute",
         bottom: 0,
-        overflow: "hidden",
-      }}
-    >
-      <canvas
-        ref={canvasRef}
-        style={{ display: "block", width: "100%", height: "100%", background: "black" }}
-      />
-      {!gameReady && <div style={{ color: "white", padding: 20 }}>Loading game…</div>}
+        left: 0,
+        width: "100%",
+        height: "90px",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "0 50px",
+        pointerEvents: "none",
+        zIndex: 100,
+        boxSizing: "border-box",
+        background: "linear-gradient(to top, rgba(0,0,0,0.9), transparent)"
+      }}>
+        <div id="ui-score" style={{ color: "white", fontSize: "28px", fontFamily: "monospace", fontWeight: "bold", textShadow: "2px 2px 0px #000" }}>
+          SCORE: 0
+        </div>
+        <div id="ui-lives" style={{ fontSize: "28px" }}>
+          ❤️ ❤️ ❤️ 
+        </div>
+      </div>
+
+      {gameOver && (
+        <div style={{
+          position: "absolute",
+          inset: 0,
+          background: "rgba(0,0,0,0.85)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 200,
+          color: "white"
+        }}>
+          <h1 style={{ fontSize: "5rem", margin: 0, color: "#ff4444" }}>MISSION FAILED</h1>
+          <p style={{ fontSize: "2rem" }}>FINAL SCORE: {scoreRef.current}</p>
+          <button
+            onClick={() => window.location.reload()}
+            style={{ padding: "15px 40px", fontSize: "1.5rem", cursor: "pointer", borderRadius: "8px", border: "none", fontWeight: "bold" }}
+          >
+            REDEPLOY
+          </button>
+        </div>
+      )}
     </div>
   );
 };

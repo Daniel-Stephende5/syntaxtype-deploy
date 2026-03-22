@@ -18,7 +18,7 @@ public class CorsConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(@NonNull CorsRegistry registry) {
-                String[] defaultOrigins = new String[]{"http://localhost:5173", "http://localhost:8080", "http://localhost:3000", "https://syntaxtype-deploy-git-main-capstoneteam40-9681s-projects.vercel.app/"};
+                String[] defaultOrigins = new String[]{"http://localhost:5173", "http://localhost:8080", "http://localhost:3000", "https://syntaxtype-deploy-omega.vercel.app/"};
                 if (frontendUrl != null && !frontendUrl.isEmpty()) {
                     String[] extras = frontendUrl.split(",");
                     String[] merged = java.util.Arrays.copyOf(defaultOrigins, defaultOrigins.length + extras.length);

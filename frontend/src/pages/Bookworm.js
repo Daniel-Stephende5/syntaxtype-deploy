@@ -1,32 +1,84 @@
-// BookwormCombined.jsx
-import React, { useEffect, useState } from "react";
+// BookwormCConcepts.jsx
+import React, { useState, useEffect } from "react";
 
-/*
-  Combined Bookworm game:
-  - Weighted random letters
-  - Seeds 3-5 words per scramble (horizontal/vertical)
-  - Click-to-select letters (adjacency enforced; clicking a previous letter backtracks)
-  - Submit removes tiles, gravity pulls letters down, top refills
-  - Hint finds any dictionary word on the board
-*/
-
-const ROWS = 12; // change this to grow/shrink board
+const ROWS = 12;
 const COLS = 12;
 
-const SAMPLE_DICTIONARY = new Set([
-  "syntax","worm","data","variable","room","tree","object","bookworm",
-  "code","react","grid","game","play","pick","code","line",
-  "time","tone","abstract","home","house","virus","error","export",
-  "python","java","ruby","dart","html","css","logic","bug",
-  "compile","loop","debug","class","object","array","string",
-  "node","stack","queue","index","click","score","hint"
-]);
+// C programming concept dictionary: word -> hint/question
+const C_DICTIONARY = {
+  pointer: "Variable that stores the address of another variable",
+  array: "Collection of elements of the same type stored in contiguous memory",
+  loop: "Executes a block of code repeatedly",
+  function: "Reusable block of code that can be called with parameters",
+  struct: "User-defined data type to group variables",
+  int: "Data type for integers",
+  char: "Data type for single characters",
+  float: "Data type for decimal numbers",
+  double: "Data type for double-precision floating point numbers",
+  printf: "Function to print output to the console",
+  scanf: "Function to read input from the user",
+  null: "Represents a pointer that points to nothing",
+  const: "Keyword for defining a value that cannot change",
+  break: "Exits a loop or switch statement",
+  continue: "Skips the current loop iteration",
+  typedef: "Keyword to create an alias for a type",
+  enum: "User-defined type with named integer constants",
+  return: "Exits a function and optionally returns a value",
+  main: "The entry point of a C program",
+  include: "Directive to include libraries or headers",
+  switch: "Multi-way branch statement",
+  case: "Label within a switch statement",
+  default: "Default label in a switch statement",
+  if: "Executes a block of code if condition is true",
+  else: "Executes a block of code if condition is false",
+  while: "Loop that executes while a condition is true",
+  for: "Loop with initialization, condition, and increment",
+  do: "Loop that executes at least once before checking condition",
+  void: "Specifies a function returns nothing",
+  static: "Keyword for local persistence or limited visibility",
+  extern: "Specifies a variable or function exists elsewhere",
+  sizeof: "Operator to get the size of a type or variable",
+  volatile: "Keyword telling compiler variable may change unexpectedly",
+  register: "Suggests variable be stored in CPU register",
+  goto: "Jumps to a labeled statement (generally discouraged)",
+  signed: "Specifies signed integer type",
+  unsigned: "Specifies unsigned integer type",
+  union: "User-defined type storing different data types in same memory",
+  file: "Represents a file pointer for I/O operations",
+  fopen: "Function to open a file",
+  fclose: "Function to close a file",
+  fread: "Function to read from a file",
+  fwrite: "Function to write to a file",
+  malloc: "Allocates memory dynamically",
+  free: "Frees dynamically allocated memory",
+  realloc: "Resizes previously allocated memory",
+  exit: "Terminates a program",
+  assert: "Macro to test assumptions at runtime",
+  getchar: "Reads a single character from stdin",
+  putchar: "Writes a single character to stdout",
+  strtok: "Tokenizes a string into smaller strings",
+  strcmp: "Compares two strings",
+  strcpy: "Copies one string to another",
+  strcat: "Concatenates two strings",
+  strlen: "Returns length of a string",
+  errno: "Global variable for error reporting",
+  stderr: "Standard error stream",
+  stdin: "Standard input stream",
+  stdout: "Standard output stream",
+  bitwise: "Operations using &, |, ^, ~, <<, >>",
+  shift: "Left or right bitwise operation",
+  operator: "Symbol performing computation (+, -, *, /, etc.)",
+  macro: "Preprocessor directive defining reusable code snippet",
+  preprocessor: "Processor that handles directives before compilation"
+};
 
-// Weighted English-like letter distribution (more vowels/frequent letters)
-const LETTER_BAG = (
-  "eeeeeeeeeeeeaaaaaaaaaooooooooiiiiiiiinnnnnssssrrttlldcugmbfywkpvzxjq"
-).split("");
+// Convert dictionary keys to array
+const WORDS = Object.keys(C_DICTIONARY);
 
+// Weighted English letters (for random tiles)
+const LETTER_BAG = "eeeeeeeeaaaaaaaaooooooiiiiiinnnnssrrttlldcugmbfywkpvzxjq".split("");
+
+// Helpers
 function randLetter() {
   return LETTER_BAG[Math.floor(Math.random() * LETTER_BAG.length)].toUpperCase();
 }
@@ -35,24 +87,29 @@ function makeEmptyBoard() {
   return Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => ""));
 }
 
-// place multiple words (3-5) into board (horizontal or vertical), avoid conflicting placements
-function makeSeededBoard() {
-  const board = makeEmptyBoard();
+function getRandomWords(n = 10) {
+  const shuffled = WORDS.sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, Math.min(n, shuffled.length));
+}
 
-  // fill with weighted random letters
+function generateRandomQuestions() {
+  const shuffled = Object.entries(C_DICTIONARY).sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, 10);
+}
+
+// Create board with seeded C concept words
+function makeCBoard() {
+  const board = makeEmptyBoard();
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       board[r][c] = randLetter();
     }
   }
 
-  const words = Array.from(SAMPLE_DICTIONARY).filter(w => w.length >= 3 && w.length <= Math.max(ROWS, COLS));
-  const numWords = Math.min(words.length, Math.floor(Math.random() * 3) + 3); // 3..5 (bounded by dictionary size)
+  const wordsToPlace = getRandomWords(10).map(w => w.toUpperCase());
   const placed = [];
 
-  for (let i = 0; i < numWords; i++) {
-    const word = words[Math.floor(Math.random() * words.length)].toUpperCase();
-
+  for (const word of wordsToPlace) {
     for (let attempt = 0; attempt < 60; attempt++) {
       const horizontal = Math.random() < 0.5;
       const row = Math.floor(Math.random() * ROWS);
@@ -60,12 +117,10 @@ function makeSeededBoard() {
 
       if ((horizontal && col + word.length > COLS) || (!horizontal && row + word.length > ROWS)) continue;
 
-      // check conflicts: allow overlapping when letter matches
       let conflict = false;
       for (let j = 0; j < word.length; j++) {
         const r = horizontal ? row : row + j;
         const c = horizontal ? col + j : col;
-        // if placed has different letter, conflict
         const existing = placed.find(p => p.r === r && p.c === c);
         if (existing && existing.letter !== word[j]) {
           conflict = true;
@@ -74,7 +129,6 @@ function makeSeededBoard() {
       }
       if (conflict) continue;
 
-      // place word
       for (let j = 0; j < word.length; j++) {
         const r = horizontal ? row : row + j;
         const c = horizontal ? col + j : col;
@@ -84,7 +138,6 @@ function makeSeededBoard() {
       break;
     }
   }
-
   return board;
 }
 
@@ -92,27 +145,27 @@ function deepCopyBoard(board) {
   return board.map(row => row.slice());
 }
 
-// DFS-based finder used by the hint system (finds any word from dictionary)
-function findAnyWordOnBoard(board, dictionaryArray) {
+function isAdjacent(a, b) {
+  const dr = Math.abs(a.r - b.r);
+  const dc = Math.abs(a.c - b.c);
+  return (dr <= 1 && dc <= 1) && !(dr === 0 && dc === 0);
+}
+
+function findAnyWordOnBoard(board, wordsArray) {
   const R = board.length;
   const C = board[0].length;
-  const maxLen = 12;
   const boardLetters = board.map(r => r.map(ch => (ch || "").toLowerCase()));
-
+  const wordSet = new Set(wordsArray.map(w => w.toLowerCase()));
   const prefixSet = new Set();
-  const wordSet = new Set();
-  for (const w of dictionaryArray) {
-    wordSet.add(w.toLowerCase());
-    for (let i = 1; i <= Math.min(w.length, maxLen); i++) prefixSet.add(w.slice(0, i).toLowerCase());
+  for (const w of wordsArray) {
+    for (let i = 1; i <= w.length; i++) prefixSet.add(w.slice(0, i).toLowerCase());
   }
-
   const visited = Array.from({ length: R }, () => Array(C).fill(false));
 
   function dfs(r, c, acc) {
     const s = acc + (boardLetters[r][c] || "");
     if (!prefixSet.has(s)) return null;
     if (wordSet.has(s)) return s;
-    if (s.length >= maxLen) return null;
     visited[r][c] = true;
     const dr = [-1,-1,-1,0,0,1,1,1];
     const dc = [-1,0,1,-1,1,-1,0,1];
@@ -137,41 +190,48 @@ function findAnyWordOnBoard(board, dictionaryArray) {
   return null;
 }
 
-function isAdjacent(a,b) {
-  const dr = Math.abs(a.r - b.r);
-  const dc = Math.abs(a.c - b.c);
-  return (dr === 0 && dc === 1) || (dr === 1 && dc === 0) || (dr === 1 && dc === 1);
+function applyGravityAndRefill(b) {
+  let newBoard = deepCopyBoard(b);
+  for (let c = 0; c < COLS; c++) {
+    let write = ROWS - 1;
+    for (let r = ROWS - 1; r >= 0; r--) {
+      if (newBoard[r][c]) {
+        newBoard[write][c] = newBoard[r][c];
+        if (write !== r) newBoard[r][c] = null;
+        write--;
+      }
+    }
+    for (let r = write; r >= 0; r--) newBoard[r][c] = randLetter();
+  }
+  return newBoard;
 }
 
-// Main component
-export default function BookwormCombined() {
-  const [board, setBoard] = useState(() => makeSeededBoard());
-  const [selected, setSelected] = useState([]); // array of {r,c}
+// === Main component ===
+export default function BookwormCConcepts() {
+  const [board, setBoard] = useState(() => makeCBoard());
+  const [selected, setSelected] = useState([]);
   const [currentWord, setCurrentWord] = useState("");
   const [foundWords, setFoundWords] = useState(new Set());
   const [score, setScore] = useState(0);
   const [message, setMessage] = useState("");
+  const [questions, setQuestions] = useState([]);
 
   useEffect(() => {
-    setCurrentWord(selected.map(p => (board[p.r][p.c] || "")).join(""));
+    setCurrentWord(selected.map(p => board[p.r][p.c]).join(""));
   }, [selected, board]);
 
-  function handleCellClick(r,c) {
-    // ignore clicks on empty tiles
-    if (!board[r][c]) return;
+  useEffect(() => {
+    setQuestions(generateRandomQuestions());
+  }, []);
 
+  function handleCellClick(r,c) {
+    if (!board[r][c]) return;
     setSelected(prev => {
       const idx = prev.findIndex(p => p.r === r && p.c === c);
-      if (idx !== -1) {
-        // backtrack to this point
-        return prev.slice(0, idx+1);
-      }
+      if (idx !== -1) return prev.slice(0, idx+1);
       if (prev.length === 0) return [{r,c}];
       const last = prev[prev.length-1];
-      if (!isAdjacent(last, {r,c})) {
-        // in Bookworm the behavior is to start a new selection when clicking a non-adjacent tile
-        return [{r,c}];
-      }
+      if (!isAdjacent(last, {r,c})) return [{r,c}];
       return [...prev, {r,c}];
     });
     setMessage("");
@@ -182,91 +242,38 @@ export default function BookwormCombined() {
     setMessage("");
   }
 
-  // gravity: collapse columns, top fill with new letters
-function applyGravityAndRefill(b) {
-  let newBoard = deepCopyBoard(b);
-
-  // Step 1: Gravity - collapse columns down
-  for (let c = 0; c < COLS; c++) {
-    let write = ROWS - 1;
-    for (let r = ROWS - 1; r >= 0; r--) {
-      if (newBoard[r][c] && newBoard[r][c] !== null) {
-        newBoard[write][c] = newBoard[r][c];
-        if (write !== r) newBoard[r][c] = null;
-        write--;
-      }
-    }
-    // Fill empty slots at top with random letters
-    for (let r = write; r >= 0; r--) {
-      newBoard[r][c] = randLetter();
-    }
-  }
-
-  // Step 2: Semi-smart adjustment — ensure at least 1–2 valid words exist
-  const wordFound = findAnyWordOnBoard(newBoard, Array.from(SAMPLE_DICTIONARY));
-  if (!wordFound) {
-    // Try a few reshuffles of random tiles until we generate a playable board
-    for (let attempts = 0; attempts < 25; attempts++) {
-      // randomly pick some columns to re-randomize top few tiles
-      const col = Math.floor(Math.random() * COLS);
-      const count = Math.floor(Math.random() * 3) + 2; // random 2–4 tiles
-      for (let r = 0; r < count; r++) {
-        newBoard[r][col] = randLetter();
-      }
-
-      const playable = findAnyWordOnBoard(newBoard, Array.from(SAMPLE_DICTIONARY));
-      if (playable) break;
-    }
-  }
-
-  return newBoard;
-}
-
-
   function submitSelectionAsWord() {
     const word = selected.map(p => board[p.r][p.c]).join("").toLowerCase();
-    if (word.length < 3) {
-      setMessage("Words must be at least 3 letters.");
-      return;
-    }
-    if (!SAMPLE_DICTIONARY.has(word)) {
-      setMessage(`"${word.toUpperCase()}" not in dictionary.`);
-      return;
-    }
-    if (foundWords.has(word)) {
-      setMessage(`You already found "${word.toUpperCase()}".`);
-      return;
-    }
+    if (word.length < 3) { setMessage("Words must be at least 3 letters."); return; }
+    if (!C_DICTIONARY[word]) { setMessage(`"${word.toUpperCase()}" not a C concept.`); return; }
+    if (foundWords.has(word)) { setMessage(`Already found "${word.toUpperCase()}".`); return; }
 
-    // Valid: remove tiles and apply gravity + refill
-    setFoundWords(prev => { const s = new Set(prev); s.add(word); return s; });
+    setFoundWords(prev => new Set(prev).add(word));
     setScore(s => s + word.length * word.length);
-    setMessage(`Found "${word.toUpperCase()}" +${word.length * word.length} pts`);
+    setMessage(`Found "${word.toUpperCase()}" (+${word.length * word.length})`);
 
-    // remove selected tiles
     const b = deepCopyBoard(board);
-    selected.forEach(p => { b[p.r][p.c] = null; });
-
-    const newB = applyGravityAndRefill(b);
-    setBoard(newB);
+    selected.forEach(p => b[p.r][p.c] = null);
+    setBoard(applyGravityAndRefill(b));
     setSelected([]);
   }
 
   function scrambleBoard() {
-    setBoard(makeSeededBoard());
+    setBoard(makeCBoard());
     setSelected([]);
     setFoundWords(new Set());
     setScore(0);
-    setMessage("Board scrambled — contains multiple seeded words.");
+    setMessage("Board scrambled with C programming concepts!");
+    setQuestions(generateRandomQuestions());
   }
 
   function giveHint() {
-    const found = findAnyWordOnBoard(board, Array.from(SAMPLE_DICTIONARY));
-    if (found) setMessage(`Hint: try "${found.toUpperCase()}"`);
-    else setMessage("No dictionary words found — try scramble.");
+    const found = findAnyWordOnBoard(board, WORDS);
+    if (found) setMessage(`Hint: ${C_DICTIONARY[found.toLowerCase()]}`);
+    else setMessage("No words found — try scramble.");
   }
 
-  // inline styles (kept inside component so single-file)
+  // === Styles (same as your version) ===
   const styles = {
     container: { fontFamily: "system-ui, Arial, sans-serif", padding: 20, display: "flex", justifyContent: "center" },
     panel: { width: "min(1100px, 96%)", display: "grid", gridTemplateColumns: "1fr 320px", gap: 20 },
@@ -282,15 +289,16 @@ function applyGravityAndRefill(b) {
     smallMuted: { fontSize: 13, color: "#6b7280" }
   };
 
+  // === Render ===
   return (
     <div style={styles.container}>
       <div style={styles.panel}>
+        {/* Board */}
         <div style={styles.boardWrap}>
-          <h2 style={{ margin: 0 }}>📚 Bookworm — Combined</h2>
+          <h2 style={{ margin: 0 }}>📚 Bookworm — C Concepts</h2>
           <p style={{ marginTop: 6, marginBottom: 12, color: "#374151" }}>
-            Click adjacent letters to form words. Submit removes tiles and gravity pulls letters down.
+            Click adjacent letters to form C programming concepts. Submit removes tiles and gravity pulls letters down.
           </p>
-
           <div style={styles.colsContainer}>
             {Array.from({ length: COLS }).map((_, c) => (
               <div key={c} style={styles.column}>
@@ -298,25 +306,15 @@ function applyGravityAndRefill(b) {
                   const ch = board[r][c];
                   const isSel = selected.some(p => p.r === r && p.c === c);
                   const idx = selected.findIndex(p => p.r === r && p.c === c);
-                  const tileStyle = {
-                    ...styles.tile,
-                    ...(isSel ? styles.tileSelected : styles.tileDefault)
-                  };
-
                   return (
                     <button
                       key={`${r}-${c}`}
                       onClick={() => handleCellClick(r,c)}
-                      style={tileStyle}
-                      title={ch || ""}
+                      style={{...styles.tile, ...(isSel ? styles.tileSelected : styles.tileDefault)}}
                       disabled={!ch}
                     >
-                      <span>{ch || ""}</span>
-                      {idx !== -1 && (
-                        <span style={{ position: "absolute", bottom: 2, right: 4, fontSize: 11, opacity: 0.95 }}>
-                          {idx + 1}
-                        </span>
-                      )}
+                      {ch}
+                      {idx !== -1 && <span style={{ position: "absolute", bottom: 2, right: 4, fontSize: 11, opacity: 0.95 }}>{idx+1}</span>}
                     </button>
                   );
                 })}
@@ -338,26 +336,32 @@ function applyGravityAndRefill(b) {
           </div>
         </div>
 
+        {/* Right panel */}
         <div style={styles.statsPanel}>
           <h3 style={{ marginTop: 0 }}>Stats</h3>
-          <div style={{ marginTop: 8, marginBottom: 8 }}>
-            <div>Score: <strong>{score}</strong></div>
-            <div style={{ marginTop: 8 }}>Found words: {foundWords.size}</div>
+          <div>Score: <strong>{score}</strong></div>
+          <div style={{ marginTop: 8 }}>Found words: {foundWords.size}</div>
+
+          <div style={{ marginTop: 12, fontSize: 13, color: "#374151" }}>Found list</div>
+          <div style={{ maxHeight: 120, overflow: "auto" }}>
+            {Array.from(foundWords).length === 0 ? (
+              <div style={{ color: "#6b7280" }}>No words yet</div>
+            ) : (
+              <ul style={{ paddingLeft: 16, marginTop: 0 }}>
+                {Array.from(foundWords).map(w => (
+                  <li key={w} style={{ fontFamily: "monospace" }}>{w.toUpperCase()} (+{w.length * w.length})</li>
+                ))}
+              </ul>
+            )}
           </div>
 
-          <div style={{ marginTop: 12 }}>
-            <div style={{ fontSize: 13, color: "#374151", marginBottom: 6 }}>Found list</div>
-            <div style={{ maxHeight: 260, overflow: "auto" }}>
-              {Array.from(foundWords).length === 0 ? (
-                <div style={{ color: "#6b7280" }}>No words yet</div>
-              ) : (
-                <ul style={{ paddingLeft: 16, marginTop: 0 }}>
-                  {Array.from(foundWords).map(w => (
-                    <li key={w} style={{ fontFamily: "monospace" }}>{w.toUpperCase()} (+{w.length * w.length})</li>
-                  ))}
-                </ul>
-              )}
-            </div>
+          <div style={{ marginTop: 12, fontSize: 13, color: "#374151" }}>Random Concept Questions</div>
+          <div style={{ maxHeight: 160, overflow: "auto" }}>
+            {questions.map(([word, hint]) => (
+              <div key={word} style={{ fontFamily: "monospace", marginBottom: 4 }}>
+                <strong>{word.toUpperCase()}</strong>: {hint}
+              </div>
+            ))}
           </div>
 
           <div style={{ marginTop: 12, fontSize: 13, color: "#6b7280" }}>
