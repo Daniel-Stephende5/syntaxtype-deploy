@@ -58,9 +58,33 @@ export function updateEnemies(enemies, dt, canvasWidth, playerPos, onHitPlayer) 
     const smoothFactor = 0.08;
     e.y += (targetY - e.y) * smoothFactor;
 
-    if (e.type === "boss") {
-      e.y += Math.sin(performance.now() * 0.001) * 25 * dt;
-    }
+ if (e.type === "boss") {
+  const lineHeight = 28; // Space between lines
+  const lines = e.word.split("\n");
+  let globalCharsCount = 0;
+
+  lines.forEach((lineText, index) => {
+    const yOffset = e.y + (index * lineHeight);
+    const typedInThisLine = Math.max(0, Math.min(lineText.length, (e.typed || "").length - globalCharsCount));
+    
+    const partDone = lineText.slice(0, typedInThisLine);
+    const partLeft = lineText.slice(typedInThisLine);
+
+    // 1. Draw Typed Part (Green)
+    ctx.fillStyle = "#00ff00";
+    ctx.fillText(partDone, e.x, yOffset);
+
+    // 2. Draw Remaining Part (White/Red)
+    ctx.fillStyle = e.destroyed ? "#ff0000" : "#ffffff";
+    const xOffset = ctx.measureText(partDone).width;
+    ctx.fillText(partLeft, e.x + xOffset, yOffset);
+
+    // Update counter (+1 for the \n we split on)
+    globalCharsCount += lineText.length + 1; 
+  });
+} else {
+  // ... (Your existing standard enemy drawing logic)
+}
 
     // --- 3. COLLISION DETECTION (Ship vs Enemy) ---
     // Using a slightly smaller hitbox for the ship to feel "fairer"
