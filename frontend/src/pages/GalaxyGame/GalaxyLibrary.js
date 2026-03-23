@@ -68,8 +68,7 @@ void ultimateAttack(Player* p) {
   speed: 18,
   questions: [
     { prompt: "Keyword for function with no return", answer: "void" },
-    { prompt: "Pointer access operator in C", answer: "->" },
-    { prompt: "Keyword for condition", answer: "if" },
+    
   ],
   spawnInterval: 60000, // 60 sec
   lastSpawn: 0,
