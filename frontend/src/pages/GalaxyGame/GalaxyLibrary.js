@@ -58,13 +58,11 @@ export const shieldEnemies = [
 ];
 export const bossEnemy = {
   type: "shield",
-  word: `
-void ultimateAttack(Player* p) {
+  word: `void ultimateAttack(Player* p) {
   if (p->hp > 0) {
     p->hp -= 50;
   }
-}
-`,
+}`,
   speed: 18,
   questions: [
     { prompt: "Keyword for function with no return", answer: "void" },
@@ -77,13 +75,11 @@ void ultimateAttack(Player* p) {
 // ✅ Boss enemy with multiple shields & code snippet as word
 export const bossEnemy2 = {
   type: "shield",
-  word: `
-int calculateDamage(Player player, Enemy enemy) {
+  word: `int calculateDamage(Player player, Enemy enemy) {
   int base = rand() % 6 + 5;
   if (player.weapon) base += player.weapon.power * 2;
   return base;
-}
-`,
+}`,
   speed: 15,
   questions: [
     { prompt: "Keyword to declare a function", answer: "int" },
