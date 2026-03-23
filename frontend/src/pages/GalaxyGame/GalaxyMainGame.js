@@ -8,26 +8,29 @@ const GalaxyMainGame = () => {
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
   const assetsRef = useRef({ ship: null });
-  const gameTimeRef = useRef(0);
+  
+  // Game State Refs
+  const gameTimeRef = useRef(0); // This only tracks ACTIVE combat time (non-boss)
   const difficultyRef = useRef(1);
-
   const scoreRef = useRef(0);
   const livesRef = useRef(3);
-
-  const [gameReady, setGameReady] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [gameOver, setGameOver] = useState(false);
-
+  const spawnTimerRef = useRef(-1.5);
+  
+  // Logic Refs
   const playerRef = useRef({ x: 50, y: 300, width: 80, height: 60, speed: 500 });
   const enemiesRef = useRef([]);
-  const spawnTimerRef = useRef(-1.5);
   const targetEnemyRef = useRef(null);
   const bulletsRef = useRef([]);
   const keysPressed = useRef({});
 
+  // States for UI rendering
+  const [gameReady, setGameReady] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
+
   const { initStars, drawBackground } = useBackground();
 
-  // --- UI & UTILITY HELPERS ---
+  // --- UI & GAME HELPERS ---
   const updateScoreUI = (pts) => {
     scoreRef.current += pts;
     const scoreEl = document.getElementById("ui-score");
@@ -39,9 +42,7 @@ const GalaxyMainGame = () => {
     const livesEl = document.getElementById("ui-lives");
     if (livesEl) {
       let hearts = "";
-      for (let i = 0; i < 3; i++) {
-        hearts += i < livesRef.current ? "❤️ " : "🖤 ";
-      }
+      for (let i = 0; i < 3; i++) hearts += i < livesRef.current ? "❤️ " : "🖤 ";
       livesEl.innerText = hearts;
     }
     if (livesRef.current <= 0) setGameOver(true);
@@ -61,16 +62,11 @@ const GalaxyMainGame = () => {
     const pts = target.type === "boss" ? 50 : (target.type === "shield" ? 2 : 1);
     updateScoreUI(pts);
     target.destroyed = true;
-    
-    // Clear the ref so the player can target the next enemy
-    if (targetEnemyRef.current === target) {
-      targetEnemyRef.current = null;
-    }
-    
+    if (targetEnemyRef.current === target) targetEnemyRef.current = null;
     setTimeout(() => { target.remove = true; }, 100);
   };
 
-  // --- ASSET LOADING ---
+  // --- INITIALIZATION ---
   useEffect(() => {
     loadAssets({ images: { ship: "/images/nightraider.png" } })
       .then((loaded) => {
@@ -90,22 +86,21 @@ const GalaxyMainGame = () => {
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Tab"].includes(key)) {
         e.preventDefault();
         if (key === "Tab") {
-          const aliveEnemies = enemiesRef.current.filter((en) => !en.destroyed && !en.remove);
-          if (!aliveEnemies.length) return;
-          const idx = aliveEnemies.indexOf(targetEnemyRef.current);
-          targetEnemyRef.current = aliveEnemies[(idx + 1) % aliveEnemies.length];
+          const alive = enemiesRef.current.filter((en) => !en.destroyed && !en.remove);
+          if (!alive.length) return;
+          const idx = alive.indexOf(targetEnemyRef.current);
+          targetEnemyRef.current = alive[(idx + 1) % alive.length];
         } else {
           keysPressed.current[key] = true;
         }
         return;
       }
 
-      // 2. Targeting Logic (STICKY BOSS LOCK)
+      // 2. Sticky Boss Targeting
       const currentTarget = targetEnemyRef.current;
-      const isBossTargeted = currentTarget && currentTarget.type === "boss" && !currentTarget.destroyed;
+      const bossActive = currentTarget && currentTarget.type === "boss" && !currentTarget.destroyed;
 
-      // Only search for a new target if we aren't already locked onto a living Boss
-      if (!isBossTargeted && key.length === 1 && (!currentTarget || currentTarget.remove || currentTarget.destroyed)) {
+      if (!bossActive && key.length === 1 && (!currentTarget || currentTarget.remove || currentTarget.destroyed)) {
         const char = key.toLowerCase();
         const match = enemiesRef.current.find((en) => {
           if (en.destroyed || en.remove || en.hitPlayer) return false;
@@ -117,24 +112,19 @@ const GalaxyMainGame = () => {
         if (match) targetEnemyRef.current = match;
       }
 
-      // Re-evaluate target after potential selection
-      const activeTarget = targetEnemyRef.current;
-      if (!activeTarget || activeTarget.remove || activeTarget.destroyed) return;
+      const active = targetEnemyRef.current;
+      if (!active || active.remove || active.destroyed) return;
 
-      // 3. Boss Special (Enter for Newline)
-      if (key === "Enter" && activeTarget.type === "boss" && !activeTarget.shield) {
+      // 3. Boss Special (Enter for \n)
+      if (key === "Enter" && active.type === "boss" && !active.shield) {
         e.preventDefault();
-        const currentTyped = activeTarget.typed || "";
-        const remaining = activeTarget.word.slice(currentTyped.length);
-
+        const remaining = active.word.slice((active.typed || "").length);
         if (remaining.startsWith("\n")) {
-          const match = remaining.match(/^[\n\r]\s*/); 
+          const match = remaining.match(/^[\n\r]\s*/);
           if (match) {
-            activeTarget.typed = currentTyped + match[0];
-            shootBullet(activeTarget);
-            if (activeTarget.typed.length >= activeTarget.word.length) {
-              finishEnemy(activeTarget);
-            }
+            active.typed = (active.typed || "") + match[0];
+            shootBullet(active);
+            if (active.typed.length >= active.word.length) finishEnemy(active);
           }
           return;
         }
@@ -143,31 +133,26 @@ const GalaxyMainGame = () => {
       // 4. Standard Typing
       if (key.length === 1) {
         const char = key.toLowerCase();
-
-        if (activeTarget.shield) {
-          const q = activeTarget.questions[activeTarget.shieldIndex];
-          const expectedChar = q.answer[activeTarget.answerTyped.length]?.toLowerCase();
-          if (char === expectedChar) {
-            activeTarget.answerTyped += key;
-            shootBullet(activeTarget);
-            if (activeTarget.answerTyped.toLowerCase() === q.answer.toLowerCase()) {
-              activeTarget.shieldIndex++;
-              activeTarget.answerTyped = "";
-              if (activeTarget.shieldIndex >= activeTarget.questions.length) {
-                activeTarget.shield = false;
-                activeTarget.typed = "";
+        if (active.shield) {
+          const q = active.questions[active.shieldIndex];
+          if (char === q.answer[(active.answerTyped || "").length]?.toLowerCase()) {
+            active.answerTyped = (active.answerTyped || "") + key;
+            shootBullet(active);
+            if (active.answerTyped.toLowerCase() === q.answer.toLowerCase()) {
+              active.shieldIndex++;
+              active.answerTyped = "";
+              if (active.shieldIndex >= active.questions.length) {
+                active.shield = false;
+                active.typed = "";
               }
             }
           }
         } else {
-          const nextIdx = (activeTarget.typed || "").length;
-          const expectedChar = activeTarget.word[nextIdx]?.toLowerCase();
-          if (char === expectedChar) {
-            activeTarget.typed = (activeTarget.typed || "") + key;
-            shootBullet(activeTarget);
-            if (activeTarget.typed.toLowerCase() === activeTarget.word.toLowerCase()) {
-              finishEnemy(activeTarget);
-            }
+          const nextIdx = (active.typed || "").length;
+          if (char === active.word[nextIdx]?.toLowerCase()) {
+            active.typed = (active.typed || "") + key;
+            shootBullet(active);
+            if (active.typed.toLowerCase() === active.word.toLowerCase()) finishEnemy(active);
           }
         }
       }
@@ -182,7 +167,7 @@ const GalaxyMainGame = () => {
     };
   }, [isPaused, gameOver]);
 
-  // --- MAIN LOOP ---
+  // --- MAIN GAME LOOP ---
   useEffect(() => {
     if (!gameReady) return;
 
@@ -204,77 +189,63 @@ const GalaxyMainGame = () => {
       last = now;
 
       if (!isPaused && !gameOver) {
-        gameTimeRef.current += dt;
-        const currentLevel = Math.floor(gameTimeRef.current / 60) + 1;
-        difficultyRef.current = currentLevel;
+        // --- DIFFICULTY & SPAWN LOGIC ---
+        const bossActive = enemiesRef.current.some(en => en.type === "boss" && !en.remove && !en.destroyed);
 
+        // Pause progression while fighting boss
+        if (!bossActive) {
+          gameTimeRef.current += dt;
+          spawnTimerRef.current += dt;
+        }
+
+        difficultyRef.current = Math.floor(gameTimeRef.current / 60) + 1;
+        const speedMultiplier = 1 + (difficultyRef.current - 1) * 0.15;
+        const maxEnemies = 5 + (difficultyRef.current - 1) * 2;
+
+        // Player movement
         const p = playerRef.current;
         const keys = keysPressed.current;
-
-        // Player Movement
         if (keys["ArrowLeft"]) p.x -= p.speed * dt;
         if (keys["ArrowRight"]) p.x += p.speed * dt;
         if (keys["ArrowUp"]) p.y -= p.speed * dt;
         if (keys["ArrowDown"]) p.y += p.speed * dt;
-
         p.x = Math.max(10, Math.min(canvas.width - p.width - 10, p.x));
         p.y = Math.max(90, Math.min(canvas.height - 120, p.y));
 
-        // --- ENEMY SPAWNING & BOSS LOCK ---
-        const bossOnScreen = enemiesRef.current.some(en => en.type === "boss" && !en.remove && !en.destroyed);
-        
-        // Timer only advances if the stage is clear of Bosses
-        if (!bossOnScreen) {
-          spawnTimerRef.current += dt;
-        }
-
-        const maxEnemies = 5 + Math.floor(gameTimeRef.current / 60) * 2;
+        // Spawning
         const activeCount = enemiesRef.current.filter(en => !en.remove && !en.destroyed).length;
-
-        if (!bossOnScreen && spawnTimerRef.current > 1.8 && activeCount < maxEnemies) {
+        if (!bossActive && spawnTimerRef.current > 1.8 && activeCount < maxEnemies) {
           spawnTimerRef.current = 0;
           const enemiesToSpawn = getEnemiesByLevel(gameTimeRef.current * 1000);
-
-          const hasBoss = enemiesToSpawn.some(e => e.type === "boss");
-          if (hasBoss) {
-            // Clear regular mobs for the boss fight
-            enemiesRef.current.forEach(en => {
-              en.destroyed = true;
-              en.remove = true;
-            });
+          
+          if (enemiesToSpawn.some(e => e.type === "boss")) {
+            enemiesRef.current.forEach(en => { en.destroyed = true; en.remove = true; });
             targetEnemyRef.current = null;
           }
 
-          enemiesToSpawn.forEach((enemyData) => {
-            const en = spawnEnemy(canvas.width, enemyData);
+          enemiesToSpawn.forEach((data) => {
+            const en = spawnEnemy(canvas.width, data);
             if (en) {
               const laneHeight = 80;
               const maxLanes = Math.floor((canvas.height - 180) / laneHeight);
               const occupied = enemiesRef.current.filter(o => !o.remove && o.x > canvas.width - 400).map(o => o.lane);
-              const available = [];
-              for (let i = 0; i < maxLanes; i++) if (!occupied.includes(i)) available.push(i);
+              const available = Array.from({length: maxLanes}, (_, i) => i).filter(i => !occupied.includes(i));
               
-              const lane = available.length > 0 ? available[Math.floor(Math.random() * available.length)] : 0;
-              en.lane = lane;
-              en.y = en.type === "boss" ? canvas.height / 2 - 40 : 120 + lane * laneHeight;
-              
-              // AUTO-TARGET BOSS
+              en.lane = available.length > 0 ? available[Math.floor(Math.random() * available.length)] : 0;
+              en.y = en.type === "boss" ? canvas.height / 2 - 40 : 120 + en.lane * laneHeight;
               if (en.type === "boss") targetEnemyRef.current = en;
-              
               enemiesRef.current.push(en);
             }
           });
         }
 
-        // --- UPDATES ---
-        const speedMultiplier = 1 + (difficultyRef.current - 1) * 0.1;
+        // Updates
         updateEnemies(enemiesRef.current, dt * speedMultiplier, canvas.width, p, updateLivesUI);
         enemiesRef.current = cleanupEnemies(enemiesRef.current);
 
         bulletsRef.current = bulletsRef.current.filter((b) => {
           if (!b.target || b.target.remove || b.target.destroyed) return false;
-          const dx = b.target.x - b.x;
-          const dy = (b.target.y + 20) - b.y;
+          const dx = b.target.x - b.x, dy = (b.target.y + 20) - b.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < 20) return false;
           b.x += (dx / dist) * b.speed * dt;
@@ -283,21 +254,13 @@ const GalaxyMainGame = () => {
         });
       }
 
-      // --- RENDER ---
+      // Render
       drawBackground(ctx, canvas);
       drawEnemies(ctx, enemiesRef.current, targetEnemyRef.current);
-
       ctx.fillStyle = "#00ffff";
-      bulletsRef.current.forEach((b) => {
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, 4, 0, Math.PI * 2);
-        ctx.fill();
-      });
-
-      if (assetsRef.current.ship) {
-        ctx.drawImage(assetsRef.current.ship, playerRef.current.x, playerRef.current.y, playerRef.current.width, playerRef.current.height);
-      }
-
+      bulletsRef.current.forEach(b => { ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, Math.PI * 2); ctx.fill(); });
+      if (assetsRef.current.ship) ctx.drawImage(assetsRef.current.ship, playerRef.current.x, playerRef.current.y, playerRef.current.width, playerRef.current.height);
+      
       animationRef.current = requestAnimationFrame(loop);
     };
 
@@ -309,34 +272,28 @@ const GalaxyMainGame = () => {
   }, [gameReady, isPaused, gameOver, initStars, drawBackground]);
 
   return (
-    <div style={{ position: "fixed", inset: 0, width: "100vw", height: "100vh", background: "black", overflow: "hidden" }}>
+    <div style={{ position: "fixed", inset: 0, background: "black", overflow: "hidden" }}>
       <canvas ref={canvasRef} style={{ display: "block", width: "100%", height: "100%" }} />
+      
       <div style={{
         position: "absolute", bottom: 0, left: 0, width: "100%", height: "90px",
         display: "flex", justifyContent: "space-between", alignItems: "center",
         padding: "0 50px", pointerEvents: "none", zIndex: 100,
-        boxSizing: "border-box", background: "linear-gradient(to top, rgba(0,0,0,0.9), transparent)"
+        background: "linear-gradient(to top, rgba(0,0,0,0.9), transparent)"
       }}>
-        <div id="ui-score" style={{ color: "white", fontSize: "28px", fontFamily: "monospace", fontWeight: "bold" }}>
-          SCORE: 0
-        </div>
+        <div id="ui-score" style={{ color: "white", fontSize: "28px", fontFamily: "monospace", fontWeight: "bold" }}>SCORE: 0</div>
+        <div style={{ color: "#aaa", fontSize: "18px", fontFamily: "monospace" }}>LVL: {difficultyRef.current}</div>
         <div id="ui-lives" style={{ fontSize: "28px" }}>❤️ ❤️ ❤️</div>
       </div>
 
       {gameOver && (
         <div style={{
           position: "absolute", inset: 0, background: "rgba(0,0,0,0.85)",
-          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-          zIndex: 200, color: "white"
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 200, color: "white"
         }}>
-          <h1 style={{ fontSize: "5rem", margin: 0, color: "#ff4444" }}>MISSION FAILED</h1>
+          <h1 style={{ fontSize: "5rem", color: "#ff4444" }}>MISSION FAILED</h1>
           <p style={{ fontSize: "2rem" }}>FINAL SCORE: {scoreRef.current}</p>
-          <button
-            onClick={() => window.location.reload()}
-            style={{ padding: "15px 40px", fontSize: "1.5rem", cursor: "pointer", borderRadius: "8px" }}
-          >
-            REDEPLOY
-          </button>
+          <button onClick={() => window.location.reload()} style={{ padding: "15px 40px", fontSize: "1.5rem", cursor: "pointer", borderRadius: "8px" }}>REDEPLOY</button>
         </div>
       )}
     </div>
