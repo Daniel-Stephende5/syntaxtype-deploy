@@ -1,6 +1,7 @@
 package com.syntaxtype.demo.Service.statistics;
 
 import com.syntaxtype.demo.DTO.statistics.LeaderboardDTO;
+import com.syntaxtype.demo.DTO.statistics.LeaderboardEntry;
 import com.syntaxtype.demo.Entity.Statistics.Leaderboard;
 import com.syntaxtype.demo.Entity.Users.User;
 import com.syntaxtype.demo.Entity.Enums.Category;
@@ -8,8 +9,9 @@ import com.syntaxtype.demo.Repository.statistics.LeaderboardRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -120,6 +122,180 @@ public class LeaderboardService {
             return convertToDTO(leaderboardRepository.save(leaderboard));
         }
         return null;
+    }
+
+    // ============ Ranking Methods ============
+
+    /**
+     * Get top 10 leaderboard entries for a category ordered by WPM.
+     *
+     * @param category The game category
+     * @return List of top 10 LeaderboardEntry with calculated ranks
+     */
+    public List<LeaderboardEntry> getTop10ByWpm(Category category) {
+        List<Leaderboard> entries = leaderboardRepository.findTop10ByCategoryOrderByWordsPerMinuteDesc(category);
+        return assignRanksWithTies(entries, "wpm");
+    }
+
+    /**
+     * Get top 10 leaderboard entries for a category ordered by accuracy.
+     *
+     * @param category The game category
+     * @return List of top 10 LeaderboardEntry with calculated ranks
+     */
+    public List<LeaderboardEntry> getTop10ByAccuracy(Category category) {
+        List<Leaderboard> entries = leaderboardRepository.findTop10ByCategoryOrderByAccuracyDesc(category);
+        return assignRanksWithTies(entries, "accuracy");
+    }
+
+    /**
+     * Get top 10 leaderboard entries for a category ordered by combined score.
+     * Combined score = wpm * (accuracy / 100.0) with 1.5x multiplier if accuracy > 95
+     *
+     * @param category The game category
+     * @return List of top 10 LeaderboardEntry with calculated ranks
+     */
+    public List<LeaderboardEntry> getTop10ByCombinedScore(Category category) {
+        // Get all entries for the category and sort by combined score in memory
+        List<Leaderboard> allEntries = leaderboardRepository.findByCategoryOrderByWordsPerMinuteDesc(category);
+        
+        // Calculate combined scores and sort
+        List<Leaderboard> sortedByCombined = allEntries.stream()
+                .sorted((a, b) -> {
+                    Double scoreA = LeaderboardEntry.calculateCombinedScore(a.getWordsPerMinute(), a.getAccuracy());
+                    Double scoreB = LeaderboardEntry.calculateCombinedScore(b.getWordsPerMinute(), b.getAccuracy());
+                    return scoreB.compareTo(scoreA); // Descending order
+                })
+                .limit(10)
+                .toList();
+        
+        return assignRanksWithTies(sortedByCombined, "combined");
+    }
+
+    /**
+     * Get global top 10 leaderboard entries across all categories.
+     * Shows best per user per metric (user's best WPM, accuracy, or combined across all games).
+     *
+     * @param metricType The metric to rank by: "wpm", "accuracy", or "combined"
+     * @return List of top 10 LeaderboardEntry with calculated ranks
+     */
+    public List<LeaderboardEntry> getGlobalTop10(String metricType) {
+        // Get all entries and find best per user
+        List<Leaderboard> allEntries = leaderboardRepository.findTopByWordsPerMinute();
+        
+        // Group by user and find best entry per user for the given metric
+        Map<Long, Leaderboard> bestPerUser = new HashMap<>();
+        
+        for (Leaderboard entry : allEntries) {
+            Long userId = entry.getUser().getUserId();
+            Leaderboard existing = bestPerUser.get(userId);
+            
+            if (existing == null) {
+                bestPerUser.put(userId, entry);
+            } else {
+                // Compare based on metric type
+                boolean isBetter = switch (metricType.toLowerCase()) {
+                    case "wpm" -> entry.getWordsPerMinute() > existing.getWordsPerMinute();
+                    case "accuracy" -> entry.getAccuracy() > existing.getAccuracy();
+                    case "combined" -> LeaderboardEntry.calculateCombinedScore(entry.getWordsPerMinute(), entry.getAccuracy())
+                            > LeaderboardEntry.calculateCombinedScore(existing.getWordsPerMinute(), existing.getAccuracy());
+                    default -> false;
+                };
+                
+                if (isBetter) {
+                    bestPerUser.put(userId, entry);
+                }
+            }
+        }
+        
+        // Sort by the specified metric and take top 10
+        List<Leaderboard> top10 = bestPerUser.values().stream()
+                .sorted((a, b) -> {
+                    int comparison = switch (metricType.toLowerCase()) {
+                        case "wpm" -> b.getWordsPerMinute().compareTo(a.getWordsPerMinute());
+                        case "accuracy" -> b.getAccuracy().compareTo(a.getAccuracy());
+                        case "combined" -> LeaderboardEntry.calculateCombinedScore(b.getWordsPerMinute(), b.getAccuracy())
+                                .compareTo(LeaderboardEntry.calculateCombinedScore(a.getWordsPerMinute(), a.getAccuracy()));
+                        default -> 0;
+                    };
+                    return comparison;
+                })
+                .limit(10)
+                .toList();
+        
+        return assignRanksWithTies(top10, metricType.toLowerCase());
+    }
+
+    /**
+     * Get all rankings for a specific user across all categories.
+     *
+     * @param userId The user ID
+     * @return List of LeaderboardEntry for all categories the user has played
+     */
+    public List<LeaderboardEntry> getUserRankings(Long userId) {
+        List<Leaderboard> entries = leaderboardRepository.findAllByUserId(userId);
+        return entries.stream()
+                .map(lb -> LeaderboardEntry.fromLeaderboard(lb, null, LocalDateTime.now()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Assigns ranks to leaderboard entries, handling ties with sequential numbering.
+     * Ties are assigned the same rank value, but ranks are still sequential (no rank skipping).
+     *
+     * @param entries List of leaderboard entries to rank
+     * @param metricType The metric type: "wpm", "accuracy", or "combined"
+     * @return List of LeaderboardEntry with rank values assigned
+     */
+    private List<LeaderboardEntry> assignRanksWithTies(List<Leaderboard> entries, String metricType) {
+        if (entries == null || entries.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Sort entries based on metric type
+        List<Leaderboard> sorted = entries.stream()
+                .sorted((a, b) -> {
+                    int comparison = switch (metricType.toLowerCase()) {
+                        case "wpm" -> b.getWordsPerMinute().compareTo(a.getWordsPerMinute());
+                        case "accuracy" -> b.getAccuracy().compareTo(a.getAccuracy());
+                        case "combined" -> LeaderboardEntry.calculateCombinedScore(b.getWordsPerMinute(), b.getAccuracy())
+                                .compareTo(LeaderboardEntry.calculateCombinedScore(a.getWordsPerMinute(), a.getAccuracy()));
+                        default -> 0;
+                    };
+                    return comparison;
+                })
+                .toList();
+
+        List<LeaderboardEntry> result = new ArrayList<>();
+        int currentRank = 1;
+        
+        for (int i = 0; i < sorted.size(); i++) {
+            Leaderboard lb = sorted.get(i);
+            
+            // Check for ties: if current entry has same score as previous, use same rank
+            if (i > 0) {
+                Leaderboard prev = sorted.get(i - 1);
+                boolean isSameScore = switch (metricType.toLowerCase()) {
+                    case "wpm" -> lb.getWordsPerMinute().equals(prev.getWordsPerMinute());
+                    case "accuracy" -> lb.getAccuracy().equals(prev.getAccuracy());
+                    case "combined" -> Objects.equals(
+                            LeaderboardEntry.calculateCombinedScore(lb.getWordsPerMinute(), lb.getAccuracy()),
+                            LeaderboardEntry.calculateCombinedScore(prev.getWordsPerMinute(), prev.getAccuracy()));
+                    default -> false;
+                };
+                
+                if (isSameScore) {
+                    // Same rank value as previous
+                } else {
+                    // Sequential rank (not skipping tied ranks)
+                    currentRank = i + 1;
+                }
+            }
+            
+            result.add(LeaderboardEntry.fromLeaderboard(lb, currentRank, LocalDateTime.now()));
+        }
+        
+        return result;
     }
 
     public void deleteById(Long id) {

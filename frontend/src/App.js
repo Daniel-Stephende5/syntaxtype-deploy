@@ -35,6 +35,7 @@ import GridGame from './pages/GridGame';
 import Bookworm from './pages/Bookworm';
 import Quiz from './pages/QuizMenu';
 import CrosswordGame from './pages/CrosswordGame';
+import LeaderboardPage from './pages/LeaderboardPage';
 
 
 const App = () => {
@@ -193,6 +194,12 @@ const App = () => {
               <CrosswordGame />
             </ProtectedRoute>
           }
+        />
+
+        {/* Public route - accessible to guests */}
+        <Route
+          path="/leaderboard"
+          element={<LeaderboardPage />}
         />
 
         <Route
