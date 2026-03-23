@@ -129,50 +129,63 @@ export function drawEnemies(ctx, enemies, targetEnemy) {
       ctx.strokeRect(e.x - 15, e.y - 50, 300, 100);
     } 
     // --- 2. WORD PHASE (Only shows after shield is gone) ---
-    else {
-      const isBoss = e.type === "boss" || (e.questions && e.questions.length > 2);
-      ctx.font = isBoss ? "bold 24px monospace" : "bold 18px monospace";
-      
-      const typedPart = e.typed || "";
-   const isBoss = e.type === "boss" || (e.questions && e.questions.length > 2);
+   else {
+  const isBoss = e.type === "boss" || (e.questions && e.questions.length > 2);
 
-if (isBoss) {
-  const fullText = e.word;
-  const typedLength = (e.typed || "").length;
+  const typedPart = e.typed || "";
 
-  const typedText = fullText.slice(0, typedLength);
-  const remainingText = fullText.slice(typedLength);
+  // =========================
+  // 🔥 BOSS (MULTI-LINE)
+  // =========================
+  if (isBoss) {
+    ctx.font = "bold 24px monospace";
 
-  const typedLines = typedText.split("\n");
-  const remainingLines = remainingText.split("\n");
+    const fullText = e.word;
+    const typedLength = typedPart.length;
 
-  const lineHeight = 26;
+    const typedText = fullText.slice(0, typedLength);
+    const remainingText = fullText.slice(typedLength);
 
-  for (let i = 0; i < Math.max(typedLines.length, remainingLines.length); i++) {
-    const typedLine = typedLines[i] || "";
-    const remainingLine = remainingLines[i] || "";
+    const typedLines = typedText.split("\n");
+    const remainingLines = remainingText.split("\n");
 
-    const yOffset = e.y + i * lineHeight;
+    const lineHeight = 26;
 
-    // typed part (green)
+    for (let i = 0; i < Math.max(typedLines.length, remainingLines.length); i++) {
+      const typedLine = typedLines[i] || "";
+      const remainingLine = remainingLines[i] || "";
+
+      const yOffset = e.y + i * lineHeight;
+
+      // typed part (green)
+      ctx.fillStyle = "#00ff00";
+      ctx.fillText(typedLine, e.x, yOffset);
+
+      // remaining part (white)
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(
+        remainingLine,
+        e.x + ctx.measureText(typedLine).width,
+        yOffset
+      );
+    }
+  }
+
+  // =========================
+  // 🟢 NORMAL ENEMIES
+  // =========================
+  else {
+    ctx.font = "bold 18px monospace";
+
+    const remaining = e.word.slice(typedPart.length);
+
     ctx.fillStyle = "#00ff00";
-    ctx.fillText(typedLine, e.x, yOffset);
+    ctx.fillText(typedPart, e.x, e.y);
 
-    // remaining part (white)
-    ctx.fillStyle = "#ffffff";
-    ctx.fillText(
-      remainingLine,
-      e.x + ctx.measureText(typedLine).width,
-      yOffset
-    );
+    ctx.fillStyle = e.destroyed ? "#ff0000" : "#ffffff";
+    ctx.fillText(remaining, e.x + ctx.measureText(typedPart).width, e.y);
   }
 }
-
-      // White for remaining main word
-      ctx.fillStyle = e.destroyed ? "#ff0000" : "#ffffff";
-      ctx.fillText(remaining, e.x + ctx.measureText(typedPart).width, e.y);
-    }
-
     // --- 3. TARGETING BRACKETS ---
     if (e === targetEnemy && !e.destroyed) {
       ctx.strokeStyle = "#00ffff";
