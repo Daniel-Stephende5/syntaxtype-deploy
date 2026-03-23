@@ -90,6 +90,16 @@ const GalaxyMainGame = () => {
         }
         return;
       }
+const target = targetEnemyRef.current;
+      if (!target || target.remove || target.destroyed) return;
+
+      // Boss-only Enter support
+      let char = key;
+      if (target.type === "boss" && key === "Enter") {
+        char = "\n";
+      } else if (key.length !== 1) {
+        return; // ignore other keys
+      }
 
       if (key.length === 1) {
         const char = key.toLowerCase();
