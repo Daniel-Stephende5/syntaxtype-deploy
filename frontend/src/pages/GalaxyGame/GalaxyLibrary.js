@@ -82,7 +82,6 @@ export const bossEnemy2 = {
 }`,
   speed: 15,
   questions: [
-    { prompt: "Keyword to declare a function", answer: "int" },
     { prompt: "Keyword for if-statement", answer: "if" },
     { prompt: "Random number function in C", answer: "rand" },
   ],
