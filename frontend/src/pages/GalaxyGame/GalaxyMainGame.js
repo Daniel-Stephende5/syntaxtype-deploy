@@ -104,20 +104,28 @@ const GalaxyMainGame = () => {
   if (!target || target.remove || target.destroyed) return;
 
   // --- 3. BOSS SPECIAL: ENTER FOR NEW LINE ---
-  if (key === "Enter" && target.type === "boss") {
-    e.preventDefault();
-    // If we're on a shield question, Enter doesn't do much unless the answer is typed.
-    // But if we are in the WORD phase, we can use Enter to clear trailing spaces/indentation
-    if (!target.shield) {
-      // Logic: If the next characters in the boss word are spaces or newlines, skip them
-      let nextChars = target.word.slice(target.typed.length);
-      let match = nextChars.match(/^[\s\n]+/); 
-      if (match) {
-        target.typed += match[0];
-        return;
+  if (key === "Enter" && target.type === "boss" && !target.shield) {
+  e.preventDefault();
+  
+  const currentTyped = target.typed || "";
+  const remaining = target.word.slice(currentTyped.length);
+
+  // If the very next character is a newline, consume it!
+  if (remaining.startsWith("\n")) {
+    // Consume the newline and any leading indentation spaces on the next line
+    const match = remaining.match(/^[\n\r]\s*/); 
+    if (match) {
+      target.typed = currentTyped + match[0];
+      shootBullet(target);
+      
+      // Check if that was the last character
+      if (target.typed.length >= target.word.length) {
+        finishEnemy(target);
       }
     }
+    return;
   }
+}
 
   // 4. Standard Typing Logic
   if (key.length === 1) {
