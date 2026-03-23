@@ -199,41 +199,53 @@ const GalaxyMainGame = () => {
 
         // Spawning
        spawnTimerRef.current += dt;
-        if (spawnTimerRef.current > 1.8) {
-          spawnTimerRef.current = 0;
-          
-          // ✅ 1. Get the correct enemy data based on current game time
-          const enemiesToSpawn = getEnemiesByLevel(gameTimeRef.current * 1000);
+if (spawnTimerRef.current > 1.8) {
+  spawnTimerRef.current = 0;
+  
+  const enemiesToSpawn = getEnemiesByLevel(gameTimeRef.current * 1000);
 
-          // ✅ 2. Loop through them (this allows normal enemies AND bosses to spawn at the same time)
-          enemiesToSpawn.forEach((enemyData) => {
-            const en = spawnEnemy(canvas.width, enemyData);
-            
-            if (en) {
-              const laneHeight = 80;
-              const maxLanes = Math.floor((canvas.height - 180) / laneHeight);
-              
-              // Find occupied lanes so enemies don't overlap
-              const occupied = enemiesRef.current
-                .filter(o => !o.remove && o.x > canvas.width - 400)
-                .map(o => o.lane);
+  // Check if any of the new spawns is a boss
+  const hasBoss = enemiesToSpawn.some(e => e.type === "boss" || e.questions?.length > 2);
 
-              const available = [];
-              for (let i = 0; i < maxLanes; i++) {
-                if (!occupied.includes(i)) available.push(i);
-              }
+  if (hasBoss) {
+    // 🔥 CLEAR THE SCREEN for the Boss fight
+    enemiesRef.current.forEach(en => {
+      if (en.type !== "boss") {
+        en.destroyed = true;
+        en.remove = true; 
+      }
+    });
+    targetEnemyRef.current = null; // Clear target so player locks onto boss
+    
+    // Optional: Flash the screen or play a sound here
+    console.log("WARNING: BOSS DETECTED");
+  }
 
-              // Assign a lane and push to the game loop
-              if (available.length > 0) {
-                const lane = available[Math.floor(Math.random() * available.length)];
-                en.lane = lane;
-                en.y = 120 + lane * laneHeight; 
-                enemiesRef.current.push(en);
-              }
-            }
-          });
-        }
+  enemiesToSpawn.forEach((enemyData) => {
+    const en = spawnEnemy(canvas.width, enemyData);
+    if (en) {
+      const laneHeight = 80;
+      const maxLanes = Math.floor((canvas.height - 180) / laneHeight);
+      
+      const occupied = enemiesRef.current
+        .filter(o => !o.remove && o.x > canvas.width - 400)
+        .map(o => o.lane);
 
+      const available = [];
+      for (let i = 0; i < maxLanes; i++) {
+        if (!occupied.includes(i)) available.push(i);
+      }
+
+      if (available.length > 0) {
+        const lane = available[Math.floor(Math.random() * available.length)];
+        en.lane = lane;
+        // Bosses usually spawn in the middle lane for dramatic effect
+        en.y = en.type === "boss" ? canvas.height / 2 - 40 : 120 + lane * laneHeight; 
+        enemiesRef.current.push(en);
+      }
+    }
+  });
+}
         // Updates
         updateEnemies(enemiesRef.current, dt * (1 + (difficultyRef.current * 0.1)), canvas.width, p, updateLivesUI);
         enemiesRef.current = cleanupEnemies(enemiesRef.current);
