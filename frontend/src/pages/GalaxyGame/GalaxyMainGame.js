@@ -27,7 +27,7 @@ const GalaxyMainGame = () => {
 
   const { initStars, drawBackground } = useBackground();
 
-  // UI helpers
+  // --- UI & UTILITY HELPERS ---
   const updateScoreUI = (pts) => {
     scoreRef.current += pts;
     const scoreEl = document.getElementById("ui-score");
@@ -57,7 +57,20 @@ const GalaxyMainGame = () => {
     });
   };
 
-  // Load assets
+  const finishEnemy = (target) => {
+    const pts = target.type === "boss" ? 50 : (target.type === "shield" ? 2 : 1);
+    updateScoreUI(pts);
+    target.destroyed = true;
+    
+    // Clear the ref so the player can target the next enemy
+    if (targetEnemyRef.current === target) {
+      targetEnemyRef.current = null;
+    }
+    
+    setTimeout(() => { target.remove = true; }, 100);
+  };
+
+  // --- ASSET LOADING ---
   useEffect(() => {
     loadAssets({ images: { ship: "/images/nightraider.png" } })
       .then((loaded) => {
@@ -67,105 +80,98 @@ const GalaxyMainGame = () => {
       .catch((err) => console.error("Asset load failed", err));
   }, []);
 
-  // Keyboard handling
+  // --- INPUT HANDLING ---
   useEffect(() => {
     const handleKeyDown = (e) => {
-  if (isPaused || gameOver) return;
-  const key = e.key;
+      if (isPaused || gameOver) return;
+      const key = e.key;
 
-  // 1. Navigation & Tab Targeting
-  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Tab"].includes(key)) {
-    e.preventDefault();
-    if (key === "Tab") {
-      const aliveEnemies = enemiesRef.current.filter((en) => !en.destroyed && !en.remove);
-      if (!aliveEnemies.length) return;
-      const idx = aliveEnemies.indexOf(targetEnemyRef.current);
-      targetEnemyRef.current = aliveEnemies[(idx + 1) % aliveEnemies.length];
-    } else {
-      keysPressed.current[key] = true;
-    }
-    return;
-  }
-
-  // 2. Target Selection Logic (Finding a target if none exists)
-  if (key.length === 1 && (!targetEnemyRef.current || targetEnemyRef.current.remove || targetEnemyRef.current.destroyed)) {
-    const char = key.toLowerCase();
-    const match = enemiesRef.current.find((en) => {
-      if (en.destroyed || en.remove || en.hitPlayer) return false;
-      const wordToMatch = (en.shield && en.questions[en.shieldIndex]) 
-        ? en.questions[en.shieldIndex].answer 
-        : en.word;
-      return wordToMatch.toLowerCase().startsWith(char);
-    });
-    if (match) targetEnemyRef.current = match;
-  }
-
-  const target = targetEnemyRef.current;
-  if (!target || target.remove || target.destroyed) return;
-
-  // --- 3. BOSS SPECIAL: ENTER FOR NEW LINE ---
-  if (key === "Enter" && target.type === "boss" && !target.shield) {
-  e.preventDefault();
-  
-  const currentTyped = target.typed || "";
-  const remaining = target.word.slice(currentTyped.length);
-
-  // If the very next character is a newline, consume it!
-  if (remaining.startsWith("\n")) {
-    // Consume the newline and any leading indentation spaces on the next line
-    const match = remaining.match(/^[\n\r]\s*/); 
-    if (match) {
-      target.typed = currentTyped + match[0];
-      shootBullet(target);
-      
-      // Check if that was the last character
-      if (target.typed.length >= target.word.length) {
-        finishEnemy(target);
+      // 1. Navigation & Tab Switching
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Tab"].includes(key)) {
+        e.preventDefault();
+        if (key === "Tab") {
+          const aliveEnemies = enemiesRef.current.filter((en) => !en.destroyed && !en.remove);
+          if (!aliveEnemies.length) return;
+          const idx = aliveEnemies.indexOf(targetEnemyRef.current);
+          targetEnemyRef.current = aliveEnemies[(idx + 1) % aliveEnemies.length];
+        } else {
+          keysPressed.current[key] = true;
+        }
+        return;
       }
-    }
-    return;
-  }
-}
 
-  // 4. Standard Typing Logic
-  if (key.length === 1) {
-    const char = key.toLowerCase();
+      // 2. Targeting Logic (STICKY BOSS LOCK)
+      const currentTarget = targetEnemyRef.current;
+      const isBossTargeted = currentTarget && currentTarget.type === "boss" && !currentTarget.destroyed;
 
-    // Shield Enemy Logic
-    if (target.shield) {
-      const q = target.questions[target.shieldIndex];
-      const expectedChar = q.answer[target.answerTyped.length]?.toLowerCase();
-      if (char === expectedChar) {
-        target.answerTyped += key;
-        shootBullet(target);
-        if (target.answerTyped.toLowerCase() === q.answer.toLowerCase()) {
-          target.shieldIndex++;
-          target.answerTyped = "";
-          if (target.shieldIndex >= target.questions.length) {
-            target.shield = false;
-            target.typed = "";
+      // Only search for a new target if we aren't already locked onto a living Boss
+      if (!isBossTargeted && key.length === 1 && (!currentTarget || currentTarget.remove || currentTarget.destroyed)) {
+        const char = key.toLowerCase();
+        const match = enemiesRef.current.find((en) => {
+          if (en.destroyed || en.remove || en.hitPlayer) return false;
+          const wordToMatch = (en.shield && en.questions[en.shieldIndex]) 
+            ? en.questions[en.shieldIndex].answer 
+            : en.word;
+          return wordToMatch.toLowerCase().startsWith(char);
+        });
+        if (match) targetEnemyRef.current = match;
+      }
+
+      // Re-evaluate target after potential selection
+      const activeTarget = targetEnemyRef.current;
+      if (!activeTarget || activeTarget.remove || activeTarget.destroyed) return;
+
+      // 3. Boss Special (Enter for Newline)
+      if (key === "Enter" && activeTarget.type === "boss" && !activeTarget.shield) {
+        e.preventDefault();
+        const currentTyped = activeTarget.typed || "";
+        const remaining = activeTarget.word.slice(currentTyped.length);
+
+        if (remaining.startsWith("\n")) {
+          const match = remaining.match(/^[\n\r]\s*/); 
+          if (match) {
+            activeTarget.typed = currentTyped + match[0];
+            shootBullet(activeTarget);
+            if (activeTarget.typed.length >= activeTarget.word.length) {
+              finishEnemy(activeTarget);
+            }
+          }
+          return;
+        }
+      }
+
+      // 4. Standard Typing
+      if (key.length === 1) {
+        const char = key.toLowerCase();
+
+        if (activeTarget.shield) {
+          const q = activeTarget.questions[activeTarget.shieldIndex];
+          const expectedChar = q.answer[activeTarget.answerTyped.length]?.toLowerCase();
+          if (char === expectedChar) {
+            activeTarget.answerTyped += key;
+            shootBullet(activeTarget);
+            if (activeTarget.answerTyped.toLowerCase() === q.answer.toLowerCase()) {
+              activeTarget.shieldIndex++;
+              activeTarget.answerTyped = "";
+              if (activeTarget.shieldIndex >= activeTarget.questions.length) {
+                activeTarget.shield = false;
+                activeTarget.typed = "";
+              }
+            }
+          }
+        } else {
+          const nextIdx = (activeTarget.typed || "").length;
+          const expectedChar = activeTarget.word[nextIdx]?.toLowerCase();
+          if (char === expectedChar) {
+            activeTarget.typed = (activeTarget.typed || "") + key;
+            shootBullet(activeTarget);
+            if (activeTarget.typed.toLowerCase() === activeTarget.word.toLowerCase()) {
+              finishEnemy(activeTarget);
+            }
           }
         }
       }
-    } 
-    // Standard Word Logic
-    else {
-      const nextIdx = (target.typed || "").length;
-      const expectedChar = target.word[nextIdx]?.toLowerCase();
-      if (char === expectedChar) {
-        target.typed = (target.typed || "") + key;
-        shootBullet(target);
-        if (target.typed.toLowerCase() === target.word.toLowerCase()) {
-          const pts = target.type === "boss" ? 10 : target.type === "shield" ? 2 : 1;
-          updateScoreUI(pts);
-          target.destroyed = true;
-          setTimeout(() => { target.remove = true; }, 100);
-          targetEnemyRef.current = null;
-        }
-      }
-    }
-  }
-};
+    };
 
     const handleKeyUp = (e) => { keysPressed.current[e.key] = false; };
     window.addEventListener("keydown", handleKeyDown);
@@ -176,18 +182,16 @@ const GalaxyMainGame = () => {
     };
   }, [isPaused, gameOver]);
 
-  // Main game loop
+  // --- MAIN LOOP ---
   useEffect(() => {
     if (!gameReady) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
-    let PLAY_AREA_BOTTOM = window.innerHeight - 60;
 
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-      PLAY_AREA_BOTTOM = canvas.height - 60;
       initStars(canvas, 150);
     };
     window.addEventListener("resize", resize);
@@ -201,17 +205,13 @@ const GalaxyMainGame = () => {
 
       if (!isPaused && !gameOver) {
         gameTimeRef.current += dt;
-
-        // Difficulty scaling
         const currentLevel = Math.floor(gameTimeRef.current / 60) + 1;
-        if (currentLevel > difficultyRef.current) difficultyRef.current = currentLevel;
-
-        const maxEnemiesOnScreen = 5 + Math.floor(gameTimeRef.current / 60) * 2;
+        difficultyRef.current = currentLevel;
 
         const p = playerRef.current;
         const keys = keysPressed.current;
 
-        // Player movement
+        // Player Movement
         if (keys["ArrowLeft"]) p.x -= p.speed * dt;
         if (keys["ArrowRight"]) p.x += p.speed * dt;
         if (keys["ArrowUp"]) p.y -= p.speed * dt;
@@ -220,46 +220,53 @@ const GalaxyMainGame = () => {
         p.x = Math.max(10, Math.min(canvas.width - p.width - 10, p.x));
         p.y = Math.max(90, Math.min(canvas.height - 120, p.y));
 
-        // Spawn enemies
-        spawnTimerRef.current += dt;
-        const activeEnemyCount = enemiesRef.current.filter(en => !en.remove && !en.destroyed).length;
+        // --- ENEMY SPAWNING & BOSS LOCK ---
+        const bossOnScreen = enemiesRef.current.some(en => en.type === "boss" && !en.remove && !en.destroyed);
+        
+        // Timer only advances if the stage is clear of Bosses
+        if (!bossOnScreen) {
+          spawnTimerRef.current += dt;
+        }
 
-        if (spawnTimerRef.current > 1.8 && activeEnemyCount < maxEnemiesOnScreen) {
+        const maxEnemies = 5 + Math.floor(gameTimeRef.current / 60) * 2;
+        const activeCount = enemiesRef.current.filter(en => !en.remove && !en.destroyed).length;
+
+        if (!bossOnScreen && spawnTimerRef.current > 1.8 && activeCount < maxEnemies) {
           spawnTimerRef.current = 0;
           const enemiesToSpawn = getEnemiesByLevel(gameTimeRef.current * 1000);
 
-          const hasBoss = enemiesToSpawn.some(e => e.type === "boss" || e.questions?.length > 2);
+          const hasBoss = enemiesToSpawn.some(e => e.type === "boss");
           if (hasBoss) {
+            // Clear regular mobs for the boss fight
             enemiesRef.current.forEach(en => {
-              if (en.type !== "boss") {
-                en.destroyed = true;
-                en.remove = true;
-              }
+              en.destroyed = true;
+              en.remove = true;
             });
             targetEnemyRef.current = null;
           }
 
           enemiesToSpawn.forEach((enemyData) => {
-            if (enemiesRef.current.filter(en => !en.remove).length < maxEnemiesOnScreen) {
-              const en = spawnEnemy(canvas.width, enemyData);
-              if (en) {
-                const laneHeight = 80;
-                const maxLanes = Math.floor((canvas.height - 180) / laneHeight);
-                const occupied = enemiesRef.current.filter(o => !o.remove && o.x > canvas.width - 400).map(o => o.lane);
-                const available = [];
-                for (let i = 0; i < maxLanes; i++) if (!occupied.includes(i)) available.push(i);
-                if (available.length > 0) {
-                  const lane = available[Math.floor(Math.random() * available.length)];
-                  en.lane = lane;
-                  en.y = en.type === "boss" ? canvas.height / 2 - 40 : 120 + lane * laneHeight;
-                  enemiesRef.current.push(en);
-                }
-              }
+            const en = spawnEnemy(canvas.width, enemyData);
+            if (en) {
+              const laneHeight = 80;
+              const maxLanes = Math.floor((canvas.height - 180) / laneHeight);
+              const occupied = enemiesRef.current.filter(o => !o.remove && o.x > canvas.width - 400).map(o => o.lane);
+              const available = [];
+              for (let i = 0; i < maxLanes; i++) if (!occupied.includes(i)) available.push(i);
+              
+              const lane = available.length > 0 ? available[Math.floor(Math.random() * available.length)] : 0;
+              en.lane = lane;
+              en.y = en.type === "boss" ? canvas.height / 2 - 40 : 120 + lane * laneHeight;
+              
+              // AUTO-TARGET BOSS
+              if (en.type === "boss") targetEnemyRef.current = en;
+              
+              enemiesRef.current.push(en);
             }
           });
         }
 
-        // Update enemies & bullets
+        // --- UPDATES ---
         const speedMultiplier = 1 + (difficultyRef.current - 1) * 0.1;
         updateEnemies(enemiesRef.current, dt * speedMultiplier, canvas.width, p, updateLivesUI);
         enemiesRef.current = cleanupEnemies(enemiesRef.current);
@@ -276,7 +283,7 @@ const GalaxyMainGame = () => {
         });
       }
 
-      // Render
+      // --- RENDER ---
       drawBackground(ctx, canvas);
       drawEnemies(ctx, enemiesRef.current, targetEnemyRef.current);
 
@@ -287,9 +294,8 @@ const GalaxyMainGame = () => {
         ctx.fill();
       });
 
-      const player = playerRef.current;
       if (assetsRef.current.ship) {
-        ctx.drawImage(assetsRef.current.ship, player.x, player.y, player.width, player.height);
+        ctx.drawImage(assetsRef.current.ship, playerRef.current.x, playerRef.current.y, playerRef.current.width, playerRef.current.height);
       }
 
       animationRef.current = requestAnimationFrame(loop);
@@ -311,7 +317,7 @@ const GalaxyMainGame = () => {
         padding: "0 50px", pointerEvents: "none", zIndex: 100,
         boxSizing: "border-box", background: "linear-gradient(to top, rgba(0,0,0,0.9), transparent)"
       }}>
-        <div id="ui-score" style={{ color: "white", fontSize: "28px", fontFamily: "monospace", fontWeight: "bold", textShadow: "2px 2px 0px #000" }}>
+        <div id="ui-score" style={{ color: "white", fontSize: "28px", fontFamily: "monospace", fontWeight: "bold" }}>
           SCORE: 0
         </div>
         <div id="ui-lives" style={{ fontSize: "28px" }}>❤️ ❤️ ❤️</div>
@@ -327,7 +333,7 @@ const GalaxyMainGame = () => {
           <p style={{ fontSize: "2rem" }}>FINAL SCORE: {scoreRef.current}</p>
           <button
             onClick={() => window.location.reload()}
-            style={{ padding: "15px 40px", fontSize: "1.5rem", cursor: "pointer", borderRadius: "8px", border: "none", fontWeight: "bold" }}
+            style={{ padding: "15px 40px", fontSize: "1.5rem", cursor: "pointer", borderRadius: "8px" }}
           >
             REDEPLOY
           </button>
