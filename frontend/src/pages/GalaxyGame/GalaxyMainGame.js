@@ -176,92 +176,119 @@ const GalaxyMainGame = () => {
       const dt = Math.min((now - last) / 1000, 0.1);
       last = now;
 
-      if (!isPaused && !gameOver) {
-        gameTimeRef.current += dt;
+   // --- Updated Game Loop Snippet ---
 
-        // Difficulty scaling
-        if (Math.floor(gameTimeRef.current / 60) + 1 > difficultyRef.current) {
-          difficultyRef.current += 1;
-        }
+if (!isPaused && !gameOver) {
+  gameTimeRef.current += dt;
 
-        const p = playerRef.current;
-        const keys = keysPressed.current;
-
-        // Player movement
-        if (keys["ArrowLeft"]) p.x -= p.speed * dt;
-        if (keys["ArrowRight"]) p.x += p.speed * dt;
-        if (keys["ArrowUp"]) p.y -= p.speed * dt;
-        if (keys["ArrowDown"]) p.y += p.speed * dt;
-
-        // Clamping
-        p.x = Math.max(10, Math.min(canvas.width - p.width - 10, p.x));
-        p.y = Math.max(90, Math.min(canvas.height - 120, p.y));
-
-        // Spawning
-       spawnTimerRef.current += dt;
-if (spawnTimerRef.current > 1.8) {
-  spawnTimerRef.current = 0;
-  
-  const enemiesToSpawn = getEnemiesByLevel(gameTimeRef.current * 1000);
-
-  // Check if any of the new spawns is a boss
-  const hasBoss = enemiesToSpawn.some(e => e.type === "boss" || e.questions?.length > 2);
-
-  if (hasBoss) {
-    // 🔥 CLEAR THE SCREEN for the Boss fight
-    enemiesRef.current.forEach(en => {
-      if (en.type !== "boss") {
-        en.destroyed = true;
-        en.remove = true; 
-      }
-    });
-    targetEnemyRef.current = null; // Clear target so player locks onto boss
-    
-    // Optional: Flash the screen or play a sound here
-    console.log("WARNING: BOSS DETECTED");
+  // 1. Difficulty Scaling (Update difficulty level every 60s)
+  const currentLevel = Math.floor(gameTimeRef.current / 60) + 1;
+  if (currentLevel > difficultyRef.current) {
+    difficultyRef.current = currentLevel;
   }
 
-  enemiesToSpawn.forEach((enemyData) => {
-    const en = spawnEnemy(canvas.width, enemyData);
-    if (en) {
-      const laneHeight = 80;
-      const maxLanes = Math.floor((canvas.height - 180) / laneHeight);
+  // 2. Dynamic Spawn Cap Logic
+  // Base 5 enemies, +2 for every minute passed
+  const maxEnemiesOnScreen = 5 + (Math.floor(gameTimeRef.current / 60) * 2);
+
+  const p = playerRef.current;
+  const keys = keysPressed.current;
+
+  // 3. Player Movement & Clamping
+  if (keys["ArrowLeft"]) p.x -= p.speed * dt;
+  if (keys["ArrowRight"]) p.x += p.speed * dt;
+  if (keys["ArrowUp"]) p.y -= p.speed * dt;
+  if (keys["ArrowDown"]) p.y += p.speed * dt;
+
+  p.x = Math.max(10, Math.min(canvas.width - p.width - 10, p.x));
+  p.y = Math.max(90, Math.min(canvas.height - 120, p.y));
+
+  // 4. Spawning Logic
+  spawnTimerRef.current += dt;
+  
+  // Count active enemies (not destroyed or removed)
+  const activeEnemyCount = enemiesRef.current.filter(en => !en.remove && !en.destroyed).length;
+
+  if (spawnTimerRef.current > 1.8) {
+    // Only proceed with spawning if we are under the current minute's cap
+    if (activeEnemyCount < maxEnemiesOnScreen) {
+      spawnTimerRef.current = 0;
       
-      const occupied = enemiesRef.current
-        .filter(o => !o.remove && o.x > canvas.width - 400)
-        .map(o => o.lane);
+      const enemiesToSpawn = getEnemiesByLevel(gameTimeRef.current * 1000);
 
-      const available = [];
-      for (let i = 0; i < maxLanes; i++) {
-        if (!occupied.includes(i)) available.push(i);
+      // Check for Boss presence in the new spawn batch
+      const hasBoss = enemiesToSpawn.some(e => e.type === "boss" || e.questions?.length > 2);
+
+      if (hasBoss) {
+        // 🔥 BOSS PHASE: Clear screen of all standard enemies
+        enemiesRef.current.forEach(en => {
+          if (en.type !== "boss") {
+            en.destroyed = true;
+            en.remove = true; 
+          }
+        });
+        targetEnemyRef.current = null; 
+        console.log(`%c WARNING: BOSS DETECTED - LEVEL ${difficultyRef.current}`, "color: red; font-weight: bold;");
       }
 
-      if (available.length > 0) {
-        const lane = available[Math.floor(Math.random() * available.length)];
-        en.lane = lane;
-        // Bosses usually spawn in the middle lane for dramatic effect
-        en.y = en.type === "boss" ? canvas.height / 2 - 40 : 120 + lane * laneHeight; 
-        enemiesRef.current.push(en);
-      }
+      enemiesToSpawn.forEach((enemyData) => {
+        // Final safety check for the cap inside the loop
+        if (enemiesRef.current.filter(en => !en.remove).length < maxEnemiesOnScreen) {
+          const en = spawnEnemy(canvas.width, enemyData);
+          
+          if (en) {
+            const laneHeight = 80;
+            const maxLanes = Math.floor((canvas.height - 180) / laneHeight);
+            
+            // Avoid overlapping lanes with enemies already on the right side of the screen
+            const occupied = enemiesRef.current
+              .filter(o => !o.remove && o.x > canvas.width - 400)
+              .map(o => o.lane);
+
+            const available = [];
+            for (let i = 0; i < maxLanes; i++) {
+              if (!occupied.includes(i)) available.push(i);
+            }
+
+            if (available.length > 0) {
+              const lane = available[Math.floor(Math.random() * available.length)];
+              en.lane = lane;
+              // Bosses center themselves; normal enemies take lanes
+              en.y = en.type === "boss" ? canvas.height / 2 - 40 : 120 + lane * laneHeight; 
+              enemiesRef.current.push(en);
+            }
+          }
+        }
+      });
+    } else {
+      // If cap is reached, reset timer slightly so we don't burst-spawn 
+      // the instant an enemy is killed.
+      spawnTimerRef.current = 1.0; 
     }
+  }
+
+  // 5. Enemy & Collision Updates
+  // Speed scales with difficulty: 10% faster every minute
+  const speedMultiplier = 1 + (difficultyRef.current - 1) * 0.1;
+  updateEnemies(enemiesRef.current, dt * speedMultiplier, canvas.width, p, updateLivesUI);
+  
+  enemiesRef.current = cleanupEnemies(enemiesRef.current);
+
+  // 6. Bullet Updates (Seeking Logic)
+  bulletsRef.current = bulletsRef.current.filter((b) => {
+    if (!b.target || b.target.remove || b.target.destroyed) return false;
+    
+    const dx = b.target.x - b.x;
+    const dy = (b.target.y + 20) - b.y; // Aim slightly offset for visual center
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    
+    if (dist < 20) return false; // Bullet hit target
+    
+    b.x += (dx / dist) * b.speed * dt;
+    b.y += (dy / dist) * b.speed * dt;
+    return true;
   });
 }
-        // Updates
-        updateEnemies(enemiesRef.current, dt * (1 + (difficultyRef.current * 0.1)), canvas.width, p, updateLivesUI);
-        enemiesRef.current = cleanupEnemies(enemiesRef.current);
-
-        // Bullet Updates
-        bulletsRef.current = bulletsRef.current.filter((b) => {
-          if (!b.target || b.target.remove || b.target.destroyed) return false;
-          const dx = b.target.x - b.x;
-          const dy = (b.target.y + 20) - b.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 20) return false;
-          b.x += (dx / dist) * b.speed * dt;
-          b.y += (dy / dist) * b.speed * dt;
-          return true;
-        });
-      }
 
       // Render
       drawBackground(ctx, canvas);
