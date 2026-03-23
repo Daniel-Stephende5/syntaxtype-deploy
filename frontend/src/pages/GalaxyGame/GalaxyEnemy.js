@@ -102,52 +102,55 @@ export function drawEnemies(ctx, enemies, targetEnemy) {
   enemies.forEach((e) => {
     if (e.remove) return;
 
-    ctx.save();
-
-    // --- COLLAPSE VISUALS ---
-    if (e.hitPlayer) {
-      const progress = Math.min(e.collapseTimer / 0.4, 1);
-      ctx.globalAlpha = 1 - progress;
-      ctx.translate(e.x, e.y);
-      ctx.scale(1 - progress, 1 - progress);
-      ctx.translate(-e.x, -e.y);
-    }
-
-    // --- TARGETING INDICATOR ---
-    if (e === targetEnemy && !e.hitPlayer && !e.destroyed) {
-      ctx.strokeStyle = "#00ffff";
-      ctx.lineWidth = 2;
-      const textWidth = ctx.measureText(e.word || "SHIELD").width;
-      ctx.strokeRect(e.x - 10, e.y - 25, textWidth + 20, 50);
-      ctx.fillStyle = "#00ffff";
-      ctx.fillText("▶", e.x - 25, e.y);
-    }
-
-    // --- RENDERING TEXT ---
-    if (e.type === "shield" && e.shield && !e.hitPlayer) {
+    // --- 1. SHIELD PHASE (Prioritize this!) ---
+    if (e.shield && e.questions && e.questions[e.shieldIndex]) {
       const q = e.questions[e.shieldIndex];
-      if (!q) { e.shield = false; ctx.restore(); return; }
-
-      ctx.font = "bold 16px monospace";
-      ctx.fillStyle = "#ff4444";
-      ctx.fillText(`🛡 ${q.prompt}`, e.x, e.y - 15);
-
-      const display = q.answer.split("").map((c, i) => (i < e.answerTyped.length ? c : "_")).join(" ");
-      ctx.fillStyle = "#ffff00";
+      
+      // Draw the Question Prompt
       ctx.font = "bold 20px monospace";
-      ctx.fillText(display, e.x, e.y + 15);
-    } else {
-      ctx.font = e.type === "boss" ? "bold 24px monospace" : "bold 18px monospace";
+      ctx.fillStyle = "#ff4444"; 
+      ctx.fillText(`🛡️ QUESTION: ${q.prompt}`, e.x, e.y - 30);
+
+      // Draw the Answer Progress (Visualizing typed vs remaining)
+      const answer = q.answer;
+      const typedPart = e.answerTyped || "";
+      const remaining = answer.slice(typedPart.length);
+
+      ctx.font = "bold 24px monospace";
+      ctx.fillStyle = "#00ff00"; // Green for correct answer letters
+      ctx.fillText(typedPart, e.x, e.y + 10);
+
+      ctx.fillStyle = "#ffff00"; // Yellow for remaining answer letters
+      ctx.fillText("_ ".repeat(remaining.length), e.x + ctx.measureText(typedPart).width, e.y + 10);
+      
+      // Draw a "Shield Bubble" around the enemy text area
+      ctx.strokeStyle = "rgba(0, 255, 255, 0.5)";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(e.x - 15, e.y - 50, 300, 100);
+    } 
+    // --- 2. WORD PHASE (Only shows after shield is gone) ---
+    else {
+      const isBoss = e.type === "boss" || (e.questions && e.questions.length > 2);
+      ctx.font = isBoss ? "bold 24px monospace" : "bold 18px monospace";
+      
       const typedPart = e.typed || "";
       const remaining = e.word.slice(typedPart.length);
 
-      ctx.fillStyle = "#00ff00"; // Typed
+      // Green for correctly typed main word
+      ctx.fillStyle = "#00ff00";
       ctx.fillText(typedPart, e.x, e.y);
-      ctx.fillStyle = e.destroyed ? "#ff0000" : "#ffffff"; // Remaining
+
+      // White for remaining main word
+      ctx.fillStyle = e.destroyed ? "#ff0000" : "#ffffff";
       ctx.fillText(remaining, e.x + ctx.measureText(typedPart).width, e.y);
     }
 
-    ctx.restore();
+    // --- 3. TARGETING BRACKETS ---
+    if (e === targetEnemy && !e.destroyed) {
+      ctx.strokeStyle = "#00ffff";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(e.x - 10, e.y - 45, 350, 90);
+    }
   });
 }
 
