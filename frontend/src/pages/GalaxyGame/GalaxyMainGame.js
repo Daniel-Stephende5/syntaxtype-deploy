@@ -70,72 +70,94 @@ const GalaxyMainGame = () => {
   // Keyboard handling
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (isPaused || gameOver) return;
-      let key = e.key;
+  if (isPaused || gameOver) return;
+  const key = e.key;
 
-      // Arrow keys & Tab (target cycling)
-      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Tab"].includes(key)) {
-        e.preventDefault();
-        if (key === "Tab") {
-          const aliveEnemies = enemiesRef.current.filter((en) => !en.destroyed && !en.remove);
-          if (!aliveEnemies.length) return;
-          const idx = aliveEnemies.indexOf(targetEnemyRef.current);
-          targetEnemyRef.current = aliveEnemies[(idx + 1) % aliveEnemies.length];
-        } else {
-          keysPressed.current[key] = true;
-        }
+  // 1. Navigation & Tab Targeting
+  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Tab"].includes(key)) {
+    e.preventDefault();
+    if (key === "Tab") {
+      const aliveEnemies = enemiesRef.current.filter((en) => !en.destroyed && !en.remove);
+      if (!aliveEnemies.length) return;
+      const idx = aliveEnemies.indexOf(targetEnemyRef.current);
+      targetEnemyRef.current = aliveEnemies[(idx + 1) % aliveEnemies.length];
+    } else {
+      keysPressed.current[key] = true;
+    }
+    return;
+  }
+
+  // 2. Target Selection Logic (Finding a target if none exists)
+  if (key.length === 1 && (!targetEnemyRef.current || targetEnemyRef.current.remove || targetEnemyRef.current.destroyed)) {
+    const char = key.toLowerCase();
+    const match = enemiesRef.current.find((en) => {
+      if (en.destroyed || en.remove || en.hitPlayer) return false;
+      const wordToMatch = (en.shield && en.questions[en.shieldIndex]) 
+        ? en.questions[en.shieldIndex].answer 
+        : en.word;
+      return wordToMatch.toLowerCase().startsWith(char);
+    });
+    if (match) targetEnemyRef.current = match;
+  }
+
+  const target = targetEnemyRef.current;
+  if (!target || target.remove || target.destroyed) return;
+
+  // --- 3. BOSS SPECIAL: ENTER FOR NEW LINE ---
+  if (key === "Enter" && target.type === "boss") {
+    e.preventDefault();
+    // If we're on a shield question, Enter doesn't do much unless the answer is typed.
+    // But if we are in the WORD phase, we can use Enter to clear trailing spaces/indentation
+    if (!target.shield) {
+      // Logic: If the next characters in the boss word are spaces or newlines, skip them
+      let nextChars = target.word.slice(target.typed.length);
+      let match = nextChars.match(/^[\s\n]+/); 
+      if (match) {
+        target.typed += match[0];
         return;
       }
+    }
+  }
 
-      // --- Typing Logic ---
-      const target = targetEnemyRef.current;
-      if (!target || target.remove || target.destroyed) return;
+  // 4. Standard Typing Logic
+  if (key.length === 1) {
+    const char = key.toLowerCase();
 
-      // Boss-only Enter support
-      let char = key;
-      if (target.type === "boss" && key === "Enter") {
-        char = "\n";
-      } else if (key.length !== 1) {
-        return; // ignore other keys
-      }
-
-      char = char.toLowerCase();
-
-      // --- Shield Enemy Logic ---
-      if (target.shield) {
-        const q = target.questions[target.shieldIndex];
-        const expectedChar = q.answer[target.answerTyped.length]?.toLowerCase();
-        if (char === expectedChar) {
-          target.answerTyped += key;
-          shootBullet(target);
-          if (target.answerTyped.toLowerCase() === q.answer.toLowerCase()) {
-            target.shieldIndex++;
-            target.answerTyped = "";
-            if (target.shieldIndex >= target.questions.length) {
-              target.shield = false;
-              target.typed = "";
-            }
-          }
-        }
-      } else {
-        // --- Standard Enemy / Boss Logic ---
-        const nextIdx = (target.typed || "").length;
-        const expectedChar = target.word[nextIdx]?.toLowerCase();
-
-        if (char === expectedChar) {
-          target.typed = (target.typed || "") + (key === "Enter" ? "\n" : key);
-          shootBullet(target);
-
-          if (target.typed.toLowerCase() === target.word.toLowerCase()) {
-            const pts = target.type === "boss" ? 10 : target.type === "shield" ? 2 : 1;
-            updateScoreUI(pts);
-            target.destroyed = true;
-            setTimeout(() => { target.remove = true; }, 100);
-            targetEnemyRef.current = null;
+    // Shield Enemy Logic
+    if (target.shield) {
+      const q = target.questions[target.shieldIndex];
+      const expectedChar = q.answer[target.answerTyped.length]?.toLowerCase();
+      if (char === expectedChar) {
+        target.answerTyped += key;
+        shootBullet(target);
+        if (target.answerTyped.toLowerCase() === q.answer.toLowerCase()) {
+          target.shieldIndex++;
+          target.answerTyped = "";
+          if (target.shieldIndex >= target.questions.length) {
+            target.shield = false;
+            target.typed = "";
           }
         }
       }
-    };
+    } 
+    // Standard Word Logic
+    else {
+      const nextIdx = (target.typed || "").length;
+      const expectedChar = target.word[nextIdx]?.toLowerCase();
+      if (char === expectedChar) {
+        target.typed = (target.typed || "") + key;
+        shootBullet(target);
+        if (target.typed.toLowerCase() === target.word.toLowerCase()) {
+          const pts = target.type === "boss" ? 10 : target.type === "shield" ? 2 : 1;
+          updateScoreUI(pts);
+          target.destroyed = true;
+          setTimeout(() => { target.remove = true; }, 100);
+          targetEnemyRef.current = null;
+        }
+      }
+    }
+  }
+};
 
     const handleKeyUp = (e) => { keysPressed.current[e.key] = false; };
     window.addEventListener("keydown", handleKeyDown);
