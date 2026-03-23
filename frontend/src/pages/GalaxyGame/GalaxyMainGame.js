@@ -109,8 +109,11 @@ const GalaxyMainGame = () => {
           if (match) targetEnemyRef.current = match;
         }
 
-        const target = targetEnemyRef.current;
-        if (!target || target.remove || target.destroyed) return;
+       const target = targetEnemyRef.current;
+if (!target || target.remove || target.destroyed) return;
+
+// 🔥 NEW: ensure word exists after shield
+if (!target.shield && !target.word) return;
 
         // Shield Enemy Logic
         if (target.shield) {
@@ -122,7 +125,10 @@ const GalaxyMainGame = () => {
             if (target.answerTyped.toLowerCase() === q.answer.toLowerCase()) {
               target.shieldIndex++;
               target.answerTyped = "";
-              if (target.shieldIndex >= target.questions.length) target.shield = false;
+              if (target.shieldIndex >= target.questions.length){
+                target.shield = false;
+              target.typed = "";
+              }
             }
           }
         } else {
