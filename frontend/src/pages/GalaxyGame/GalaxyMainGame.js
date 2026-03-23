@@ -113,7 +113,7 @@ const GalaxyMainGame = () => {
         if (!target || target.remove || target.destroyed) return;
 
         // Shield Enemy Logic
-        if (target.type === "shield" && target.shield) {
+        if (target.shield) {
           const q = target.questions[target.shieldIndex];
           const expectedChar = q.answer[target.answerTyped.length]?.toLowerCase();
           if (char === expectedChar) {
