@@ -134,11 +134,39 @@ export function drawEnemies(ctx, enemies, targetEnemy) {
       ctx.font = isBoss ? "bold 24px monospace" : "bold 18px monospace";
       
       const typedPart = e.typed || "";
-      const remaining = e.word.slice(typedPart.length);
+   const isBoss = e.type === "boss" || (e.questions && e.questions.length > 2);
 
-      // Green for correctly typed main word
-      ctx.fillStyle = "#00ff00";
-      ctx.fillText(typedPart, e.x, e.y);
+if (isBoss) {
+  const fullText = e.word;
+  const typedLength = (e.typed || "").length;
+
+  const typedText = fullText.slice(0, typedLength);
+  const remainingText = fullText.slice(typedLength);
+
+  const typedLines = typedText.split("\n");
+  const remainingLines = remainingText.split("\n");
+
+  const lineHeight = 26;
+
+  for (let i = 0; i < Math.max(typedLines.length, remainingLines.length); i++) {
+    const typedLine = typedLines[i] || "";
+    const remainingLine = remainingLines[i] || "";
+
+    const yOffset = e.y + i * lineHeight;
+
+    // typed part (green)
+    ctx.fillStyle = "#00ff00";
+    ctx.fillText(typedLine, e.x, yOffset);
+
+    // remaining part (white)
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(
+      remainingLine,
+      e.x + ctx.measureText(typedLine).width,
+      yOffset
+    );
+  }
+}
 
       // White for remaining main word
       ctx.fillStyle = e.destroyed ? "#ff0000" : "#ffffff";
