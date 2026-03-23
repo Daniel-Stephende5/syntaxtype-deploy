@@ -97,26 +97,28 @@ int calculateDamage(Player player, Enemy enemy) {
 
 
 // --- Combined library based on level ---
+// GalaxyLibrary.js
+
 export function getEnemiesByLevel(currentTime = 0) {
   const enemies = [];
-
-  const spawnPool = [...easyEnemies, ...shieldEnemies];
-
-  // Normal spawn
-  const randomIndex = Math.floor(Math.random() * spawnPool.length);
-  enemies.push({ ...spawnPool[randomIndex] });
-
-  // 🔥 Boss 1 spawn (every 60s for testing)
+  
+  // 🔥 Check Boss 1 (60s)
   if (currentTime - (bossEnemy.lastSpawn || 0) >= 60000) {
     bossEnemy.lastSpawn = currentTime;
-    enemies.push({ ...bossEnemy });
+    // Return ONLY the boss to signal a phase shift
+    return [{ ...bossEnemy, type: "boss" }]; 
   }
 
-  // 🔥 Boss 2 spawn (also every 60s)
-  if (currentTime - (bossEnemy2.lastSpawn || 0) >= 60000) {
+  // 🔥 Check Boss 2 (90s)
+  if (currentTime - (bossEnemy2.lastSpawn || 0) >= 90000) {
     bossEnemy2.lastSpawn = currentTime;
-    enemies.push({ ...bossEnemy2 });
+    return [{ ...bossEnemy2, type: "boss" }];
   }
+
+  // Normal spawn if no boss is due
+  const spawnPool = [...easyEnemies, ...shieldEnemies];
+  const randomIndex = Math.floor(Math.random() * spawnPool.length);
+  enemies.push({ ...spawnPool[randomIndex] });
 
   return enemies;
 }
