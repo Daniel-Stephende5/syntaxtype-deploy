@@ -414,6 +414,7 @@ public class LeaderboardService {
                     .build();
 
         } catch (Exception e) {
+            log.error("Failed to update leaderboard for user {} and category {}", username, category, e);
             return LeaderboardUpdateResult.builder()
                     .success(false)
                     .isNewBest(false)
