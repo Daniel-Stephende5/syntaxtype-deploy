@@ -26,6 +26,8 @@ const GalaxyMainGame = () => {
   const keysPressed = useRef({});
 
   // States for UI rendering
+  const [score, setScore] = useState(0);
+  const [lives, setLives] = useState(3);
   const [gameReady, setGameReady] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [gameOver, setGameOver] = useState(false);
@@ -41,19 +43,14 @@ const GalaxyMainGame = () => {
   // --- UI & GAME HELPERS ---
   const updateScoreUI = (pts) => {
     scoreRef.current += pts;
-    const scoreEl = document.getElementById("ui-score");
-    if (scoreEl) scoreEl.innerText = `SCORE: ${scoreRef.current}`;
+    setScore(scoreRef.current);
   };
 
   const updateLivesUI = () => {
-    livesRef.current -= 1;
-    const livesEl = document.getElementById("ui-lives");
-    if (livesEl) {
-      let hearts = "";
-      for (let i = 0; i < 3; i++) hearts += i < livesRef.current ? "❤️ " : "🖤 ";
-      livesEl.innerText = hearts;
-    }
-    if (livesRef.current <= 0) {
+    const newLives = livesRef.current - 1;
+    livesRef.current = newLives;
+    setLives(newLives);
+    if (newLives <= 0) {
       setGameOver(true);
       setShowSubmitButton(true);
     }
@@ -124,13 +121,11 @@ const GalaxyMainGame = () => {
   const restartGame = () => {
     // Reset score
     scoreRef.current = 0;
-    const scoreEl = document.getElementById("ui-score");
-    if (scoreEl) scoreEl.innerText = "SCORE: 0";
+    setScore(0);
 
     // Reset lives
     livesRef.current = 3;
-    const livesEl = document.getElementById("ui-lives");
-    if (livesEl) livesEl.innerText = "❤️ ❤️ ❤️";
+    setLives(3);
 
     // Reset game state
     setGameOver(false);
@@ -373,9 +368,11 @@ const GalaxyMainGame = () => {
         padding: "0 50px", pointerEvents: "none", zIndex: 100,
         background: "linear-gradient(to top, rgba(0,0,0,0.9), transparent)"
       }}>
-        <div id="ui-score" style={{ color: "white", fontSize: "28px", fontFamily: "monospace", fontWeight: "bold" }}>SCORE: 0</div>
+        <div style={{ color: "white", fontSize: "28px", fontFamily: "monospace", fontWeight: "bold" }}>SCORE: {score}</div>
         <div style={{ color: "#aaa", fontSize: "18px", fontFamily: "monospace" }}>LVL: {difficultyRef.current}</div>
-        <div id="ui-lives" style={{ fontSize: "28px" }}>❤️ ❤️ ❤️</div>
+        <div style={{ fontSize: "28px" }}>
+          {Array.from({ length: 3 }, (_, i) => i < lives ? "❤️ " : "🖤 ").join("")}
+        </div>
       </div>
 
       {gameOver && (
@@ -384,7 +381,7 @@ const GalaxyMainGame = () => {
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 200, color: "white"
         }}>
           <h1 style={{ fontSize: "5rem", color: "#ff4444" }}>MISSION FAILED</h1>
-          <p style={{ fontSize: "2rem" }}>FINAL SCORE: {scoreRef.current}</p>
+          <p style={{ fontSize: "2rem" }}>FINAL SCORE: {score}</p>
           
           {showSubmitButton && (
             <div style={{ marginTop: "20px", textAlign: "center" }}>
