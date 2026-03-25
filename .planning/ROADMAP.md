@@ -102,7 +102,12 @@
 3. Backend updates Leaderboard record when new score exceeds previous best
 4. Leaderboard reflects scores immediately after game completion
 
-**Plans:** TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Backend unified score submission endpoint
+- [ ] 03-02-PLAN.md — Typing games (TypingTest, FallingTypingTest) integration
+- [ ] 03-03-PLAN.md — Non-typing games (Galaxy, Grid, Bookworm, Crossword, FourPics, SyntaxSaver) integration
 
 ---
 
@@ -208,7 +213,7 @@
 | 1 - Leaderboard Data Layer | Backend API | LB-01 to LB-04 | ✅ Complete |
 | 2 - Leaderboard Frontend | UI | LB-05 to LB-07 | ✅ Complete |
 | 1b - Game Mode Expansion | Categories | LB-08 to LB-11 | Pending |
-| 3 - Game Score Integration | Connect games | SCORE-01 to SCORE-09 | Pending |
+| 3 - Game Score Integration | Connect games | SCORE-01 to SCORE-09 | Plans created |
 | 4 - Security & Error Handling | JWT auth | SEC-01 to SEC-06, ERR-01 to ERR-05 | Pending |
 | 5 - Backend Quality & Testing | Quality | BQ-01 to BQ-05, TEST-01 to TEST-03 | Pending |
 | 6 - Backend Modularization | Structure | (restructuring) | Pending |
@@ -224,7 +229,7 @@
 | 1. Leaderboard Data Layer | ✅ Complete | 2026-03-23 |
 | 2. Leaderboard Frontend | ✅ Complete | 2026-03-23 |
 | 1b. Game Mode Expansion | Not started | - |
-| 3. Game Score Integration | Not started | - |
+| 3. Game Score Integration | Plans created | 2026-03-25 |
 | 4. Security & Error Handling | Not started | - |
 | 5. Backend Quality & Testing | Not started | - |
 | 6. Backend Modularization | Not started | - |

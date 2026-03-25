@@ -1,4 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { getAuthToken } from "../utils/AuthUtils";
+import { API_BASE } from "../utils/api";
  
 // Grid Dimensions and Constants
 const ROWS = 15;
@@ -270,7 +272,13 @@ const CrosswordGame = () => {
   const [activeCol, setActiveCol] = useState(null);
   const { grid, placements } = puzzle;
    const [secondsElapsed, setSecondsElapsed] = useState(0);
-  const [score, setScore] = useState(null);
+   const [score, setScore] = useState(null);
+   
+   // Score submission states
+   const [showSubmitButton, setShowSubmitButton] = useState(false);
+   const [isSubmitting, setIsSubmitting] = useState(false);
+   const [submitMessage, setSubmitMessage] = useState("");
+   const [submitSuccess, setSubmitSuccess] = useState(false);
  
  
  
@@ -298,6 +306,7 @@ const CrosswordGame = () => {
       const finalScore = calculateScore(secondsElapsed);
       setScore(finalScore);
       setMessage(`🎉 Puzzle completed! Score: ${finalScore}`);
+      setShowSubmitButton(true);
     }
   }, [locked, grid, secondsElapsed]);
   // Reset state when puzzle changes
@@ -587,7 +596,71 @@ const CrosswordGame = () => {
           <button onClick={newPuzzle} style={{ ...styles.btn, background: "#ef4444", color: "#fff" }}>
             New Puzzle
           </button>
- 
+
+          {/* Leaderboard Submit Button */}
+          {showSubmitButton && (
+            <div style={{ marginLeft: "20px" }}>
+              {isSubmitting ? (
+                <span style={{ color: "#666" }}>Submitting score...</span>
+              ) : submitMessage ? (
+                <span style={{ color: submitSuccess ? "#4caf50" : "#f44336", fontWeight: "bold" }}>
+                  {submitMessage}
+                </span>
+              ) : (
+                <button 
+                  onClick={async () => {
+                    const token = getAuthToken();
+                    if (!token) {
+                      setSubmitMessage("Please login to save your score to the leaderboard");
+                      setSubmitSuccess(false);
+                      return;
+                    }
+                    setIsSubmitting(true);
+                    setSubmitMessage("");
+                    try {
+                      const response = await fetch(`${API_BASE}/api/scores/CROSSWORD`, {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                          "Authorization": `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                          wpm: 0,
+                          accuracy: 100,
+                          score: score
+                        })
+                      });
+                      if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.message || "Failed to submit score");
+                      }
+                      const data = await response.json();
+                      setSubmitSuccess(true);
+                      setSubmitMessage(data.message || "Score submitted! Rank: " + (data.rank || "?"));
+                      setShowSubmitButton(false);
+                    } catch (err) {
+                      setSubmitSuccess(false);
+                      setSubmitMessage(err.message || "Failed to submit score. Please try again.");
+                    } finally {
+                      setIsSubmitting(false);
+                    }
+                  }}
+                  style={{
+                    padding: "8px 16px",
+                    fontSize: "13px",
+                    cursor: "pointer",
+                    borderRadius: "5px",
+                    backgroundColor: "#4caf50",
+                    color: "white",
+                    border: "none"
+                  }}
+                >
+                  Submit to Leaderboard
+                </button>
+              )}
+            </div>
+          )}
+  
           <div style={{ marginLeft: "auto", color: "#10b981", fontWeight: 600 }}>
             {message}
           </div>

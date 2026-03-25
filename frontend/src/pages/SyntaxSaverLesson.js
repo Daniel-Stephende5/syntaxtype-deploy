@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 // import "./SyntaxSaverLesson.css";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { API_BASE } from '../utils/api';
+import { getAuthToken } from '../utils/AuthUtils';
 
 export default function SyntaxSaverLesson({ quizId = 1, onBack }) {
   const [title, setTitle] = useState("");
@@ -11,6 +12,13 @@ export default function SyntaxSaverLesson({ quizId = 1, onBack }) {
   const [step, setStep] = useState(0);
   const [score, setScore] = useState(0);
   const [feedback, setFeedback] = useState("");
+  const [isLessonComplete, setIsLessonComplete] = useState(false);
+  
+  // Score submission states
+  const [showSubmitButton, setShowSubmitButton] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState("");
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   // ======================================================
   // 🔹 FETCH QUIZ FROM BACKEND
@@ -79,6 +87,52 @@ try {
       setStep((prev) => prev + 1);
     } else {
       setFeedback("🎉 Lesson Complete! You mastered this quiz!");
+      setIsLessonComplete(true);
+      setShowSubmitButton(true);
+    }
+  };
+  
+  // Submit score to leaderboard
+  const submitScore = async () => {
+    const token = getAuthToken();
+    
+    if (!token) {
+      setSubmitMessage("Please login to save your score to the leaderboard");
+      setSubmitSuccess(false);
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setSubmitMessage("");
+    
+    try {
+      const response = await fetch(`${API_BASE}/api/scores/SYNTAX_SAVER`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          wpm: 0,
+          accuracy: 100,
+          score: score
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to submit score");
+      }
+      
+      const data = await response.json();
+      setSubmitSuccess(true);
+      setSubmitMessage(data.message || "Score submitted! Rank: " + (data.rank || "?"));
+      setShowSubmitButton(false);
+    } catch (err) {
+      setSubmitSuccess(false);
+      setSubmitMessage(err.message || "Failed to submit score. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -126,6 +180,35 @@ try {
 
       <p className="feedback">{feedback}</p>
       <p className="score">⭐ Score: {score}</p>
+
+      {/* Leaderboard Submit Button */}
+      {showSubmitButton && (
+        <div style={{ marginTop: "15px" }}>
+          {isSubmitting ? (
+            <p style={{ color: "#666" }}>Submitting score...</p>
+          ) : submitMessage ? (
+            <p style={{ color: submitSuccess ? "#4caf50" : "#f44336", fontWeight: "bold" }}>
+              {submitMessage}
+            </p>
+          ) : (
+            <button 
+              onClick={submitScore}
+              style={{
+                padding: "12px 24px",
+                fontSize: "14px",
+                cursor: "pointer",
+                borderRadius: "5px",
+                backgroundColor: "#4caf50",
+                color: "white",
+                border: "none",
+                marginRight: "10px"
+              }}
+            >
+              Submit to Leaderboard
+            </button>
+          )}
+        </div>
+      )}
 
       <button className="back-btn" onClick={onBack}>
         🔙 Back to Menu

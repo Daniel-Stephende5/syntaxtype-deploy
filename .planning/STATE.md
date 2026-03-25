@@ -17,9 +17,9 @@
 | Item | Value |
 |------|-------|
 | **Current Phase** | 3 - Game Score Integration |
-| **Current Plan** | Plans created |
-| **Status** | Planning complete, ready for execution |
-| **Progress** | [======------------------] 3/8 phases |
+| **Current Plan** | 03-03 complete |
+| **Status** | ✅ Plan 03-03 complete |
+| **Progress** | [==========------------] 4/8 phases |
 
 ---
 
@@ -121,10 +121,11 @@
 - [x] Executed Phase 2 Plan 01 (Leaderboard Frontend)
 - [x] Executed Phase 3 Plan 01 (Backend unified score endpoint)
 - [x] Executed Phase 3 Plan 02 (Typing games leaderboard integration)
+- [x] Executed Phase 3 Plan 03 (Non-typing games leaderboard integration)
 
 ### What's Next
 
-1. Phase 3 Plan 03: Non-typing games integration (Galaxy, Grid, Bookworm, Crossword, FourPics, SyntaxSaver)
+1. Phase 3 remaining plans (if any)
 
 ---
 
@@ -142,7 +143,13 @@
   - JWT authentication via localStorage
   - Loading spinner, retry on failure
   - POST to /api/scores/{TYPING_TESTS|FALLING_WORDS}
-- **03-03:** Non-typing games (Galaxy, Grid, Bookworm, Crossword, FourPics, SyntaxSaver) integration
+- **03-03:** Non-typing games (Galaxy, Grid, Bookworm, Crossword, FourPics, SyntaxSaver) integration ✅ Complete
+  - GalaxyMainGame: Added submit button on game over
+  - GridGame: Added score tracking + submit button
+  - Bookworm: Added submit button when score >= 200
+  - CrosswordGame: Added submit button on puzzle completion
+  - FourPicsGame: Implemented score tracking (was missing) + submit
+  - SyntaxSaverLesson: Added submit button on lesson completion
 
 ### Requirements
 - SCORE-01 to SCORE-09 (8 games + backend update)

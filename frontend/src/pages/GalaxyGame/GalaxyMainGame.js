@@ -3,6 +3,8 @@ import { useBackground } from "./GalaxyBackground";
 import { loadAssets } from "./assets";
 import { getEnemiesByLevel } from "./GalaxyLibrary";
 import { spawnEnemy, updateEnemies, drawEnemies, cleanupEnemies } from "./GalaxyEnemy";
+import { getAuthToken } from "../../utils/AuthUtils";
+import { API_BASE } from "../../utils/api";
 
 const GalaxyMainGame = () => {
   const canvasRef = useRef(null);
@@ -27,6 +29,12 @@ const GalaxyMainGame = () => {
   const [gameReady, setGameReady] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [gameOver, setGameOver] = useState(false);
+  
+  // Score submission states
+  const [showSubmitButton, setShowSubmitButton] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState("");
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   const { initStars, drawBackground } = useBackground();
 
@@ -45,7 +53,54 @@ const GalaxyMainGame = () => {
       for (let i = 0; i < 3; i++) hearts += i < livesRef.current ? "❤️ " : "🖤 ";
       livesEl.innerText = hearts;
     }
-    if (livesRef.current <= 0) setGameOver(true);
+    if (livesRef.current <= 0) {
+      setGameOver(true);
+      setShowSubmitButton(true);
+    }
+  };
+  
+  // Submit score to leaderboard
+  const submitScore = async () => {
+    const token = getAuthToken();
+    
+    if (!token) {
+      setSubmitMessage("Please login to save your score to the leaderboard");
+      setSubmitSuccess(false);
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setSubmitMessage("");
+    
+    try {
+      const response = await fetch(`${API_BASE}/api/scores/GALAXY`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          wpm: 0,
+          accuracy: 100,
+          score: scoreRef.current
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to submit score");
+      }
+      
+      const data = await response.json();
+      setSubmitSuccess(true);
+      setSubmitMessage(data.message || "Score submitted! Rank: " + (data.rank || "?"));
+      setShowSubmitButton(false);
+    } catch (err) {
+      setSubmitSuccess(false);
+      setSubmitMessage(err.message || "Failed to submit score. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const shootBullet = (target) => {
@@ -293,7 +348,42 @@ const GalaxyMainGame = () => {
         }}>
           <h1 style={{ fontSize: "5rem", color: "#ff4444" }}>MISSION FAILED</h1>
           <p style={{ fontSize: "2rem" }}>FINAL SCORE: {scoreRef.current}</p>
-          <button onClick={() => window.location.reload()} style={{ padding: "15px 40px", fontSize: "1.5rem", cursor: "pointer", borderRadius: "8px" }}>REDEPLOY</button>
+          
+          {showSubmitButton && (
+            <div style={{ marginTop: "20px", textAlign: "center" }}>
+              {isSubmitting ? (
+                <p>Submitting score...</p>
+              ) : submitMessage ? (
+                <p style={{ color: submitSuccess ? "#4caf50" : "#f44336" }}>{submitMessage}</p>
+              ) : (
+                <button 
+                  onClick={submitScore}
+                  style={{
+                    padding: "15px 40px",
+                    fontSize: "1.5rem",
+                    cursor: "pointer",
+                    borderRadius: "8px",
+                    backgroundColor: "#4caf50",
+                    color: "white",
+                    border: "none",
+                    marginRight: "20px"
+                  }}
+                >
+                  Submit to Leaderboard
+                </button>
+              )}
+              <button 
+                onClick={() => window.location.reload()} 
+                style={{ padding: "15px 40px", fontSize: "1.5rem", cursor: "pointer", borderRadius: "8px" }}
+              >
+                REDEPLOY
+              </button>
+            </div>
+          )}
+          
+          {!showSubmitButton && (
+            <button onClick={() => window.location.reload()} style={{ padding: "15px 40px", fontSize: "1.5rem", cursor: "pointer", borderRadius: "8px" }}>REDEPLOY</button>
+          )}
         </div>
       )}
     </div>
