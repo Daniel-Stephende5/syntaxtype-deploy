@@ -45,7 +45,7 @@ export default function QuizMenu() {
         {/* ✅ ITEM 2: 4 Pics */}
         <button
           className="bookworm"
-          onClick={() => setSelected("bookworm")}
+          onClick={() => setSelected("crossword")}
         >
           🖼️ Crossword
         </button>
