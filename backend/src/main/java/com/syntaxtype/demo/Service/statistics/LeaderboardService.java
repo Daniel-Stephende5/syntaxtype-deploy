@@ -9,6 +9,8 @@ import com.syntaxtype.demo.Entity.Enums.Category;
 import com.syntaxtype.demo.Repository.statistics.LeaderboardRepository;
 import com.syntaxtype.demo.Repository.users.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -18,6 +20,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class LeaderboardService {
+    private static final Logger log = LoggerFactory.getLogger(LeaderboardService.class);
+
     private final LeaderboardRepository leaderboardRepository;
     private final UserRepository userRepository;
 
@@ -375,14 +379,14 @@ public class LeaderboardService {
                     isNewBest = newCombined > existingCombined;
                 } else {
                     // Compare raw scores for non-typing games
-                    isNewBest = rawScore > (existing.getTotalWordsTyped() != null ? existing.getTotalWordsTyped() : 0);
+                    isNewBest = rawScore > (existing.getScore() != null ? existing.getScore() : 0);
                 }
 
                 if (isNewBest) {
                     // Update existing entry
                     existing.setWordsPerMinute(wpm);
                     existing.setAccuracy(accuracy);
-                    existing.setTotalWordsTyped(rawScore);
+                    existing.setScore(rawScore);
                     leaderboardRepository.save(existing);
                 }
 
@@ -395,7 +399,7 @@ public class LeaderboardService {
                         .category(category)
                         .wordsPerMinute(wpm)
                         .accuracy(accuracy)
-                        .totalWordsTyped(rawScore)
+                        .score(rawScore)
                         .totalTimeSpent(0)
                         .build();
                 leaderboardRepository.save(newEntry);
@@ -441,8 +445,8 @@ public class LeaderboardService {
                         Double scoreB = LeaderboardEntry.calculateCombinedScore(b.getWordsPerMinute(), b.getAccuracy());
                         return scoreB.compareTo(scoreA);
                     } else {
-                        Integer scoreA = a.getTotalWordsTyped() != null ? a.getTotalWordsTyped() : 0;
-                        Integer scoreB = b.getTotalWordsTyped() != null ? b.getTotalWordsTyped() : 0;
+                        Integer scoreA = a.getScore() != null ? a.getScore() : 0;
+                        Integer scoreB = b.getScore() != null ? b.getScore() : 0;
                         return scoreB.compareTo(scoreA);
                     }
                 })

@@ -32,6 +32,10 @@ public class Leaderboard {
     private Integer totalWordsTyped;
     private Integer totalTimeSpent;
 
+    // Dedicated field for raw game scores (non-typing games like Memory, Snake, etc.)
+    // NOTE: Schema migration may be needed - existing totalWordsTyped data for non-typing games may need to be migrated to this field
+    private Integer score;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "category")
     private Category category;
