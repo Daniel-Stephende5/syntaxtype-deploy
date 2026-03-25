@@ -42,11 +42,11 @@ const Navbar = () => {
     const sidebarList = [
         { text: "Typing Test", link: "/typingtest" },
         { text: "Bookworm", link: "/bookworm" },
-        { text: "Galaxy", link: "/galaxy" },
+       
         { text: "Galaxy New", link: "/galaxy-new"},
         { text: "Quiz", link: "/quiz" },
         { text: "Grid Game", link: "/grid" },
-        { text: "Crossword", link: "/crossword" },
+       
         { text: "Leaderboard", link: "/leaderboard" },
         // { text: "Instructor Module", link: "/instructor" },
         { text: "Challenges", link: "/challenges" },
