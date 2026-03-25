@@ -157,7 +157,7 @@ export const fourPicsOneWordData = [
     id: 7,
     answer: "VARIABLE",
     images: [
-      "/images/variable.png",
+      "/images/variable.jpg",
       
     ],
     hint: "Stores a value that can change",
