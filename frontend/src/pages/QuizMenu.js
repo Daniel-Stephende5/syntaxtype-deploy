@@ -3,6 +3,7 @@ import SyntaxSaverLesson from "./SyntaxSaverLesson";
 import FourPicsGame from "./FourPicsGame";
 import "./SyntaxSaverLesson.css";
 import Bookworm from "./Bookworm.js";
+import Crossword from ".CrosswordGame.js;
 
 export default function QuizMenu() {
   const [selected, setSelected] = useState(null);
@@ -15,8 +16,8 @@ export default function QuizMenu() {
   if (selected === "fourpics") {
     return <FourPicsGame onBack={() => setSelected(null)} />;
   }
-  if (selected === "bookworm") {
-    return <Bookworm onBack={() => setSelected(null)} />;
+  if (selected === "crossword") {
+    return <Crossword onBack={() => setSelected(null)} />;
   }
 
   return (
@@ -46,7 +47,7 @@ export default function QuizMenu() {
           className="bookworm"
           onClick={() => setSelected("bookworm")}
         >
-          🖼️ Bookworm
+          🖼️ Crossword
         </button>
 
       </div>
