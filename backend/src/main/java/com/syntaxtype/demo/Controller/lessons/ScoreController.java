@@ -100,6 +100,7 @@ public class ScoreController {
         score.setChallengeType(categoryEnum.name());
         score.setWpm(request.getWpm() != null ? request.getWpm() : 0);
         score.setSubmittedAt(LocalDateTime.now());
+        score.setUser(userDetails.getUser());
         scoreService.saveScore(score);
 
         // Update leaderboard if better
