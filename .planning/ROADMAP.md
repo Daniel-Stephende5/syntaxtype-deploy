@@ -15,6 +15,7 @@
 - [x] **Phase 3a: Bug Fixes & Code Quality** - Fix code review issues from PR #2 ✅
 - [x] **Phase 3b: Quality Improvements** - Additional review fixes (useScoreSubmission hook, React state, Optional) ✅
 - [x] **Phase 3c: Final Cleanup & E2E Tests** - Apply hook to remaining games, define e2e tests ✅
+- [x] **Phase 3d: Rank Calculation Fix** - Native query for combined score sorting ✅
 - [ ] **Phase 4: Security & Error Handling** - Enable JWT auth, externalize secrets, configure exception handlers
 - [ ] **Phase 5: Backend Quality & Testing** - Fix data layer issues, add security tests
 - [ ] **Phase 6: Backend Modularization** - Restructure codebase into domain-based modules
@@ -279,6 +280,7 @@ Plans:
 | 3a - Bug Fixes & Code Quality | Code review fixes | (9 issues) | ✅ Complete |
 | 3b - Quality Improvements | Code review fixes | (4 issues) | ✅ Complete |
 | 3c - Final Cleanup & E2E Tests | Code review fixes | (5 issues) | ✅ Complete |
+| 3d - Rank Calculation Fix | Native query fix | (1 issue) | ✅ Complete |
 | 4 - Security & Error Handling | JWT auth | SEC-01 to SEC-06, ERR-01 to ERR-05 | Pending |
 | 5 - Backend Quality & Testing | Quality | BQ-01 to BQ-05, TEST-01 to TEST-03 | Pending |
 | 6 - Backend Modularization | Structure | (restructuring) | Pending |
@@ -298,6 +300,7 @@ Plans:
 | 3a. Bug Fixes & Code Quality | ✅ Complete | 2026-03-25 |
 | 3b. Quality Improvements | ✅ Complete | 2026-03-25 |
 | 3c. Final Cleanup & E2E Tests | ✅ Complete | 2026-03-25 |
+| 3d. Rank Calculation Fix | ✅ Complete | 2026-03-25 |
 | 4. Security & Error Handling | Not started | - |
 | 5. Backend Quality & Testing | Not started | - |
 | 6. Backend Modularization | Not started | - |
