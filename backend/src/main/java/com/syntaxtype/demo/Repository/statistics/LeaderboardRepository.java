@@ -3,6 +3,7 @@ package com.syntaxtype.demo.Repository.statistics;
 import com.syntaxtype.demo.Entity.Statistics.Leaderboard;
 import com.syntaxtype.demo.Entity.Users.User;
 import com.syntaxtype.demo.Entity.Enums.Category;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -74,4 +75,26 @@ public interface LeaderboardRepository extends JpaRepository<Leaderboard, Long> 
      */
     @Query("SELECT l FROM Leaderboard l JOIN FETCH l.user ORDER BY l.wordsPerMinute DESC")
     List<Leaderboard> findTopByWordsPerMinute();
+
+    /**
+     * Retrieves top N leaderboard entries for a category ordered by WPM descending.
+     * Optimized for rank calculation in typing games.
+     *
+     * @param category The game category
+     * @param pageable Pageable with limit
+     * @return List of top N Leaderboard entries by WPM for the category
+     */
+    @Query("SELECT l FROM Leaderboard l JOIN FETCH l.user WHERE l.category = :category ORDER BY l.wordsPerMinute DESC")
+    List<Leaderboard> findTopNByCategoryOrderByWpmDesc(@Param("category") Category category, Pageable pageable);
+
+    /**
+     * Retrieves top N leaderboard entries for a category ordered by score descending.
+     * Optimized for rank calculation in non-typing games.
+     *
+     * @param category The game category
+     * @param pageable Pageable with limit
+     * @return List of top N Leaderboard entries by score for the category
+     */
+    @Query("SELECT l FROM Leaderboard l JOIN FETCH l.user WHERE l.category = :category ORDER BY l.score DESC")
+    List<Leaderboard> findTopNByCategoryOrderByScoreDesc(@Param("category") Category category, Pageable pageable);
 }

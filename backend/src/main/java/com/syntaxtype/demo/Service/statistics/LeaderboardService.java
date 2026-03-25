@@ -11,6 +11,7 @@ import com.syntaxtype.demo.Repository.users.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -425,6 +426,7 @@ public class LeaderboardService {
 
     /**
      * Calculates the rank for a user in a specific category.
+     * Uses optimized queries with LIMIT for better performance.
      *
      * @param user The user
      * @param category The category
@@ -432,7 +434,17 @@ public class LeaderboardService {
      * @return The rank position (1-based), or null if not on leaderboard
      */
     private Integer calculateRankForUser(User user, Category category, boolean isTypingGame) {
-        List<Leaderboard> entries = leaderboardRepository.findByCategoryOrderByWordsPerMinuteDesc(category);
+        // Use optimized query based on game type - fetch top 1000 to find user's rank
+        final int RANK_QUERY_LIMIT = 1000;
+        
+        List<Leaderboard> entries;
+        if (isTypingGame) {
+            // For typing games, fetch by WPM and sort by combined score in memory
+            entries = leaderboardRepository.findTopNByCategoryOrderByWpmDesc(category, PageRequest.of(0, RANK_QUERY_LIMIT));
+        } else {
+            // For non-typing games, fetch by score (already sorted by score in query)
+            entries = leaderboardRepository.findTopNByCategoryOrderByScoreDesc(category, PageRequest.of(0, RANK_QUERY_LIMIT));
+        }
 
         if (entries.isEmpty()) {
             return null;
@@ -446,6 +458,7 @@ public class LeaderboardService {
                         Double scoreB = LeaderboardEntry.calculateCombinedScore(b.getWordsPerMinute(), b.getAccuracy());
                         return scoreB.compareTo(scoreA);
                     } else {
+                        // Already sorted by score in query, but keep for consistency
                         Integer scoreA = a.getScore() != null ? a.getScore() : 0;
                         Integer scoreB = b.getScore() != null ? b.getScore() : 0;
                         return scoreB.compareTo(scoreA);
