@@ -120,6 +120,36 @@ const GalaxyMainGame = () => {
     });
   };
 
+  // Restart game - resets all state without full page reload
+  const restartGame = () => {
+    // Reset score
+    scoreRef.current = 0;
+    const scoreEl = document.getElementById("ui-score");
+    if (scoreEl) scoreEl.innerText = "SCORE: 0";
+
+    // Reset lives
+    livesRef.current = 3;
+    const livesEl = document.getElementById("ui-lives");
+    if (livesEl) livesEl.innerText = "❤️ ❤️ ❤️";
+
+    // Reset game state
+    setGameOver(false);
+    setShowSubmitButton(false);
+    setSubmitMessage("");
+    setSubmitSuccess(false);
+
+    // Reset game refs
+    enemiesRef.current = [];
+    targetEnemyRef.current = null;
+    bulletsRef.current = [];
+    gameTimeRef.current = 0;
+    spawnTimerRef.current = -1.5;
+    difficultyRef.current = 1;
+
+    // Reset player position
+    playerRef.current = { x: window.innerWidth / 2, y: window.innerHeight - 100, width: 80, height: 60, speed: 500 };
+  };
+
   const finishEnemy = (target) => {
     const pts = target.type === "boss" ? 50 : (target.type === "shield" ? 2 : 1);
     updateScoreUI(pts);
@@ -380,7 +410,7 @@ const GalaxyMainGame = () => {
                 </button>
               )}
               <button 
-                onClick={() => window.location.reload()} 
+                onClick={restartGame} 
                 style={{ padding: "15px 40px", fontSize: "1.5rem", cursor: "pointer", borderRadius: "8px" }}
               >
                 REDEPLOY
@@ -389,7 +419,7 @@ const GalaxyMainGame = () => {
           )}
           
           {!showSubmitButton && (
-            <button onClick={() => window.location.reload()} style={{ padding: "15px 40px", fontSize: "1.5rem", cursor: "pointer", borderRadius: "8px" }}>REDEPLOY</button>
+            <button onClick={restartGame} style={{ padding: "15px 40px", fontSize: "1.5rem", cursor: "pointer", borderRadius: "8px" }}>REDEPLOY</button>
           )}
         </div>
       )}
