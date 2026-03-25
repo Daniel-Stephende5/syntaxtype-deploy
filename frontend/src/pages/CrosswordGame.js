@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { getAuthToken } from "../utils/AuthUtils";
-import { API_BASE } from "../utils/api";
+import { useScoreSubmission } from "../hooks/useScoreSubmission";
  
 // Grid Dimensions and Constants
 const ROWS = 15;
@@ -276,9 +275,7 @@ const CrosswordGame = () => {
    
    // Score submission states
    const [showSubmitButton, setShowSubmitButton] = useState(false);
-   const [isSubmitting, setIsSubmitting] = useState(false);
-   const [submitMessage, setSubmitMessage] = useState("");
-   const [submitSuccess, setSubmitSuccess] = useState(false);
+   const { submitScore, isSubmitting, submitMessage, submitSuccess } = useScoreSubmission();
  
  
  
@@ -608,49 +605,9 @@ const CrosswordGame = () => {
                 </span>
               ) : (
                 <button 
-                  onClick={async () => {
-                    const token = getAuthToken();
-                    if (!token) {
-                      setSubmitMessage("Please login to save your score to the leaderboard");
-                      setSubmitSuccess(false);
-                      return;
-                    }
-                    setIsSubmitting(true);
-                    setSubmitMessage("");
-                    try {
-                      const response = await fetch(`${API_BASE}/api/scores/CROSSWORD`, {
-                        method: "POST",
-                        headers: {
-                          "Content-Type": "application/json",
-                          "Authorization": `Bearer ${token}`
-                        },
-                        body: JSON.stringify({
-                          wpm: 0,
-                          accuracy: 100,
-                          score: score
-                        })
-                      });
-                      if (!response.ok) {
-                        const errorData = await response.json().catch(() => ({}));
-                        throw new Error(errorData.message || "Failed to submit score");
-                      }
-                      const data = await response.json();
-                      setSubmitSuccess(true);
-                      let successMessage = "Score submitted!";
-                      if (data.isNewBest) {
-                        successMessage = "New best score!";
-                      }
-                      if (data.rank) {
-                        successMessage += ` Your rank is #${data.rank}.`;
-                      }
-                      setSubmitMessage(successMessage);
-                      setShowSubmitButton(false);
-                    } catch (err) {
-                      setSubmitSuccess(false);
-                      setSubmitMessage(err.message || "Failed to submit score. Please try again.");
-                    } finally {
-                      setIsSubmitting(false);
-                    }
+                  onClick={() => {
+                    submitScore('CROSSWORD', { wpm: 0, accuracy: 100, score });
+                    setShowSubmitButton(false);
                   }}
                   style={{
                     padding: "8px 16px",

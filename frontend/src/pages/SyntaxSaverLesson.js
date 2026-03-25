@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 // import "./SyntaxSaverLesson.css";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { API_BASE } from '../utils/api';
-import { getAuthToken } from '../utils/AuthUtils';
+import { useScoreSubmission } from '../hooks/useScoreSubmission';
 
 export default function SyntaxSaverLesson({ quizId = 1, onBack }) {
   const [title, setTitle] = useState("");
@@ -16,9 +16,7 @@ export default function SyntaxSaverLesson({ quizId = 1, onBack }) {
   
   // Score submission states
   const [showSubmitButton, setShowSubmitButton] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState("");
-  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const { submitScore, isSubmitting, submitMessage, submitSuccess } = useScoreSubmission();
 
   // ======================================================
   // 🔹 FETCH QUIZ FROM BACKEND
@@ -92,57 +90,6 @@ try {
     }
   };
   
-  // Submit score to leaderboard
-  const submitScore = async () => {
-    const token = getAuthToken();
-    
-    if (!token) {
-      setSubmitMessage("Please login to save your score to the leaderboard");
-      setSubmitSuccess(false);
-      return;
-    }
-    
-    setIsSubmitting(true);
-    setSubmitMessage("");
-    
-    try {
-      const response = await fetch(`${API_BASE}/api/scores/SYNTAX_SAVER`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          wpm: 0,
-          accuracy: 100,
-          score: score
-        })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to submit score");
-      }
-      
-      const data = await response.json();
-      setSubmitSuccess(true);
-      let successMessage = "Score submitted!";
-      if (data.isNewBest) {
-        successMessage = "New best score!";
-      }
-      if (data.rank) {
-        successMessage += ` Your rank is #${data.rank}.`;
-      }
-      setSubmitMessage(successMessage);
-      setShowSubmitButton(false);
-    } catch (err) {
-      setSubmitSuccess(false);
-      setSubmitMessage(err.message || "Failed to submit score. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   // ======================================================
   // 🔹 RENDER LOGIC
   // ======================================================
@@ -199,7 +146,10 @@ try {
             </p>
           ) : (
             <button 
-              onClick={submitScore}
+              onClick={() => {
+                submitScore('SYNTAX_SAVER', { wpm: 0, accuracy: 100, score });
+                setShowSubmitButton(false);
+              }}
               style={{
                 padding: "12px 24px",
                 fontSize: "14px",

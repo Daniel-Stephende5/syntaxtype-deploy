@@ -1,8 +1,7 @@
 import React, { useState, useRef } from "react";
 import "./GridGame.css";
 import { runCCode } from "./judge0";
-import { getAuthToken } from "../utils/AuthUtils";
-import { API_BASE } from "../utils/api";
+import { useScoreSubmission } from "../hooks/useScoreSubmission";
 
 const GRID_ROWS = 10;
 const GRID_COLS = 10;
@@ -25,9 +24,7 @@ export default function GridGameSimulator() {
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [showSubmitButton, setShowSubmitButton] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState("");
-  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const { submitScore, isSubmitting, submitMessage, submitSuccess } = useScoreSubmission();
 
   const getObstacleCount = () => {
     switch (difficulty) {
@@ -250,57 +247,6 @@ ${customCode}`;
     setMessage(`🎲 New ${difficulty} game! Avoid obstacles and reach Pokémon!`);
   }
 
-  // Submit score to leaderboard
-  const submitScore = async () => {
-    const token = getAuthToken();
-    
-    if (!token) {
-      setSubmitMessage("Please login to save your score to the leaderboard");
-      setSubmitSuccess(false);
-      return;
-    }
-    
-    setIsSubmitting(true);
-    setSubmitMessage("");
-    
-    try {
-      const response = await fetch(`${API_BASE}/api/scores/GRID`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          wpm: 0,
-          accuracy: 100,
-          score: score
-        })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to submit score");
-      }
-      
-      const data = await response.json();
-      setSubmitSuccess(true);
-      let successMessage = "Score submitted!";
-      if (data.isNewBest) {
-        successMessage = "New best score!";
-      }
-      if (data.rank) {
-        successMessage += ` Your rank is #${data.rank}.`;
-      }
-      setSubmitMessage(successMessage);
-      setShowSubmitButton(false);
-    } catch (err) {
-      setSubmitSuccess(false);
-      setSubmitMessage(err.message || "Failed to submit score. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   // =======================
   // UI Rendering
   // =======================
@@ -457,7 +403,10 @@ ${customCode}`;
                 <span style={{ color: submitSuccess ? "#4caf50" : "#f44336" }}>{submitMessage}</span>
               ) : (
                 <button 
-                  onClick={submitScore}
+                  onClick={() => {
+                    submitScore('GRID', { wpm: 0, accuracy: 100, score });
+                    setShowSubmitButton(false);
+                  }}
                   style={{
                     padding: "8px 20px",
                     fontSize: "14px",

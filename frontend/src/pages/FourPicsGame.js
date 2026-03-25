@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { fourPicsOneWordData } from "./QuizData";
-import { getAuthToken } from "../utils/AuthUtils";
-import { API_BASE } from "../utils/api";
+import { useScoreSubmission } from "../hooks/useScoreSubmission";
 
 export default function FourPicsGame({ onBack }) {
   const [step, setStep] = useState(0);
@@ -17,9 +16,7 @@ export default function FourPicsGame({ onBack }) {
   
   // Score submission states
   const [showSubmitButton, setShowSubmitButton] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState("");
-  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const { submitScore, isSubmitting, submitMessage, submitSuccess } = useScoreSubmission();
 
   const current = fourPicsOneWordData[step];
 
@@ -93,57 +90,6 @@ export default function FourPicsGame({ onBack }) {
       }, 800);
     } else {
       setFeedback("❌ Wrong answer!");
-    }
-  };
-
-  // Submit score to leaderboard
-  const submitScore = async () => {
-    const token = getAuthToken();
-    
-    if (!token) {
-      setSubmitMessage("Please login to save your score to the leaderboard");
-      setSubmitSuccess(false);
-      return;
-    }
-    
-    setIsSubmitting(true);
-    setSubmitMessage("");
-    
-    try {
-      const response = await fetch(`${API_BASE}/api/scores/FOUR_PICS`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          wpm: 0,
-          accuracy: 100,
-          score: score + 10
-        })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to submit score");
-      }
-      
-      const data = await response.json();
-      setSubmitSuccess(true);
-      let successMessage = "Score submitted!";
-      if (data.isNewBest) {
-        successMessage = "New best score!";
-      }
-      if (data.rank) {
-        successMessage += ` Your rank is #${data.rank}.`;
-      }
-      setSubmitMessage(successMessage);
-      setShowSubmitButton(false);
-    } catch (err) {
-      setSubmitSuccess(false);
-      setSubmitMessage(err.message || "Failed to submit score. Please try again.");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -285,7 +231,10 @@ export default function FourPicsGame({ onBack }) {
             </p>
           ) : (
             <button 
-              onClick={submitScore}
+              onClick={() => {
+                submitScore('FOUR_PICS', { wpm: 0, accuracy: 100, score: score + 10 });
+                setShowSubmitButton(false);
+              }}
               style={{
                 padding: "12px 24px",
                 fontSize: "16px",

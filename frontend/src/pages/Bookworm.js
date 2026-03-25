@@ -1,7 +1,6 @@
 // BookwormCConcepts.jsx
 import React, { useState, useEffect } from "react";
-import { getAuthToken } from "../utils/AuthUtils";
-import { API_BASE } from "../utils/api";
+import { useScoreSubmission } from "../hooks/useScoreSubmission";
 
 const ROWS = 12;
 const COLS = 12;
@@ -220,9 +219,7 @@ export default function BookwormCConcepts() {
   
   // Score submission states
   const [showSubmitButton, setShowSubmitButton] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState("");
-  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const { submitScore, isSubmitting, submitMessage, submitSuccess } = useScoreSubmission();
   
   // Check if game is complete (all words found or board empty)
   useEffect(() => {
@@ -395,49 +392,9 @@ export default function BookwormCConcepts() {
                 </div>
               ) : (
                 <button 
-                  onClick={async () => {
-                    const token = getAuthToken();
-                    if (!token) {
-                      setSubmitMessage("Please login to save your score to the leaderboard");
-                      setSubmitSuccess(false);
-                      return;
-                    }
-                    setIsSubmitting(true);
-                    setSubmitMessage("");
-                    try {
-                      const response = await fetch(`${API_BASE}/api/scores/BOOKWORM`, {
-                        method: "POST",
-                        headers: {
-                          "Content-Type": "application/json",
-                          "Authorization": `Bearer ${token}`
-                        },
-                        body: JSON.stringify({
-                          wpm: 0,
-                          accuracy: 100,
-                          score: score
-                        })
-                      });
-                      if (!response.ok) {
-                        const errorData = await response.json().catch(() => ({}));
-                        throw new Error(errorData.message || "Failed to submit score");
-                      }
-                      const data = await response.json();
-                      setSubmitSuccess(true);
-                      let successMessage = "Score submitted!";
-                      if (data.isNewBest) {
-                        successMessage = "New best score!";
-                      }
-                      if (data.rank) {
-                        successMessage += ` Your rank is #${data.rank}.`;
-                      }
-                      setSubmitMessage(successMessage);
-                      setShowSubmitButton(false);
-                    } catch (err) {
-                      setSubmitSuccess(false);
-                      setSubmitMessage(err.message || "Failed to submit score. Please try again.");
-                    } finally {
-                      setIsSubmitting(false);
-                    }
+                  onClick={() => {
+                    submitScore('BOOKWORM', { wpm: 0, accuracy: 100, score });
+                    setShowSubmitButton(false);
                   }}
                   style={{
                     padding: "10px 20px",
