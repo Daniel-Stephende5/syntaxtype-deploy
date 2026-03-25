@@ -130,7 +130,14 @@ export default function FourPicsGame({ onBack }) {
       
       const data = await response.json();
       setSubmitSuccess(true);
-      setSubmitMessage(data.message || "Score submitted! Rank: " + (data.rank || "?"));
+      let successMessage = "Score submitted!";
+      if (data.isNewBest) {
+        successMessage = "New best score!";
+      }
+      if (data.rank) {
+        successMessage += ` Your rank is #${data.rank}.`;
+      }
+      setSubmitMessage(successMessage);
       setShowSubmitButton(false);
     } catch (err) {
       setSubmitSuccess(false);
