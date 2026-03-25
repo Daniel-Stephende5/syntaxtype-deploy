@@ -5,9 +5,9 @@
 
 ## v1 Requirements
 
-### Leaderboards
+### Leaderboards (Complete)
 
-#### Phase 1-2: Core Leaderboard (Complete)
+#### Phase 1-2: Core Leaderboard
 - [x] **LB-01**: Create backend LeaderboardController with endpoints for global, game-specific, and user-specific leaderboards
 - [x] **LB-02**: Create LeaderboardService to aggregate scores from all game types
 - [x] **LB-03**: Define LeaderboardEntry DTO with fields: rank, username, score, gameName, dateAchieved
@@ -16,20 +16,33 @@
 - [x] **LB-06**: Display top 10 scores with rank, username, score, game, and date
 - [x] **LB-07**: Highlight current user's row in leaderboard when logged in
 
-#### Phase 1b: Leaderboard Game Mode Expansion
+#### Phase 1b: Game Mode Expansion
 - [ ] **LB-08**: Update Category enum to include all game types (FOUR_PICS, CODE_CHALLENGES, MAP, SYNTAX_SAVER)
 - [ ] **LB-09**: Update LeaderboardPage.js game filter dropdown to include all game modes
 - [ ] **LB-10**: Update LeaderboardController to support all game categories
 - [ ] **LB-11**: Update OVERALL calculation to include all game types
 
-#### Phase 3: Game Score Integration (NEW)
-- [ ] **SCORE-01**: Create unified score submission endpoint that updates both Score and Leaderboard tables
-- [ ] **SCORE-02**: Update TypingTest.js to submit score with WPM and accuracy to leaderboard
-- [ ] **SCORE-03**: Update FallingTypingTest.js and AdvancedFallingTypingTest.js to submit to leaderboard
-- [ ] **SCORE-04**: Create score submission for new games: Galaxy, Grid, Bookworm, Crossword, FourPics, CodeChallenges, Map, SyntaxSaver
-- [ ] **SCORE-05**: Backend updates Leaderboard record when new score exceeds previous best for user/category
+### Phase 3: Game Score Integration (NEW)
 
-### Security (CRITICAL - Must Fix)
+| # | Requirement | Game | Description |
+|---|-------------|------|-------------|
+| [ ] **SCORE-01** | TypingTest.js | Update score submission to also update Leaderboard table |
+| [ ] **SCORE-02** | FallingTypingTest.js | Update score submission to also update Leaderboard table |
+| [ ] **SCORE-03** | GalaxyMainGame.js | Create score submission endpoint and connect to leaderboard |
+| [ ] **SCORE-04** | GridGame.js | Create score submission endpoint and connect to leaderboard |
+| [ ] **SCORE-05** | Bookworm.js | Create score submission endpoint and connect to leaderboard |
+| [ ] **SCORE-06** | CrosswordGame.js | Create score submission endpoint and connect to leaderboard |
+| [ ] **SCORE-07** | FourPicsGame.js | Implement score tracking + submission endpoint |
+| [ ] **SCORE-08** | SyntaxSaverLesson.js | Create score submission endpoint and connect to leaderboard |
+| [ ] **SCORE-09** | Backend Service | Update Leaderboard record when new score exceeds previous best |
+
+**Backend Requirements:**
+- Create unified score submission endpoint that updates both Score and Leaderboard tables
+- Accept: userId, category, wpm, accuracy, score
+- Return: success/failure
+- Auto-calculate combined score using formula: WPM × (Accuracy/100) × 1.5 if accuracy > 95%
+
+### Security (Phase 4)
 
 - [ ] **SEC-01**: Externalize all hardcoded credentials in application.properties to environment variables
 - [ ] **SEC-02**: Enable JWT authentication filter in SecurityConfig.java (currently commented out)
@@ -38,7 +51,7 @@
 - [ ] **SEC-05**: Add JWT token expiration (15-minute access token recommended)
 - [ ] **SEC-06**: Update frontend to include Authorization header with JWT tokens
 
-### Error Handling (HIGH PRIORITY)
+### Error Handling (Phase 4)
 
 - [ ] **ERR-01**: Enable GlobalExceptionHandler with proper error responses
 - [ ] **ERR-02**: Enable RestExceptionHandler with consistent API error format
@@ -46,7 +59,7 @@
 - [ ] **ERR-04**: Configure appropriate HTTP status codes for different error types
 - [ ] **ERR-05**: Prevent raw exception messages from leaking to clients
 
-### Backend Quality
+### Backend Quality (Phase 5)
 
 - [ ] **BQ-01**: Remove duplicate PostgreSQL dependency from pom.xml
 - [ ] **BQ-02**: Implement stub method in UserStatisticsService (currently returns empty DTO with TODO)
@@ -54,36 +67,38 @@
 - [ ] **BQ-04**: Disable DEBUG logging in production configuration
 - [ ] **BQ-05**: Verify CORS configuration uses environment variables (not hardcoded)
 
-### Frontend Quality
+### Testing (Phase 5)
+
+- [ ] **TEST-01**: Add unit tests for JWT authentication flow
+- [ ] **TEST-02**: Add integration tests for role-based access control
+- [ ] **TEST-03**: Add frontend tests for authentication flow
+
+### Frontend Quality (Phase 7)
 
 - [ ] **FQ-01**: Update deprecated react-scripts to Vite or modern CRA alternative
 - [ ] **FQ-02**: Fix incorrect NPM packages in production dependencies
 - [ ] **FQ-03**: Complete incomplete score display feature (has TODO comment)
 - [ ] **FQ-04**: Add proper error handling UI for API failures
 
-### Testing (Initial Coverage)
-
-- [ ] **TEST-01**: Add unit tests for JWT authentication flow
-- [ ] **TEST-02**: Add integration tests for role-based access control
-- [ ] **TEST-03**: Add frontend tests for authentication flow
-
 ---
 
-## Game Score Status
+## Game Score Integration Status
 
-| Game | Frontend File | Score Submission | Leaderboard |
-|------|---------------|------------------|-------------|
-| Typing Test | TypingTest.js | POST /api/scores | ❌ Not connected |
-| Falling Typing | FallingTypingTest.js | POST /api/scores/falling | ❌ Not connected |
-| Advanced Falling | AdvancedFallingTypingTest.js | POST /api/scores/falling | ❌ Not connected |
-| Galaxy | GalaxyGame.js | None | ❌ No endpoint |
-| Grid | GridGame.js | None | ❌ No endpoint |
-| Bookworm | Bookworm.js | None | ❌ No endpoint |
-| Crossword | CrosswordGame.js | None | ❌ No endpoint |
-| Four Pics | FourPicsGame.js | None | ❌ No endpoint |
-| Code Challenges | codeChallenges.js | None | ❌ No endpoint |
-| Map Game | map.js | None | ❌ No endpoint |
-| Syntax Saver | SyntaxSaverLesson.js | None | ❌ No endpoint |
+| Game | File | Current Score | Needs | Status |
+|------|------|-------------|-------|--------|
+| Typing Test | TypingTest.js | ✅ Submits | Leaderboard update | SCORE-01 |
+| Falling Typing | FallingTypingTest.js | ✅ Submits | Leaderboard update | SCORE-02 |
+| Galaxy Game | GalaxyMainGame.js | ✅ Local | Submission endpoint | SCORE-03 |
+| Grid Game | GridGame.js | ✅ Local | Submission endpoint | SCORE-04 |
+| Bookworm | Bookworm.js | ✅ Local | Submission endpoint | SCORE-05 |
+| Crossword | CrosswordGame.js | ✅ Local | Submission endpoint | SCORE-06 |
+| Four Pics | FourPicsGame.js | ❌ None | Full implementation | SCORE-07 |
+| Syntax Saver | SyntaxSaverLesson.js | ✅ Local | Submission endpoint | SCORE-08 |
+
+**Cancelled/Deferred:**
+- AdvancedFallingTypingTest.js - May be cancelled (time constraints)
+- CodeChallenges - Not prioritized
+- Map Game - Not prioritized
 
 ---
 
@@ -93,15 +108,15 @@
 |-------------|-------|--------|
 | LB-01 to LB-07 | Phase 1-2 | ✅ Complete |
 | LB-08 to LB-11 | Phase 1b | Pending |
-| SCORE-01 to SCORE-05 | Phase 3 | Pending |
+| SCORE-01 to SCORE-09 | Phase 3 | Pending |
 | SEC-01 to SEC-06 | Phase 4 | Pending |
 | ERR-01 to ERR-05 | Phase 4 | Pending |
 | BQ-01 to BQ-05 | Phase 5 | Pending |
 | TEST-01 to TEST-03 | Phase 5 | Pending |
 | FQ-01 to FQ-04 | Phase 7 | Pending |
 
-**Coverage:** 40/40 requirements mapped
+**Total:** 44 requirements across 9 phases
 
 ---
 
-*Generated by GSD workflow - updated with score integration phase*
+*Generated by GSD workflow - updated with confirmed game list*
