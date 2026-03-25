@@ -94,18 +94,18 @@ export const fourPicsOneWordData = [
       "/images/array.jpg",
       
     ],
-    hint: "Stores multiple values in order",
+    hint: "",
     letters: "R E Y A O F D A R T A M A P A".split(" "), // can form DATA, MAP
     slots: generateSlots("ARRAY"),
   },
   {
     id: 2,
-    answer: "CONDITION",
+    answer: "",
     images: [
       "/images/condition.jpg",
       
     ],
-    hint: "Decision-making in code",
+    hint: "",
     letters: "C O A L N D I E T W I O N C O D E I F".split(" "), // CODE, IF
     slots: generateSlots("CONDITION"),
   },
@@ -116,7 +116,7 @@ export const fourPicsOneWordData = [
       "/images/datatype.jpg",
       
     ],
-    hint: "Defines what kind of data",
+    hint: "",
     letters: " P A T T Y E T Y P O E C D A E D".split(" "), // TYPE, CODE
     slots: generateSlots("DATATYPE"),
   },
@@ -127,13 +127,13 @@ export const fourPicsOneWordData = [
       "/images/function.jpg",
       
     ],
-    hint: "Reusable block of code",
+    hint: "",
     letters: "Y U A N C T I F U O N R U N C O D E".split(" "), // RUN, CODE
     slots: generateSlots("FUNCTION"),
   },
   {
     id: 5,
-    answer: "RECURSION",
+    answer: "",
     images: [
       "/images/recursion.jpg",
       
@@ -144,23 +144,23 @@ export const fourPicsOneWordData = [
   },
   {
     id: 6,
-    answer: "STRUCTURE",
+    answer: "",
     images: [
       "/images/structure.jpg",
      
     ],
-    hint: "Organized grouping of data",
+    hint: "",
     letters: " T R U C K T U R A U S E R T S R E E".split(" "), // USER, TREE
     slots: generateSlots("STRUCTURE"),
   },
   {
     id: 7,
-    answer: "VARIABLE",
+    answer: "",
     images: [
       "/images/variable.png",
       
     ],
-    hint: "Stores a value that can change",
+    hint: "",
     letters: "V A L U E R B A B L E V A T U E I B I T".split(" "), // VALUE, BIT
     slots: generateSlots("VARIABLE"),
   },
@@ -171,7 +171,7 @@ export const fourPicsOneWordData = [
       "/images/main.png",
       
     ],
-    hint: "Program entry point",
+    hint: "",
     letters: "M A N Y I N C O D E R U N A P P".split(" "), // CODE, RUN, APP
     slots: generateSlots("MAIN"),
   },
@@ -182,7 +182,7 @@ export const fourPicsOneWordData = [
       "/images/pointer.jpg",
       
     ],
-    hint: "Stores an address",
+    hint: "",
     letters: "U S I N T E P X Y R N O O A E R A M".split(" "), // NODE, RAM
     slots: generateSlots("POINTER"),
   },
@@ -193,7 +193,7 @@ export const fourPicsOneWordData = [
       "/images/memory.png",
      
     ],
-    hint: "continuos block of bytes",
+    hint: "",
     letters: "Y M A R W H P L M E D A O O".split(" "), // FOR, WHILE, DO
     slots: generateSlots("MEMORY"),
   },
