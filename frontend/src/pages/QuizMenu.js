@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import SyntaxSaverLesson from "./SyntaxSaverLesson";
 import FourPicsGame from "./FourPicsGame";
 import "./SyntaxSaverLesson.css";
-import Bookworm from "./Bookworm.js";
-import Crossword from ".CrosswordGame.js;
+
+import Crossword from "./CrosswordGame.js;
 
 export default function QuizMenu() {
   const [selected, setSelected] = useState(null);
