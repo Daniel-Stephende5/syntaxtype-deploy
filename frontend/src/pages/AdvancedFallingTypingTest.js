@@ -60,6 +60,8 @@ const AdvancedFallingTypingTest = () => {
 
   useEffect(() => {
     if (isGameOver) {
+      // TODO: Deprecated - uses old endpoint without leaderboard update
+      // This gamemode will be removed due to time constraints
       fetch(`${API_BASE}/api/scores/falling`, {
         method: "POST",
         headers: {

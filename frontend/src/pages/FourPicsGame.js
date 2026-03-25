@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { fourPicsOneWordData } from "./QuizData";
+import { useScoreSubmission } from "../hooks/useScoreSubmission";
 
 export default function FourPicsGame({ onBack }) {
   const [step, setStep] = useState(0);
@@ -11,6 +12,11 @@ export default function FourPicsGame({ onBack }) {
   // ✅ NEW STATES
   const [score, setScore] = useState(0);
   const [startTime, setStartTime] = useState(null);
+  const [isGameComplete, setIsGameComplete] = useState(false);
+  
+  // Score submission states
+  const [showSubmitButton, setShowSubmitButton] = useState(false);
+  const { submitScore, isSubmitting, submitMessage, submitSuccess } = useScoreSubmission();
 
   const current = fourPicsOneWordData[step];
 
@@ -73,35 +79,13 @@ export default function FourPicsGame({ onBack }) {
       // 🎯 Add score
       setScore((prev) => prev + 10);
 
-      setTimeout(async () => {
+      setTimeout(() => {
         if (step < fourPicsOneWordData.length - 1) {
           setStep((prev) => prev + 1);
         } else {
           setFeedback("🎉 Completed!");
-
-          // ⏱ Calculate time
-          const endTime = Date.now();
-          const timeInSeconds = Math.floor((endTime - startTime) / 1000);
-
-          // 🚀 SEND TO BACKEND
-          try {
-            await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/scores`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                score: score + 10, // include last answer
-                timeInSeconds: timeInSeconds,
-                challengeType: "fourpics",
-                wpm: 0,
-              }),
-            });
-
-            console.log("Score submitted!");
-          } catch (err) {
-            console.error("Error submitting score:", err);
-          }
+          setIsGameComplete(true);
+          setShowSubmitButton(true);
         }
       }, 800);
     } else {
@@ -235,6 +219,37 @@ export default function FourPicsGame({ onBack }) {
       >
         {feedback}
       </p>
+      
+      {/* Leaderboard Submit Button */}
+      {showSubmitButton && (
+        <div style={{ marginTop: "15px" }}>
+          {isSubmitting ? (
+            <p style={{ color: "#666" }}>Submitting score...</p>
+          ) : submitMessage ? (
+            <p style={{ color: submitSuccess ? "#4caf50" : "#f44336", fontWeight: "bold" }}>
+              {submitMessage}
+            </p>
+          ) : (
+            <button 
+              onClick={() => {
+                submitScore('FOUR_PICS', { wpm: 0, accuracy: 100, score: score + 10 });
+                setShowSubmitButton(false);
+              }}
+              style={{
+                padding: "12px 24px",
+                fontSize: "16px",
+                cursor: "pointer",
+                borderRadius: "5px",
+                backgroundColor: "#4caf50",
+                color: "white",
+                border: "none"
+              }}
+            >
+              Submit to Leaderboard
+            </button>
+          )}
+        </div>
+      )}
 
       {/* 🔙 BACK */}
       <button

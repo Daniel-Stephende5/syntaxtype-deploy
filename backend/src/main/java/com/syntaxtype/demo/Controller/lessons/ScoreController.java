@@ -1,26 +1,36 @@
 package com.syntaxtype.demo.Controller.lessons;
 
 import com.syntaxtype.demo.DTO.lessons.ScoreDTO;
+import com.syntaxtype.demo.DTO.statistics.LeaderboardUpdateResult;
+import com.syntaxtype.demo.DTO.statistics.ScoreSubmissionRequest;
+import com.syntaxtype.demo.Entity.Enums.Category;
 import com.syntaxtype.demo.Repository.lessons.ScoreRepository;
+import com.syntaxtype.demo.Controller.auth.security.CustomUserDetails;
 import com.syntaxtype.demo.Service.lessons.ChallengeService;
 import com.syntaxtype.demo.Service.lessons.ScoreService;
+import com.syntaxtype.demo.Service.statistics.LeaderboardService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import com.syntaxtype.demo.Entity.Lessons.Score;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/scores")
 public class ScoreController {
 
     private final ScoreService scoreService;
+    private final LeaderboardService leaderboardService;
     private ScoreRepository scoreRepository;
 
-    public ScoreController(ScoreService scoreService) {
+    public ScoreController(ScoreService scoreService, LeaderboardService leaderboardService) {
         this.scoreService = scoreService;
+        this.leaderboardService = leaderboardService;
     }
     @PostMapping
     public ResponseEntity<Score> submitScore(@RequestBody ScoreDTO scoreDTO) {
@@ -55,6 +65,55 @@ public class ScoreController {
     @GetMapping("/falling")
     public List<Score> getFallingScores() {
         return scoreService.getScoresByTypeDesc("falling");
+    }
+
+    /**
+     * Submit a game score with category.
+     * Saves to Score table always, updates Leaderboard only if new score is better.
+     *
+     * @param category The game category (TYPING_TESTS, FALLING_WORDS, GALAXY, GRID, etc.)
+     * @param request The score submission data
+     * @param userDetails The authenticated user from JWT
+     * @return LeaderboardUpdateResult with success, isNewBest, and rank
+     */
+    @PostMapping("/{category}")
+    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','USER')")
+    public ResponseEntity<LeaderboardUpdateResult> submitScore(
+            @PathVariable String category,
+            @RequestBody ScoreSubmissionRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        // Parse category from path
+        Category categoryEnum;
+        try {
+            categoryEnum = Category.valueOf(category.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        // Get username from JWT
+        String username = userDetails.getUser().getUsername();
+
+        // Save to Score table (always)
+        Score score = new Score();
+        score.setScore(Optional.ofNullable(request.getScore()).orElse(0));
+        score.setTimeInSeconds(Optional.ofNullable(request.getTimeSpent()).orElse(0));
+        score.setChallengeType(categoryEnum.name());
+        score.setWpm(Optional.ofNullable(request.getWpm()).orElse(0));
+        score.setSubmittedAt(LocalDateTime.now());
+        score.setUser(userDetails.getUser());
+        scoreService.saveScore(score);
+
+        // Update leaderboard if better
+        LeaderboardUpdateResult result = leaderboardService.updateLeaderboardIfBetter(
+                username,
+                categoryEnum,
+                Optional.ofNullable(request.getWpm()).orElse(0),
+                Optional.ofNullable(request.getAccuracy()).orElse(100),
+                Optional.ofNullable(request.getScore()).orElse(0)
+        );
+
+        return ResponseEntity.ok(result);
     }
 
 

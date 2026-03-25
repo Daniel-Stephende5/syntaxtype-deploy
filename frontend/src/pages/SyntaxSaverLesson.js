@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 // import "./SyntaxSaverLesson.css";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { API_BASE } from '../utils/api';
+import { useScoreSubmission } from '../hooks/useScoreSubmission';
 
 export default function SyntaxSaverLesson({ quizId = 1, onBack }) {
   const [title, setTitle] = useState("");
@@ -11,6 +12,11 @@ export default function SyntaxSaverLesson({ quizId = 1, onBack }) {
   const [step, setStep] = useState(0);
   const [score, setScore] = useState(0);
   const [feedback, setFeedback] = useState("");
+  const [isLessonComplete, setIsLessonComplete] = useState(false);
+  
+  // Score submission states
+  const [showSubmitButton, setShowSubmitButton] = useState(false);
+  const { submitScore, isSubmitting, submitMessage, submitSuccess } = useScoreSubmission();
 
   // ======================================================
   // 🔹 FETCH QUIZ FROM BACKEND
@@ -79,9 +85,11 @@ try {
       setStep((prev) => prev + 1);
     } else {
       setFeedback("🎉 Lesson Complete! You mastered this quiz!");
+      setIsLessonComplete(true);
+      setShowSubmitButton(true);
     }
   };
-
+  
   // ======================================================
   // 🔹 RENDER LOGIC
   // ======================================================
@@ -126,6 +134,38 @@ try {
 
       <p className="feedback">{feedback}</p>
       <p className="score">⭐ Score: {score}</p>
+
+      {/* Leaderboard Submit Button */}
+      {showSubmitButton && (
+        <div style={{ marginTop: "15px" }}>
+          {isSubmitting ? (
+            <p style={{ color: "#666" }}>Submitting score...</p>
+          ) : submitMessage ? (
+            <p style={{ color: submitSuccess ? "#4caf50" : "#f44336", fontWeight: "bold" }}>
+              {submitMessage}
+            </p>
+          ) : (
+            <button 
+              onClick={() => {
+                submitScore('SYNTAX_SAVER', { wpm: 0, accuracy: 100, score });
+                setShowSubmitButton(false);
+              }}
+              style={{
+                padding: "12px 24px",
+                fontSize: "14px",
+                cursor: "pointer",
+                borderRadius: "5px",
+                backgroundColor: "#4caf50",
+                color: "white",
+                border: "none",
+                marginRight: "10px"
+              }}
+            >
+              Submit to Leaderboard
+            </button>
+          )}
+        </div>
+      )}
 
       <button className="back-btn" onClick={onBack}>
         🔙 Back to Menu

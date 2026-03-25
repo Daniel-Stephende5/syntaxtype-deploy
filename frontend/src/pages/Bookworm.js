@@ -1,5 +1,6 @@
 // BookwormCConcepts.jsx
 import React, { useState, useEffect } from "react";
+import { useScoreSubmission } from "../hooks/useScoreSubmission";
 
 const ROWS = 12;
 const COLS = 12;
@@ -215,6 +216,18 @@ export default function BookwormCConcepts() {
   const [score, setScore] = useState(0);
   const [message, setMessage] = useState("");
   const [questions, setQuestions] = useState([]);
+  
+  // Score submission states
+  const [showSubmitButton, setShowSubmitButton] = useState(false);
+  const { submitScore, isSubmitting, submitMessage, submitSuccess } = useScoreSubmission();
+  
+  // Check if game is complete (all words found or board empty)
+  useEffect(() => {
+    const totalWords = Object.keys(C_DICTIONARY).length;
+    if (foundWords.size >= 10 || score >= 200) {
+      setShowSubmitButton(true);
+    }
+  }, [foundWords, score]);
 
   useEffect(() => {
     setCurrentWord(selected.map(p => board[p.r][p.c]).join(""));
@@ -367,6 +380,37 @@ export default function BookwormCConcepts() {
           <div style={{ marginTop: 12, fontSize: 13, color: "#6b7280" }}>
             Tip: Click letters in order. Clicking a non-adjacent tile starts a new selection.
           </div>
+          
+          {/* Leaderboard Submit Button */}
+          {showSubmitButton && (
+            <div style={{ marginTop: "15px", paddingTop: "15px", borderTop: "1px solid #ddd" }}>
+              {isSubmitting ? (
+                <div style={{ color: "#666" }}>Submitting score...</div>
+              ) : submitMessage ? (
+                <div style={{ color: submitSuccess ? "#4caf50" : "#f44336", fontWeight: "bold" }}>
+                  {submitMessage}
+                </div>
+              ) : (
+                <button 
+                  onClick={() => {
+                    submitScore('BOOKWORM', { wpm: 0, accuracy: 100, score });
+                    setShowSubmitButton(false);
+                  }}
+                  style={{
+                    padding: "10px 20px",
+                    fontSize: "14px",
+                    cursor: "pointer",
+                    borderRadius: "5px",
+                    backgroundColor: "#4caf50",
+                    color: "white",
+                    border: "none"
+                  }}
+                >
+                  Submit to Leaderboard
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

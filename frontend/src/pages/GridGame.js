@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import "./GridGame.css";
 import { runCCode } from "./judge0";
+import { useScoreSubmission } from "../hooks/useScoreSubmission";
 
 const GRID_ROWS = 10;
 const GRID_COLS = 10;
@@ -18,6 +19,12 @@ export default function GridGameSimulator() {
   // Difficulty Levels
   // =======================
   const [difficulty, setDifficulty] = useState("Normal");
+  
+  // Score tracking
+  const [score, setScore] = useState(0);
+  const [gameOver, setGameOver] = useState(false);
+  const [showSubmitButton, setShowSubmitButton] = useState(false);
+  const { submitScore, isSubmitting, submitMessage, submitSuccess } = useScoreSubmission();
 
   const getObstacleCount = () => {
     switch (difficulty) {
@@ -180,6 +187,12 @@ ${customCode}`;
             setPlayerPos(lastSafePosition);
           } else {
             setMessage("💀 GAME OVER! No hearts left.");
+            setGameOver(true);
+            // Calculate score based on difficulty and remaining health
+            const difficultyBonus = difficulty === "Hard" ? 30 : difficulty === "Normal" ? 20 : 10;
+            const finalScore = difficultyBonus + (health * 10);
+            setScore(finalScore);
+            setShowSubmitButton(true);
           }
           return;
         }
@@ -192,6 +205,11 @@ ${customCode}`;
         // Check if reached Pokémon
         if (currentPos.row === pokemonPos.row && currentPos.col === pokemonPos.col) {
           setMessage("🎉 You found the Pokémon! 🎊");
+          // Calculate score based on difficulty
+          const difficultyBonus = difficulty === "Hard" ? 50 : difficulty === "Normal" ? 30 : 20;
+          const finalScore = 100 + difficultyBonus;
+          setScore(finalScore);
+          setShowSubmitButton(true);
           return;
         }
       }
@@ -219,6 +237,10 @@ ${customCode}`;
     setPokemonPos(newPokemon);
     setObstacles(generateObstacles());
     setHealth(3);
+    setScore(0);
+    setGameOver(false);
+    setShowSubmitButton(false);
+    setSubmitMessage("");
 
     setCodeInput(getForLoopCode(newPlayer.row, newPlayer.col));
     setWhileCode(getWhileLoopCode(newPlayer.row, newPlayer.col));
@@ -367,6 +389,42 @@ ${customCode}`;
           </div>
         )}
       </div>
+
+      {/* Score Display */}
+      {(score > 0 || showSubmitButton) && (
+        <div style={{ marginBottom: "15px", fontSize: "18px", fontWeight: "bold" }}>
+          <span style={{ color: "#4caf50" }}>Score: {score}</span>
+          
+          {showSubmitButton && (
+            <div style={{ marginTop: "10px" }}>
+              {isSubmitting ? (
+                <span>Submitting score...</span>
+              ) : submitMessage ? (
+                <span style={{ color: submitSuccess ? "#4caf50" : "#f44336" }}>{submitMessage}</span>
+              ) : (
+                <button 
+                  onClick={() => {
+                    submitScore('GRID', { wpm: 0, accuracy: 100, score });
+                    setShowSubmitButton(false);
+                  }}
+                  style={{
+                    padding: "8px 20px",
+                    fontSize: "14px",
+                    cursor: "pointer",
+                    borderRadius: "5px",
+                    backgroundColor: "#4caf50",
+                    color: "white",
+                    border: "none",
+                    marginLeft: "15px"
+                  }}
+                >
+                  Submit to Leaderboard
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Controls */}
       <button style={{ marginBottom: "10px" }} onClick={() => setShowWhileEditor(!showWhileEditor)}>

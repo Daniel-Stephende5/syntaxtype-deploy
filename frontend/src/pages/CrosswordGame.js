@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { useScoreSubmission } from "../hooks/useScoreSubmission";
  
 // Grid Dimensions and Constants
 const ROWS = 15;
@@ -270,7 +271,11 @@ const CrosswordGame = () => {
   const [activeCol, setActiveCol] = useState(null);
   const { grid, placements } = puzzle;
    const [secondsElapsed, setSecondsElapsed] = useState(0);
-  const [score, setScore] = useState(null);
+   const [score, setScore] = useState(null);
+   
+   // Score submission states
+   const [showSubmitButton, setShowSubmitButton] = useState(false);
+   const { submitScore, isSubmitting, submitMessage, submitSuccess } = useScoreSubmission();
  
  
  
@@ -298,6 +303,7 @@ const CrosswordGame = () => {
       const finalScore = calculateScore(secondsElapsed);
       setScore(finalScore);
       setMessage(`🎉 Puzzle completed! Score: ${finalScore}`);
+      setShowSubmitButton(true);
     }
   }, [locked, grid, secondsElapsed]);
   // Reset state when puzzle changes
@@ -587,7 +593,38 @@ const CrosswordGame = () => {
           <button onClick={newPuzzle} style={{ ...styles.btn, background: "#ef4444", color: "#fff" }}>
             New Puzzle
           </button>
- 
+
+          {/* Leaderboard Submit Button */}
+          {showSubmitButton && (
+            <div style={{ marginLeft: "20px" }}>
+              {isSubmitting ? (
+                <span style={{ color: "#666" }}>Submitting score...</span>
+              ) : submitMessage ? (
+                <span style={{ color: submitSuccess ? "#4caf50" : "#f44336", fontWeight: "bold" }}>
+                  {submitMessage}
+                </span>
+              ) : (
+                <button 
+                  onClick={() => {
+                    submitScore('CROSSWORD', { wpm: 0, accuracy: 100, score });
+                    setShowSubmitButton(false);
+                  }}
+                  style={{
+                    padding: "8px 16px",
+                    fontSize: "13px",
+                    cursor: "pointer",
+                    borderRadius: "5px",
+                    backgroundColor: "#4caf50",
+                    color: "white",
+                    border: "none"
+                  }}
+                >
+                  Submit to Leaderboard
+                </button>
+              )}
+            </div>
+          )}
+  
           <div style={{ marginLeft: "auto", color: "#10b981", fontWeight: 600 }}>
             {message}
           </div>

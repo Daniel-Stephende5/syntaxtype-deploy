@@ -11,7 +11,11 @@
 - [x] **Phase 1: Leaderboard Data Layer** - Create backend API and data models for best scores per game ✅
 - [x] **Phase 2: Leaderboard Frontend** - Build leaderboard page to display top scores by game ✅
 - [ ] **Phase 1b: Leaderboard Game Mode Expansion** - Add category support for new game modes
-- [ ] **Phase 3: Game Score Integration** - Connect game score submission to leaderboard system
+- [x] **Phase 3: Game Score Integration** - Connect game score submission to leaderboard system ✅
+- [x] **Phase 3a: Bug Fixes & Code Quality** - Fix code review issues from PR #2 ✅
+- [x] **Phase 3b: Quality Improvements** - Additional review fixes (useScoreSubmission hook, React state, Optional) ✅
+- [x] **Phase 3c: Final Cleanup & E2E Tests** - Apply hook to remaining games, define e2e tests ✅
+- [x] **Phase 3d: Rank Calculation Fix** - Native query for combined score sorting ✅
 - [ ] **Phase 4: Security & Error Handling** - Enable JWT auth, externalize secrets, configure exception handlers
 - [ ] **Phase 5: Backend Quality & Testing** - Fix data layer issues, add security tests
 - [ ] **Phase 6: Backend Modularization** - Restructure codebase into domain-based modules
@@ -102,7 +106,71 @@
 3. Backend updates Leaderboard record when new score exceeds previous best
 4. Leaderboard reflects scores immediately after game completion
 
-**Plans:** TBD
+**Plans:** 3 plans
+
+Plans:
+- [x] 03-01-PLAN.md — Backend unified score submission endpoint
+- [x] 03-02-PLAN.md — Typing games (TypingTest, FallingTypingTest) integration
+- [x] 03-03-PLAN.md — Non-typing games (Galaxy, Grid, Bookworm, Crossword, FourPics, SyntaxSaver) integration
+
+---
+
+### Phase 3a: Bug Fixes & Code Quality
+
+**Goal:** Address code review issues identified by Gemini Code Assist on PR #2
+
+**Status:** Planning
+
+**Issues Fixed:**
+
+| Priority | File | Issue |
+|----------|------|-------|
+| HIGH | ScoreController.java | Score not associated with user |
+| HIGH | FallingTypingTest.js | Accuracy hardcoded to 100% |
+| HIGH | TypingTest.js | `replace("___")` only replaces first occurrence |
+| HIGH | All game files | Frontend expects wrong response fields |
+| MEDIUM | LeaderboardService.java | Inefficient query |
+| MEDIUM | LeaderboardService.java | `totalWordsTyped` misused for raw scores |
+| MEDIUM | LeaderboardService.java | Generic exception without logging |
+| MEDIUM | LeaderboardService.java | Rank calculation fetches all then sorts |
+| MEDIUM | GalaxyMainGame.js | `window.location.reload()` bad UX |
+
+**Plan:** `3a-PLAN.md`
+
+**Success Criteria:**
+1. Score submissions are correctly associated with user
+2. Accuracy calculations are correct for all typing games
+3. Multiple blanks in challenges are handled correctly
+4. All frontend components handle new response format
+5. Leaderboard queries are optimized
+6. No generic exception catching without logging
+7. Galaxy game restarts without page refresh
+
+---
+
+### Phase 3b: Quality Improvements
+
+**Goal:** Additional code quality improvements from second round of code review
+
+**Status:** Planning
+
+**Issues Fixed:**
+
+| Priority | File | Issue |
+|----------|------|-------|
+| HIGH | Bookworm.js | Code duplication - extract useScoreSubmission hook |
+| HIGH | GalaxyMainGame.js | Direct DOM manipulation - use React state |
+| MEDIUM | ScoreController.java | Use Optional.ofNullable() for null handling |
+| MEDIUM | LeaderboardService.java | Redundant sorting for non-typing games |
+
+**Plan:** `3b-PLAN.md`
+
+**Success Criteria:**
+1. Galaxy game uses React state for UI elements
+2. Score submission logic centralized in reusable hook
+3. At least 4 game components use the new hook
+4. ScoreController uses Optional for null handling
+5. LeaderboardService only sorts when necessary
 
 ---
 
@@ -208,7 +276,11 @@
 | 1 - Leaderboard Data Layer | Backend API | LB-01 to LB-04 | ✅ Complete |
 | 2 - Leaderboard Frontend | UI | LB-05 to LB-07 | ✅ Complete |
 | 1b - Game Mode Expansion | Categories | LB-08 to LB-11 | Pending |
-| 3 - Game Score Integration | Connect games | SCORE-01 to SCORE-09 | Pending |
+| 3 - Game Score Integration | Connect games | SCORE-01 to SCORE-09 | ✅ Complete |
+| 3a - Bug Fixes & Code Quality | Code review fixes | (9 issues) | ✅ Complete |
+| 3b - Quality Improvements | Code review fixes | (4 issues) | ✅ Complete |
+| 3c - Final Cleanup & E2E Tests | Code review fixes | (5 issues) | ✅ Complete |
+| 3d - Rank Calculation Fix | Native query fix | (1 issue) | ✅ Complete |
 | 4 - Security & Error Handling | JWT auth | SEC-01 to SEC-06, ERR-01 to ERR-05 | Pending |
 | 5 - Backend Quality & Testing | Quality | BQ-01 to BQ-05, TEST-01 to TEST-03 | Pending |
 | 6 - Backend Modularization | Structure | (restructuring) | Pending |
@@ -224,7 +296,11 @@
 | 1. Leaderboard Data Layer | ✅ Complete | 2026-03-23 |
 | 2. Leaderboard Frontend | ✅ Complete | 2026-03-23 |
 | 1b. Game Mode Expansion | Not started | - |
-| 3. Game Score Integration | Not started | - |
+| 3. Game Score Integration | ✅ Complete | 2026-03-25 |
+| 3a. Bug Fixes & Code Quality | ✅ Complete | 2026-03-25 |
+| 3b. Quality Improvements | ✅ Complete | 2026-03-25 |
+| 3c. Final Cleanup & E2E Tests | ✅ Complete | 2026-03-25 |
+| 3d. Rank Calculation Fix | ✅ Complete | 2026-03-25 |
 | 4. Security & Error Handling | Not started | - |
 | 5. Backend Quality & Testing | Not started | - |
 | 6. Backend Modularization | Not started | - |

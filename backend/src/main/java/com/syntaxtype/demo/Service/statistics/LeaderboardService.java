@@ -2,11 +2,16 @@ package com.syntaxtype.demo.Service.statistics;
 
 import com.syntaxtype.demo.DTO.statistics.LeaderboardDTO;
 import com.syntaxtype.demo.DTO.statistics.LeaderboardEntry;
+import com.syntaxtype.demo.DTO.statistics.LeaderboardUpdateResult;
 import com.syntaxtype.demo.Entity.Statistics.Leaderboard;
 import com.syntaxtype.demo.Entity.Users.User;
 import com.syntaxtype.demo.Entity.Enums.Category;
 import com.syntaxtype.demo.Repository.statistics.LeaderboardRepository;
+import com.syntaxtype.demo.Repository.users.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -16,7 +21,10 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class LeaderboardService {
+    private static final Logger log = LoggerFactory.getLogger(LeaderboardService.class);
+
     private final LeaderboardRepository leaderboardRepository;
+    private final UserRepository userRepository;
 
     public List<LeaderboardDTO> findAll() {
         return leaderboardRepository.findAll().stream()
@@ -326,5 +334,143 @@ public class LeaderboardService {
         leaderboard.setTotalTimeSpent(dto.getTotalTimeSpent());
         leaderboard.setCategory(dto.getCategory());
         return leaderboard;
+    }
+
+    /**
+     * Updates the leaderboard if the new score is better than the existing best.
+     * For typing games (TYPING_TESTS, FALLING_WORDS): compares combined scores.
+     * For non-typing games: compares raw scores.
+     *
+     * @param username The username of the player
+     * @param category The game category
+     * @param wpm Words per minute (0 for non-typing games)
+     * @param accuracy Accuracy percentage (100 for non-typing games)
+     * @param rawScore Raw game score
+     * @return LeaderboardUpdateResult with success, isNewBest, and rank
+     */
+    public LeaderboardUpdateResult updateLeaderboardIfBetter(String username, Category category, Integer wpm, Integer accuracy, Integer rawScore) {
+        try {
+            // Find user by username
+            User user = userRepository.findByUsername(username).orElse(null);
+            if (user == null) {
+                return LeaderboardUpdateResult.builder()
+                        .success(false)
+                        .isNewBest(false)
+                        .rank(null)
+                        .build();
+            }
+
+            // Check if this is a typing game
+            boolean isTypingGame = category == Category.TYPING_TESTS || category == Category.FALLING_WORDS;
+
+            // Find existing leaderboard entry for user + category
+            Optional<Leaderboard> existingEntry = leaderboardRepository.findByUserAndCategory(user, category);
+
+            boolean isNewBest = false;
+            Integer currentRank = null;
+
+            if (existingEntry.isPresent()) {
+                Leaderboard existing = existingEntry.get();
+
+                // Compare scores based on game type
+                if (isTypingGame) {
+                    // Calculate combined scores for typing games
+                    Double existingCombined = LeaderboardEntry.calculateCombinedScore(existing.getWordsPerMinute(), existing.getAccuracy());
+                    Double newCombined = LeaderboardEntry.calculateCombinedScore(wpm, accuracy);
+                    isNewBest = newCombined > existingCombined;
+                } else {
+                    // Compare raw scores for non-typing games
+                    isNewBest = rawScore > (existing.getScore() != null ? existing.getScore() : 0);
+                }
+
+                if (isNewBest) {
+                    // Update existing entry
+                    existing.setWordsPerMinute(wpm);
+                    existing.setAccuracy(accuracy);
+                    existing.setScore(rawScore);
+                    leaderboardRepository.save(existing);
+                }
+
+                // Calculate current rank after update
+                currentRank = calculateRankForUser(user, category, isTypingGame);
+            } else {
+                // First score for this category - create new entry
+                Leaderboard newEntry = Leaderboard.builder()
+                        .user(user)
+                        .category(category)
+                        .wordsPerMinute(wpm)
+                        .accuracy(accuracy)
+                        .score(rawScore)
+                        .totalTimeSpent(0)
+                        .build();
+                leaderboardRepository.save(newEntry);
+                isNewBest = true;
+                currentRank = calculateRankForUser(user, category, isTypingGame);
+            }
+
+            return LeaderboardUpdateResult.builder()
+                    .success(true)
+                    .isNewBest(isNewBest)
+                    .rank(currentRank)
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Failed to update leaderboard for user {} and category {}", username, category, e);
+            return LeaderboardUpdateResult.builder()
+                    .success(false)
+                    .isNewBest(false)
+                    .rank(null)
+                    .build();
+        }
+    }
+
+    /**
+     * Calculates the rank for a user in a specific category.
+     * Uses optimized queries with LIMIT for better performance.
+     *
+     * @param user The user
+     * @param category The category
+     * @param isTypingGame Whether this is a typing game (use combined score for ranking)
+     * @return The rank position (1-based), or null if not on leaderboard
+     */
+    private Integer calculateRankForUser(User user, Category category, boolean isTypingGame) {
+        // Use optimized query based on game type - fetch top 1000 to find user's rank
+        final int RANK_QUERY_LIMIT = 1000;
+        
+        List<Leaderboard> entries;
+        if (isTypingGame) {
+            // For typing games, fetch by WPM and sort by combined score in memory
+            entries = leaderboardRepository.findTopNByCategoryOrderByWpmDesc(category, PageRequest.of(0, RANK_QUERY_LIMIT));
+        } else {
+            // For non-typing games, fetch by score (already sorted by score in query)
+            entries = leaderboardRepository.findTopNByCategoryOrderByScoreDesc(category, PageRequest.of(0, RANK_QUERY_LIMIT));
+        }
+
+        if (entries.isEmpty()) {
+            return null;
+        }
+
+        // Sort by appropriate metric (only needed for typing games)
+        List<Leaderboard> sortedEntries;
+        if (isTypingGame) {
+            sortedEntries = entries.stream()
+                    .sorted((a, b) -> {
+                        Double scoreA = LeaderboardEntry.calculateCombinedScore(a.getWordsPerMinute(), a.getAccuracy());
+                        Double scoreB = LeaderboardEntry.calculateCombinedScore(b.getWordsPerMinute(), b.getAccuracy());
+                        return scoreB.compareTo(scoreA);
+                    })
+                    .toList();
+        } else {
+            sortedEntries = entries; // Already sorted by DB query
+        }
+
+        // Find user's position
+        for (int i = 0; i < sortedEntries.size(); i++) {
+            if (sortedEntries.get(i).getUser().getUserId().equals(user.getUserId())) {
+                return i + 1; // 1-based rank
+            }
+        }
+
+        return null;
     }
 }
