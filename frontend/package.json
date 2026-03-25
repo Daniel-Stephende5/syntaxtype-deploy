@@ -21,7 +21,6 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.14.1",
-    // Using React 18.x (not 19.x) for stability and broader library compatibility
     "react-scripts": "^5.0.1",
     "web-vitals": "^2.1.4"
   },
