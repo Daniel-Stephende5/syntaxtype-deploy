@@ -75,7 +75,7 @@ export default function FourPicsGame({ onBack }) {
 
       <div style={{ display: "flex", justifyContent: "center", gap: 10, marginBottom: 20 }}>
         {current.images.map((img, i) => (
-          <img key={i} src={img} alt="clue" width={180} height={180} style={{ borderRadius: 10, border: '1px solid #ddd' }} />
+          <img key={i} src={img} alt="clue" width={300} height={250} style={{ borderRadius: 10, border: '1px solid #ddd' }} />
         ))}
       </div>
 
