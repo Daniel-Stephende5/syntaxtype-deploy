@@ -11,11 +11,12 @@
 - [x] **Phase 1: Leaderboard Data Layer** - Create backend API and data models for best scores per game ✅
 - [x] **Phase 2: Leaderboard Frontend** - Build leaderboard page to display top scores by game ✅
 - [ ] **Phase 1b: Leaderboard Game Mode Expansion** - Add scoring for new game modes (FourPics, CodeChallenges, Map, SyntaxSaver)
-- [ ] **Phase 3: Security & Error Handling** - Enable JWT auth, externalize secrets, configure exception handlers
-- [ ] **Phase 4: Backend Quality & Testing** - Fix data layer issues, add security tests
-- [ ] **Phase 5: Backend Modularization** - Restructure codebase into domain-based modules
-- [ ] **Phase 6: Frontend Improvements** - Migrate to Vite, fix quality issues
-- [ ] **Phase 7: Polish & Production Readiness** - Add logging, caching, integration tests
+- [ ] **Phase 3: Game Score Integration** - Connect game score submission to leaderboard system
+- [ ] **Phase 4: Security & Error Handling** - Enable JWT auth, externalize secrets, configure exception handlers
+- [ ] **Phase 5: Backend Quality & Testing** - Fix data layer issues, add security tests
+- [ ] **Phase 6: Backend Modularization** - Restructure codebase into domain-based modules
+- [ ] **Phase 7: Frontend Improvements** - Migrate to Vite, fix quality issues
+- [ ] **Phase 8: Polish & Production Readiness** - Add logging, caching, integration tests
 
 ---
 
@@ -57,7 +58,7 @@
 
 ---
 
-### Phase 1b: Leaderboard Game Mode Expansion (NEW)
+### Phase 1b: Leaderboard Game Mode Expansion
 
 **Goal:** Integrate new game modes into the leaderboard system with proper scoring
 
@@ -65,32 +66,59 @@
 
 **Requirements:** LB-08, LB-09, LB-10, LB-11, LB-12
 
-**New Game Modes:**
-| Game | Page File | Category Enum |
-|------|-----------|---------------|
-| Four Pics | FourPicsGame.js | FOUR_PICS |
-| Code Challenges | codeChallenges.js | CODE_CHALLENGES |
-| Map Game | map.js | MAP |
-| Syntax Saver | SyntaxSaverLesson.js | SYNTAX_SAVER |
-
 **Success Criteria** (what must be TRUE):
 
 1. Category enum includes all game types: TYPING_TESTS, FALLING_WORDS, GALAXY, GRID, BOOKWORM, CROSSWORD, FOUR_PICS, CODE_CHALLENGES, MAP, SYNTAX_SAVER, CHALLENGES, OVERALL
 2. LeaderboardPage.js game filter dropdown shows all 10 game categories
-3. LeaderboardService handles scoring calculation for all game types
-4. Each new game mode has a score submission endpoint: POST /api/scores/{gameType}
-5. LeaderboardController accepts all category values from frontend
-6. OVERALL leaderboard correctly aggregates best scores across all game types
+3. LeaderboardController accepts all category values from frontend
 
 **Plans:** TBD
 
 ---
 
-### Phase 3: Security & Error Handling
+### Phase 3: Game Score Integration (NEW)
+
+**Goal:** Connect game score submission to leaderboard system so scores actually appear on leaderboards
+
+**Depends on:** Phase 1b
+
+**Requirements:** SCORE-01, SCORE-02, SCORE-03, SCORE-04, SCORE-05
+
+**Problem:** Games submit scores to `/api/scores` but Leaderboard table is never updated. Two separate systems exist but aren't connected.
+
+**Success Criteria** (what must be TRUE):
+
+1. When a user completes a game, their score is recorded in the Leaderboard table with the correct category
+2. Each game type has a unified score submission endpoint that updates both Score and Leaderboard tables
+3. Score submission includes: WPM, accuracy, category (game type)
+4. Backend recalculates combined score and updates user's best if new score is higher
+5. Leaderboard reflects scores immediately after game completion
+6. All 10 game types (TypingTest, FallingTyping, Galaxy, Grid, Bookworm, Crossword, FourPics, CodeChallenges, Map, SyntaxSaver) submit to leaderboard
+
+**Score Submission Mapping:**
+
+| Game Type | Frontend File | Current Endpoint | Needs Update |
+|-----------|---------------|------------------|--------------|
+| TypingTest | TypingTest.js | POST /api/scores | Yes - add Leaderboard update |
+| FallingTyping | FallingTypingTest.js | POST /api/scores/falling | Yes - add Leaderboard update |
+| Galaxy | GalaxyGame.js | None | Yes - create endpoint |
+| Grid | GridGame.js | None | Yes - create endpoint |
+| Bookworm | Bookworm.js | None | Yes - create endpoint |
+| Crossword | CrosswordGame.js | None | Yes - create endpoint |
+| FourPics | FourPicsGame.js | None | Yes - create endpoint |
+| CodeChallenges | codeChallenges.js | None | Yes - create endpoint |
+| Map | map.js | None | Yes - create endpoint |
+| SyntaxSaver | SyntaxSaverLesson.js | None | Yes - create endpoint |
+
+**Plans:** TBD
+
+---
+
+### Phase 4: Security & Error Handling
 
 **Goal:** Users can securely access the application with JWT authentication, and API errors return proper responses
 
-**Depends on:** Phase 1b
+**Depends on:** Phase 3
 
 **Requirements:** SEC-01, SEC-02, SEC-03, SEC-04, SEC-05, SEC-06, ERR-01, ERR-02, ERR-03, ERR-04, ERR-05
 
@@ -108,11 +136,11 @@
 
 ---
 
-### Phase 4: Backend Quality & Testing
+### Phase 5: Backend Quality & Testing
 
 **Goal:** Backend data layer is consistent and reliable; authentication is properly tested
 
-**Depends on:** Phase 3
+**Depends on:** Phase 4
 
 **Requirements:** BQ-01, BQ-02, BQ-03, BQ-04, BQ-05, TEST-01, TEST-02, TEST-03
 
@@ -131,11 +159,11 @@
 
 ---
 
-### Phase 5: Backend Modularization
+### Phase 6: Backend Modularization
 
 **Goal:** Codebase organized by domain for improved maintainability and clear boundaries
 
-**Depends on:** Phase 4
+**Depends on:** Phase 5
 
 **Requirements:** (Code restructuring - no new functional requirements)
 
@@ -151,11 +179,11 @@
 
 ---
 
-### Phase 6: Frontend Improvements
+### Phase 7: Frontend Improvements
 
 **Goal:** Modern build system with improved code quality and user experience
 
-**Depends on:** Phase 5
+**Depends on:** Phase 6
 
 **Requirements:** FQ-01, FQ-02, FQ-03, FQ-04
 
@@ -163,18 +191,18 @@
 
 1. Application builds using Vite instead of deprecated react-scripts
 2. npm install completes without warnings about incorrect package types
-3. Score display show actual numeric values (not blank/empty) after completing a game
+3. Score display shows actual numeric values (not blank/empty) after completing a game
 4. Network error (API failure) displays user-friendly error message in UI instead of silent failure or raw error
 
 **Plans:** TBD
 
 ---
 
-### Phase 7: Polish & Production Readiness
+### Phase 8: Polish & Production Readiness
 
 **Goal:** Production-ready application with observability and comprehensive test coverage
 
-**Depends on:** Phase 6
+**Depends on:** Phase 7
 
 **Requirements:** (Final hardening - no new functional requirements)
 
@@ -196,11 +224,12 @@
 | 1 - Leaderboard Data Layer | Backend API for best scores | LB-01 to LB-04 | ✅ Complete |
 | 2 - Leaderboard Frontend | User-facing leaderboard UI | LB-05 to LB-07 | ✅ Complete |
 | 1b - Game Mode Expansion | Integrate new game modes | LB-08 to LB-12 | Pending |
-| 3 - Security & Error Handling | Secure JWT auth with proper errors | SEC-01 to SEC-06, ERR-01 to ERR-05 | Pending |
-| 4 - Backend Quality & Testing | Consistent data layer, tested auth | BQ-01 to BQ-05, TEST-01 to TEST-03 | Pending |
-| 5 - Backend Modularization | Domain-based code organization | (restructuring) | Pending |
-| 6 - Frontend Improvements | Modern build, quality fixes | FQ-01 to FQ-04 | Pending |
-| 7 - Polish & Production Readiness | Production hardening | (observability) | Pending |
+| 3 - Game Score Integration | Connect games to leaderboard | SCORE-01 to SCORE-05 | Pending |
+| 4 - Security & Error Handling | Secure JWT auth | SEC-01 to SEC-06, ERR-01 to ERR-05 | Pending |
+| 5 - Backend Quality & Testing | Consistent data layer | BQ-01 to BQ-05, TEST-01 to TEST-03 | Pending |
+| 6 - Backend Modularization | Domain-based organization | (restructuring) | Pending |
+| 7 - Frontend Improvements | Modern build | FQ-01 to FQ-04 | Pending |
+| 8 - Polish & Production Readiness | Production hardening | (observability) | Pending |
 
 ---
 
@@ -211,31 +240,32 @@
 | 1. Leaderboard Data Layer | ✅ Complete | 2026-03-23 |
 | 2. Leaderboard Frontend | ✅ Complete | 2026-03-23 |
 | 1b. Game Mode Expansion | Not started | - |
-| 3. Security & Error Handling | Not started | - |
-| 4. Backend Quality & Testing | Not started | - |
-| 5. Backend Modularization | Not started | - |
-| 6. Frontend Improvements | Not started | - |
-| 7. Polish & Production Readiness | Not started | - |
+| 3. Game Score Integration | Not started | - |
+| 4. Security & Error Handling | Not started | - |
+| 5. Backend Quality & Testing | Not started | - |
+| 6. Backend Modularization | Not started | - |
+| 7. Frontend Improvements | Not started | - |
+| 8. Polish & Production Readiness | Not started | - |
 
 ---
 
 ## Game Categories Reference
 
-| Category Enum | Frontend Page | Phase 1 Support |
-|--------------|---------------|-----------------|
-| TYPING_TESTS | TypingTest.js | ✅ |
-| FALLING_WORDS | FallingTypingTest.js | ✅ |
-| GALAXY | GalaxyGame/ | ✅ |
-| GRID | GridGame.js | ✅ |
-| BOOKWORM | Bookworm.js | ✅ |
-| CROSSWORD | CrosswordGame.js | ✅ |
-| FOUR_PICS | FourPicsGame.js | ❌ Phase 1b |
-| CODE_CHALLENGES | codeChallenges.js | ❌ Phase 1b |
-| MAP | map.js | ❌ Phase 1b |
-| SYNTAX_SAVER | SyntaxSaverLesson.js | ❌ Phase 1b |
-| CHALLENGES | ChallengePage.js | ❌ Phase 1b |
-| OVERALL | (computed) | ✅ |
+| Category Enum | Frontend Page | Phase 1 Support | Score Integration |
+|--------------|---------------|-----------------|------------------|
+| TYPING_TESTS | TypingTest.js | ✅ | ❌ Phase 3 |
+| FALLING_WORDS | FallingTypingTest.js | ✅ | ❌ Phase 3 |
+| GALAXY | GalaxyGame/ | ✅ | ❌ Phase 3 |
+| GRID | GridGame.js | ✅ | ❌ Phase 3 |
+| BOOKWORM | Bookworm.js | ✅ | ❌ Phase 3 |
+| CROSSWORD | CrosswordGame.js | ✅ | ❌ Phase 3 |
+| FOUR_PICS | FourPicsGame.js | ❌ Phase 1b | ❌ Phase 3 |
+| CODE_CHALLENGES | codeChallenges.js | ❌ Phase 1b | ❌ Phase 3 |
+| MAP | map.js | ❌ Phase 1b | ❌ Phase 3 |
+| SYNTAX_SAVER | SyntaxSaverLesson.js | ❌ Phase 1b | ❌ Phase 3 |
+| CHALLENGES | ChallengePage.js | ❌ Phase 1b | ❌ Phase 3 |
+| OVERALL | (computed) | ✅ | ✅ Phase 3 |
 
 ---
 
-*Generated by GSD workflow - updated with new game modes*
+*Generated by GSD workflow - updated with score integration phase*
