@@ -1,14 +1,16 @@
 # SyntaxType Roadmap
 
 **Generated:** 2026-03-14  
+**Updated:** 2026-03-25
 **Granularity:** standard
 
 ---
 
 ## Phases
 
-- [ ] **Phase 1: Leaderboard Data Layer** - Create backend API and data models for best scores per game
-- [ ] **Phase 2: Leaderboard Frontend** - Build leaderboard page to display top scores by game
+- [x] **Phase 1: Leaderboard Data Layer** - Create backend API and data models for best scores per game ✅
+- [x] **Phase 2: Leaderboard Frontend** - Build leaderboard page to display top scores by game ✅
+- [ ] **Phase 1b: Leaderboard Game Mode Expansion** - Add scoring for new game modes (FourPics, CodeChallenges, Map, SyntaxSaver)
 - [ ] **Phase 3: Security & Error Handling** - Enable JWT auth, externalize secrets, configure exception handlers
 - [ ] **Phase 4: Backend Quality & Testing** - Fix data layer issues, add security tests
 - [ ] **Phase 5: Backend Modularization** - Restructure codebase into domain-based modules
@@ -19,53 +21,68 @@
 
 ## Phase Details
 
-### Phase 1: Leaderboard Data Layer
+### Phase 1: Leaderboard Data Layer ✅
 
 **Goal:** Create backend infrastructure to track and retrieve best scores for each player across all games
 
-**Depends on:** Nothing (can be parallel with Phase 3)
+**Status:** Complete
 
 **Requirements:** LB-01, LB-02, LB-03, LB-04
 
-**Success Criteria** (what must be TRUE):
-
-1. Backend exposes `/api/leaderboard/global` endpoint returning top 10 scores across all games
-2. Backend exposes `/api/leaderboard/game/{gameId}` endpoint returning top 10 scores for specific game
-3. Backend exposes `/api/leaderboard/user/{userId}` endpoint returning best score per game for a user
-4. Each leaderboard entry includes: rank, username, score, game name, date achieved
-5. API response time < 200ms for leaderboard queries (indexed queries)
-6. Leaderboard data includes scores from all game types (TypingTest, FallingTypingTest, GalaxyGame, GridGame, Bookworm, CrosswordGame)
-
-**Plans:** 3 plans
-
-Plans:
-- [x] 01-01-PLAN.md — LeaderboardEntry DTO + Repository ranking queries ✅
-- [ ] 01-02-PLAN.md — LeaderboardService aggregation logic
-- [ ] 01-03-PLAN.md — LeaderboardController endpoints + indexes
+**Deliverables:**
+- LeaderboardEntry DTO with combined score formula
+- LeaderboardRepository with ranking queries
+- LeaderboardService with aggregation logic
+- LeaderboardController with 3 public endpoints
+- Database indexes for performance
 
 ---
 
-### Phase 2: Leaderboard Frontend
+### Phase 2: Leaderboard Frontend ✅
 
 **Goal:** Build user-facing leaderboard page showing best scores per game with filtering and sorting
 
-**Depends on:** Phase 1
+**Status:** Complete
 
 **Requirements:** LB-05, LB-06, LB-07
 
+**Deliverables:**
+- LeaderboardPage.js component (~370 lines)
+- Table with medal emojis for top 3
+- Filter by game, sort by metric
+- Best/Recent toggle with localStorage
+- Current user highlighting
+- Loading spinner, empty state, error auto-retry
+- Guest banner with Register/Login
+
+---
+
+### Phase 1b: Leaderboard Game Mode Expansion (NEW)
+
+**Goal:** Integrate new game modes into the leaderboard system with proper scoring
+
+**Depends on:** Phase 2
+
+**Requirements:** LB-08, LB-09, LB-10, LB-11, LB-12
+
+**New Game Modes:**
+| Game | Page File | Category Enum |
+|------|-----------|---------------|
+| Four Pics | FourPicsGame.js | FOUR_PICS |
+| Code Challenges | codeChallenges.js | CODE_CHALLENGES |
+| Map Game | map.js | MAP |
+| Syntax Saver | SyntaxSaverLesson.js | SYNTAX_SAVER |
+
 **Success Criteria** (what must be TRUE):
 
-1. `/leaderboard` route displays global leaderboard with top 10 scores
-2. User can filter leaderboard by game type (dropdown or tabs)
-3. User can view their own rank when logged in (highlighted row)
-4. Leaderboard updates after completing a game without page refresh
-5. Loading state shown while fetching leaderboard data
-6. Empty state displayed if no scores exist for a game
+1. Category enum includes all game types: TYPING_TESTS, FALLING_WORDS, GALAXY, GRID, BOOKWORM, CROSSWORD, FOUR_PICS, CODE_CHALLENGES, MAP, SYNTAX_SAVER, CHALLENGES, OVERALL
+2. LeaderboardPage.js game filter dropdown shows all 10 game categories
+3. LeaderboardService handles scoring calculation for all game types
+4. Each new game mode has a score submission endpoint: POST /api/scores/{gameType}
+5. LeaderboardController accepts all category values from frontend
+6. OVERALL leaderboard correctly aggregates best scores across all game types
 
-**Plans:** 1 plan
-
-Plans:
-- [ ] 02-01-PLAN.md — LeaderboardPage component with filters, table, auth integration
+**Plans:** TBD
 
 ---
 
@@ -73,7 +90,7 @@ Plans:
 
 **Goal:** Users can securely access the application with JWT authentication, and API errors return proper responses
 
-**Depends on:** Nothing (first phase)
+**Depends on:** Phase 1b
 
 **Requirements:** SEC-01, SEC-02, SEC-03, SEC-04, SEC-05, SEC-06, ERR-01, ERR-02, ERR-03, ERR-04, ERR-05
 
@@ -146,7 +163,7 @@ Plans:
 
 1. Application builds using Vite instead of deprecated react-scripts
 2. npm install completes without warnings about incorrect package types
-3. Score display shows actual numeric values (not blank/empty) after completing a game
+3. Score display show actual numeric values (not blank/empty) after completing a game
 4. Network error (API failure) displays user-friendly error message in UI instead of silent failure or raw error
 
 **Plans:** TBD
@@ -174,30 +191,51 @@ Plans:
 
 ## Coverage Map
 
-| Phase | Goal | Requirements | Success Criteria |
-|-------|------|--------------|------------------|
-| 1 - Leaderboard Data Layer | Backend API for best scores | LB-01 to LB-04 | 6 criteria |
-| 2 - Leaderboard Frontend | User-facing leaderboard UI | LB-05 to LB-07 | 6 criteria |
-| 3 - Security & Error Handling | Secure JWT auth with proper errors | SEC-01 to SEC-06, ERR-01 to ERR-05 | 7 criteria |
-| 4 - Backend Quality & Testing | Consistent data layer, tested auth | BQ-01 to BQ-05, TEST-01 to TEST-03 | 8 criteria |
-| 5 - Backend Modularization | Domain-based code organization | (restructuring) | 5 criteria |
-| 6 - Frontend Improvements | Modern build, quality fixes | FQ-01 to FQ-04 | 4 criteria |
-| 7 - Polish & Production Readiness | Production hardening | (observability) | 4 criteria |
+| Phase | Goal | Requirements | Status |
+|-------|------|--------------|--------|
+| 1 - Leaderboard Data Layer | Backend API for best scores | LB-01 to LB-04 | ✅ Complete |
+| 2 - Leaderboard Frontend | User-facing leaderboard UI | LB-05 to LB-07 | ✅ Complete |
+| 1b - Game Mode Expansion | Integrate new game modes | LB-08 to LB-12 | Pending |
+| 3 - Security & Error Handling | Secure JWT auth with proper errors | SEC-01 to SEC-06, ERR-01 to ERR-05 | Pending |
+| 4 - Backend Quality & Testing | Consistent data layer, tested auth | BQ-01 to BQ-05, TEST-01 to TEST-03 | Pending |
+| 5 - Backend Modularization | Domain-based code organization | (restructuring) | Pending |
+| 6 - Frontend Improvements | Modern build, quality fixes | FQ-01 to FQ-04 | Pending |
+| 7 - Polish & Production Readiness | Production hardening | (observability) | Pending |
 
 ---
 
 ## Progress
 
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 1. Leaderboard Data Layer | 1/3 | In Progress | 01-01 (2026-03-23) |
-| 2. Leaderboard Frontend | 0/1 | Planned | - |
-| 3. Security & Error Handling | 0/1 | Not started | - |
-| 4. Backend Quality & Testing | 0/1 | Not started | - |
-| 5. Backend Modularization | 0/1 | Not started | - |
-| 6. Frontend Improvements | 0/1 | Not started | - |
-| 7. Polish & Production Readiness | 0/1 | Not started | - |
+| Phase | Status | Completed |
+|-------|--------|-----------|
+| 1. Leaderboard Data Layer | ✅ Complete | 2026-03-23 |
+| 2. Leaderboard Frontend | ✅ Complete | 2026-03-23 |
+| 1b. Game Mode Expansion | Not started | - |
+| 3. Security & Error Handling | Not started | - |
+| 4. Backend Quality & Testing | Not started | - |
+| 5. Backend Modularization | Not started | - |
+| 6. Frontend Improvements | Not started | - |
+| 7. Polish & Production Readiness | Not started | - |
 
 ---
 
-*Generated by GSD workflow - auto mode*
+## Game Categories Reference
+
+| Category Enum | Frontend Page | Phase 1 Support |
+|--------------|---------------|-----------------|
+| TYPING_TESTS | TypingTest.js | ✅ |
+| FALLING_WORDS | FallingTypingTest.js | ✅ |
+| GALAXY | GalaxyGame/ | ✅ |
+| GRID | GridGame.js | ✅ |
+| BOOKWORM | Bookworm.js | ✅ |
+| CROSSWORD | CrosswordGame.js | ✅ |
+| FOUR_PICS | FourPicsGame.js | ❌ Phase 1b |
+| CODE_CHALLENGES | codeChallenges.js | ❌ Phase 1b |
+| MAP | map.js | ❌ Phase 1b |
+| SYNTAX_SAVER | SyntaxSaverLesson.js | ❌ Phase 1b |
+| CHALLENGES | ChallengePage.js | ❌ Phase 1b |
+| OVERALL | (computed) | ✅ |
+
+---
+
+*Generated by GSD workflow - updated with new game modes*

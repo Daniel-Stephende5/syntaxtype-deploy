@@ -33,12 +33,17 @@ import {
 
 const GAME_OPTIONS = [
   { value: "", label: "All Games" },
-  { value: "TypingTest", label: "Typing Test" },
-  { value: "FallingTypingTest", label: "Falling Typing" },
-  { value: "GalaxyGame", label: "Galaxy Game" },
-  { value: "GridGame", label: "Grid Game" },
-  { value: "Bookworm", label: "Bookworm" },
-  { value: "CrosswordGame", label: "Crossword" },
+  { value: "TYPING_TESTS", label: "Typing Test" },
+  { value: "FALLING_WORDS", label: "Falling Typing" },
+  { value: "GALAXY", label: "Galaxy Game" },
+  { value: "GRID", label: "Grid Game" },
+  { value: "BOOKWORM", label: "Bookworm" },
+  { value: "CROSSWORD", label: "Crossword" },
+  { value: "FOUR_PICS", label: "Four Pics" },
+  { value: "CODE_CHALLENGES", label: "Code Challenges" },
+  { value: "MAP", label: "Map Game" },
+  { value: "SYNTAX_SAVER", label: "Syntax Saver" },
+  { value: "CHALLENGES", label: "Challenges" },
 ];
 
 const LeaderboardPage = () => {

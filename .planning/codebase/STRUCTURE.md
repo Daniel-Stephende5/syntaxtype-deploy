@@ -1,211 +1,232 @@
 # Codebase Structure
 
-**Analysis Date:** 2026-03-14
+**Analysis Date:** 2026-03-25
 
 ## Directory Layout
 
 ```
 syntaxtype-deploy/
-├── backend/                    # Spring Boot application
+├── .planning/                    # GSD planning documents
+│   └── codebase/
+├── backend/                      # Spring Boot application
 │   ├── src/main/java/com/syntaxtype/demo/
-│   │   ├── Controller/         # REST API controllers
-│   │   ├── Service/           # Business logic
-│   │   ├── Repository/        # JPA repositories
-│   │   ├── Entity/            # JPA entities
-│   │   ├── DTO/               # Data Transfer Objects
-│   │   ├── Exception/         # Exception handlers
-│   │   └── Controller/auth/security/  # JWT security
+│   │   ├── Controller/          # REST controllers
+│   │   ├── Service/              # Business logic
+│   │   ├── Repository/           # Data access
+│   │   ├── Entity/               # JPA entities
+│   │   ├── DTO/                  # Data transfer objects
+│   │   └── Exception/            # Exception handlers
 │   ├── src/main/resources/
 │   │   └── application.properties
-│   ├── pom.xml
+│   ├── src/test/                 # Test sources
+│   ├── pom.xml                   # Maven dependencies
 │   └── Dockerfile
-├── frontend/                   # React application
+├── frontend/                     # React application
 │   ├── src/
-│   │   ├── pages/             # Page components
-│   │   ├── components/        # Reusable components
-│   │   ├── utils/             # Utilities
-│   │   ├── css/               # Stylesheets
-│   │   ├── App.js             # Main app with routing
-│   │   ├── index.js           # Entry point
-│   │   └── setupProxy.js      # Dev proxy config
+│   │   ├── components/            # Reusable UI components
+│   │   ├── pages/                # Page components
+│   │   ├── utils/                # Utility functions
+│   │   ├── css/                  # Stylesheets
+│   │   ├── App.js                # Main app component
+│   │   ├── index.js              # Entry point
+│   │   └── *.config.js           # Configuration files
+│   ├── public/                   # Static assets
 │   ├── package.json
-│   └── public/
-├── .vscode/                   # VS Code settings
-└── .planning/codebase/        # Analysis documents
+│   └── tailwind.config.js
+└── p/                             # Parent directory marker
 ```
 
-## Backend Directory Purposes
+## Directory Purposes
 
-**Controller Directory:**
-- Purpose: Handle HTTP requests and define REST API endpoints
-- Contains: REST controllers organized by domain
-- Key files:
-  - `AuthController.java` - `/api/auth/*` endpoints
-  - `UserController.java` - User management
-  - `LessonsController.java` - Lesson CRUD
-  - `StudentController.java` - Student operations
-  - `TeacherController.java` - Teacher operations
+### Backend (`backend/`)
 
-**Service Directory:**
-- Purpose: Business logic and orchestration
-- Contains: Service classes with `@Service` annotation
-- Key files:
+**Controller Layer:**
+- Location: `backend/src/main/java/com/syntaxtype/demo/Controller/`
+- Contains: REST endpoint handlers organized by feature
+- Subdirectories:
+  - `auth/` - Authentication and security (AuthController, JwtUtil, SecurityConfig)
+  - `users/` - User CRUD operations (UserController, StudentController, TeacherController)
+  - `lessons/` - Lesson content management
+  - `statistics/` - Statistics and leaderboards
+  - `junctions/` - Many-to-many relationship handlers
+
+**Service Layer:**
+- Location: `backend/src/main/java/com/syntaxtype/demo/Service/`
+- Contains: Business logic classes
+- Subdirectories mirror Controller organization:
   - `users/` - UserService, StudentService, TeacherService, AdminService
-  - `lessons/` - LessonsService, QuizService, ChallengeService
-  - `statistics/` - ScoringService, LeaderboardService, AchievementsService
+  - `lessons/` - LessonsService, QuizService, TopicsService, ChallengeService
+  - `statistics/` - ScoringService, AchievementsService, LeaderboardService
+  - `junctions/` - StudentTopicsService, TeacherTopicsService
 
-**Repository Directory:**
-- Purpose: Data access layer using JPA
-- Contains: Repository interfaces extending JpaRepository
-- Key files:
-  - `users/UserRepository.java`
-  - `lessons/LessonsRepository.java`
-  - `statistics/ScoringRepository.java`
+**Repository Layer:**
+- Location: `backend/src/main/java/com/syntaxtype/demo/Repository/`
+- Contains: JPA repository interfaces
+- Pattern: `JpaRepository<Entity, Long>` with custom query methods
 
-**Entity Directory:**
-- Purpose: Database table mappings
-- Contains: JPA entities with annotations
-- Key files:
-  - `Users/User.java` - Base user entity
-  - `Users/Student.java` - Student profile
-  - `Users/Teacher.java` - Teacher profile
-  - `Lessons/Lessons.java` - Lesson content
-  - `Statistics/Scoring.java` - Score records
-  - `Enums/Role.java` - ADMIN, TEACHER, STUDENT, USER
+**Entity Layer:**
+- Location: `backend/src/main/java/com/syntaxtype/demo/Entity/`
+- Contains: JPA entity classes
+- Subdirectories:
+  - `Users/` - User, Student, Teacher, Admin
+  - `Lessons/` - Lessons, Topics, Quiz, QuizItem, Challenge, GalaxyChallenge
+  - `Statistics/` - UserStatistics, Achievements, LessonAttempts, Scoring, Leaderboard
+  - `Junctions/` - StudentTopics, TeacherTopics (join tables)
+  - `Enums/` - Role, ChallengeType, Category
+  - `CompositeKeys/` - TeacherTopicsId, StudentTopicsId
+  - `Lessons/GalaxyChallengeClasses/` - Question, Choice, QuestionTypes
 
-**DTO Directory:**
-- Purpose: Data transfer objects for API communication
-- Contains: POJOs for requests/responses
-- Key files:
-  - `users/UserDTO.java`
-  - `lessons/LessonsDTO.java`
-  - `statistics/ScoringDTO.java`
+**DTO Layer:**
+- Location: `backend/src/main/java/com/syntaxtype/demo/DTO/`
+- Contains: Data Transfer Objects
+- Pattern: Separate subdirectories for different entity types
+  - `users/` - UserDTO, TeacherDTO, StudentDTO
+  - `lessons/` - TopicsDTO, GalaxyChallengeDTO
+  - `users/requests/` - TempTeacherUpdate
+  - `users/responses/` - AccountSetupResponse
 
-**Exception Directory:**
-- Purpose: Custom exception handling
-- Key files:
+**Exception Layer:**
+- Location: `backend/src/main/java/com/syntaxtype/demo/Exception/`
+- Contains: Custom exception classes and handlers
   - `GlobalExceptionHandler.java`
   - `RestExceptionHandler.java`
   - `UsernameConflictException.java`
 
-## Frontend Directory Purposes
+### Frontend (`frontend/`)
 
-**Pages Directory:**
-- Purpose: Full-page components mapped to routes
-- Contains: React components for each page/view
+**Components:**
+- Location: `frontend/src/components/`
+- Contains: Reusable React components
 - Key files:
-  - `LoginPage.js` - Authentication
+  - `Navbar.js` - Navigation bar with responsive sidebar
+  - `ProtectedRoute.js` - Route guard with role checking
+  - `PublicOnlyRoute.js` - Redirects logged-in users from public pages
+  - `NotFoundRedirect.js` - 404 handler
+  - `Dashboard.js` - Main dashboard component
+  - `AdminDashboard.js` - Admin-specific dashboard
+  - `AdminManageUsers.js` - User management interface
+
+**Pages:**
+- Location: `frontend/src/pages/`
+- Contains: Route-specific page components
+- Key pages:
+  - `LoginPage.js` - User login
   - `RegisterPage.js` - User registration
   - `Dashboard.js` - Main dashboard
-  - `TypingTest.js` - Typing practice game
-  - `FallingTypingTest.js` - Falling words typing game
-  - `GalaxyGame/GalaxyMainGame.js` - Galaxy space game
-  - `InstructorModule.js` - Teacher lesson management
-  - `CreateLessonModule.js` - Create new lessons
-  - `AdminManageUsers.js` - Admin user management
+  - `TypingTest.js` - Typing practice
+  - `FallingTypingTest.js` / `AdvancedFallingTypingTest.js` - Falling words typing
+  - `QuizMenu.js` - Quiz selection
+  - `GalaxyGame/` - Galaxy challenge subfolder
+    - `GalaxyMainGame.js` - Main game component
+    - `GalaxyChallengeList.js` - Challenge selection
+    - `GalaxyEnemy.js`, `GalaxyControls.js`, `GalaxyPowerup.js` - Game elements
+  - `GridGame.js` - Grid-based puzzle game
+  - `Bookworm.js` - Reading comprehension game
+  - `CrosswordGame.js` - Crossword puzzle
+  - `LeaderboardPage.js` - Public leaderboard
+  - `ChallengePage.js` - Challenge management
+  - `LessonDetail.js` - Lesson viewer
+  - `CreateLessonModule.js` / `EditLessonModule.js` - Lesson CRUD
+  - `AllLessonsView.js` - Lesson listing
+  - `InstructorModule.js` - Instructor dashboard
+  - `StudentDetailsForm.js` / `TeacherDetailsForm.js` - Profile forms
+  - `StudentStatisticsPage.js` / `PersonalStatsDashboard.js` - Statistics views
+  - `codeChallenges.js`, `judge0.js` - Code execution integration
+  - `map.js`, `usePlayer.js` - Game utilities
 
-**Components Directory:**
-- Purpose: Reusable UI components
+**Utilities:**
+- Location: `frontend/src/utils/`
 - Key files:
-  - `Navbar.js` - Navigation header
-  - `ProtectedRoute.js` - Route guard with role checking
-  - `PublicOnlyRoute.js` - Guest-only route guard
-  - `NotFoundRedirect.js` - 404 handler
-  - `Dashboard.js` - Dashboard layout
-  - `AdminDashboard.js` - Admin-specific layout
+  - `api.js` - API URL resolution with environment fallback
+  - `AuthUtils.js` - Token management (setAuthToken, getAuthToken, subscribeToAuthChanges)
+  - `JwtUtils.js` - JWT decoding and validation (getUserRole, getUserId, getUsername)
 
-**Utils Directory:**
-- Purpose: Utility functions and API helpers
-- Key files:
-  - `api.js` - API URL resolution (`API_BASE`, `resolveApi()`)
-  - `AuthUtils.js` - Token management, axios header setup
-  - `JwtUtils.js` - JWT decoding, expiry validation
-
-**CSS Directory:**
-- Purpose: Component-specific stylesheets
-- Files: `typingtest.css`, `TotalDashboard.css`, etc.
+**Configuration:**
+- `tailwind.config.js` - Tailwind CSS configuration
+- `postcss.config.js` - PostCSS configuration
+- `setupProxy.js` - Development proxy configuration
 
 ## Key File Locations
 
 **Entry Points:**
-- Backend: `backend/src/main/java/com/syntaxtype/demo/DemoApplication.java`
-- Frontend: `frontend/src/index.js`
+- `backend/src/main/java/com/syntaxtype/demo/DemoApplication.java` - Spring Boot main class
+- `frontend/src/index.js` - React entry point
+- `frontend/src/App.js` - Main React component with routing
 
 **Configuration:**
-- Backend: `backend/src/main/resources/application.properties`
-- Frontend proxy: `frontend/src/setupProxy.js`
-- Frontend env: `frontend/.env`
+- `backend/src/main/resources/application.properties` - Spring Boot configuration
+- `frontend/package.json` - npm dependencies and scripts
+- `backend/pom.xml` - Maven dependencies
 
-**Routing:**
-- Frontend: `frontend/src/App.js` - All route definitions
-
-**Authentication:**
-- Backend JWT: `backend/src/main/java/com/syntaxtype/demo/Controller/auth/security/JwtUtil.java`
-- Backend Security: `backend/src/main/java/com/syntaxtype/demo/Controller/auth/security/SecurityConfig.java`
-- Frontend Auth: `frontend/src/utils/AuthUtils.js`
+**Core Logic:**
+- `backend/src/main/java/com/syntaxtype/demo/Controller/auth/AuthController.java` - Authentication
+- `frontend/src/pages/LoginPage.js` - Login UI
+- `frontend/src/utils/AuthUtils.js` - Client-side auth
 
 ## Naming Conventions
 
-**Files:**
-- Java: PascalCase (e.g., `UserService.java`, `LessonsController.java`)
-- JavaScript/JSX: PascalCase (e.g., `LoginPage.js`, `ProtectedRoute.js`)
-- CSS: kebab-case (e.g., `typingtest.css`, `TotalDashboard.css`)
+**Backend (Java):**
+- Files: PascalCase (`UserController.java`, `UserService.java`)
+- Directories: camelCase (`Controller/users/`)
+- Classes: PascalCase
+- Methods: camelCase
+- Variables: camelCase
+- Constants: UPPER_SNAKE_CASE
 
-**Directories:**
-- Java packages: lowercase with subdirectories (e.g., `Service/users/`)
-- Frontend: PascalCase for components, lowercase for utilities
-
-**Java Classes:**
-- Controllers: `*Controller.java`
-- Services: `*Service.java`
-- Repositories: `*Repository.java`
-- Entities: Entity name (e.g., `User.java`, `Lessons.java`)
-- DTOs: `*DTO.java`
+**Frontend (JavaScript/React):**
+- Files: PascalCase for components (`LoginPage.js`), camelCase for utilities (`authUtils.js`)
+- Directories: camelCase or kebab-case
+- Components: PascalCase
+- Functions/variables: camelCase
+- Constants: UPPER_SNAKE_CASE
 
 ## Where to Add New Code
 
-**New Backend Feature:**
-1. Create Entity in `Entity/` if new database table needed
-2. Create DTO in `DTO/` for API communication
-3. Create Repository in `Repository/`
-4. Create Service in `Service/`
-5. Create Controller in `Controller/`
-6. Add exception handling if needed in `Exception/`
+### Backend
 
-**New Frontend Feature:**
-1. Create page component in `pages/` if new route needed
-2. Create reusable components in `components/`
-3. Add utility functions in `utils/` if needed
-4. Add route in `App.js` with ProtectedRoute wrapper
+**New Entity:**
+1. Create entity class in `backend/src/main/java/com/syntaxtype/demo/Entity/<Category>/`
+2. Create corresponding repository in `Repository/<Category>/`
+3. Create service in `Service/<Category>/`
+4. Create DTO in `DTO/<Category>/`
+5. Create controller in `Controller/<Category>/`
 
 **New API Endpoint:**
-1. Add method to existing Controller or create new Controller
-2. Implement logic in Service layer
-3. Query/persist data via Repository
-4. Return DTO to frontend
+1. Add method to existing controller or create new controller
+2. Use `@GetMapping`, `@PostMapping`, etc.
+3. Add `@PreAuthorize` for protected endpoints
+4. Document with `@ApiResponses` for Swagger
 
-**New Database Entity:**
-1. Create Entity class with JPA annotations
-2. Use Lombok annotations for getters/setters
-3. Create corresponding DTO
-4. Create Repository interface
-5. Add Service method to interact with Repository
+### Frontend
+
+**New Page:**
+1. Create file in `frontend/src/pages/`
+2. Import in `frontend/src/App.js`
+3. Add Route with appropriate `ProtectedRoute` wrapper
+
+**New Component:**
+1. Create file in `frontend/src/components/`
+2. Import and use in page components
+
+**New API Utility:**
+1. Add function to `frontend/src/utils/api.js`
+2. Use existing `API_BASE` for URL resolution
 
 ## Special Directories
 
-**Backend Controller/auth/security:**
-- Purpose: JWT authentication and Spring Security configuration
-- Contains: JwtUtil, JwtAuthFilter, SecurityConfig, CustomUserDetailsService, JwtResponse
+**GalaxyGame Subdirectory:**
+- Purpose: Galaxy challenge game implementation
+- Contains: Main game, enemy, controls, powerups, events, background, assets
+- Structure: Modular game architecture
 
-**Frontend pages/GalaxyGame:**
-- Purpose: Complex game component with multiple sub-files
-- Contains: GalaxyMainGame.js, GalaxyChallengeList.js, GalaxyEnemy.js, GalaxyControls.js, etc.
+**DTO Subdirectories:**
+- Purpose: Organized DTOs by entity type
+- Contains: users, lessons, nested requests/responses
 
-**backend/target:**
-- Purpose: Maven build output (generated)
-- Generated: Yes
-- Committed: No (should be in .gitignore)
+**Junction Tables:**
+- Purpose: Many-to-many relationships (StudentTopics, TeacherTopics)
+- Contains: Composite key classes for composite primary keys
 
 ---
 
-*Structure analysis: 2026-03-14*
+*Structure analysis: 2026-03-25*

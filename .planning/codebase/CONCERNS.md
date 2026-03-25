@@ -306,4 +306,219 @@ logging.level.org.springframework.security=DEBUG
 
 ---
 
-*Concerns audit: 2026-03-14*
+## Additional Security Concerns (2026-03-25)
+
+### Hardcoded API Key in Frontend
+
+**Issue:** RapidAPI key is hardcoded directly in frontend JavaScript code.
+
+**Files:**
+- `frontend/src/pages/judge0.js` (lines 7-8)
+
+**Details:**
+```javascript
+const RAPIDAPI_HOST = "judge0-ce.p.rapidapi.com";
+const RAPIDAPI_KEY = "59d1b3d17fmsh86f863c96541ddcp19de3cjsnfa4c4a2f3419";
+```
+
+**Impact:** API key is exposed in client-side code. Anyone can extract and use the key, potentially exhausting quota or incurring charges.
+
+**Fix approach:** Move code execution to backend API, use environment variables, or implement API key proxy on server-side.
+
+---
+
+### Hardcoded CORS Origins in SecurityConfig
+
+**Issue:** Frontend URLs are hardcoded in SecurityConfig instead of using configuration.
+
+**Files:**
+- `backend/src/main/java/com/syntaxtype/demo/Controller/auth/security/SecurityConfig.java` (line 78)
+
+**Details:**
+```java
+List<String> allowedOrigins = List.of("http://localhost:3000", "http://localhost:5173", "https://syntaxtype-deploy-omega.vercel.app/");
+```
+
+**Impact:** Cannot easily add new frontend environments without code changes. Risk of accidentally locking out deployments.
+
+**Fix approach:** Use `${FRONTEND_URL}` environment variable or external configuration.
+
+---
+
+### No Input Validation on DTOs
+
+**Issue:** No validation annotations on request DTOs.
+
+**Files:**
+- All DTO classes in `backend/src/main/java/com/syntaxtype/demo/DTO/`
+
+**Details:** No `@Valid`, `@NotNull`, `@NotBlank`, `@Size`, `@Email` annotations on DTO fields.
+
+**Impact:** Invalid data accepted at API layer. Potential for database corruption, security issues, and unexpected behavior.
+
+**Fix approach:** Add Bean Validation annotations to all DTOs and enable validation in controllers.
+
+---
+
+## Additional Error Handling Issues
+
+### Swallowed Exceptions Using System.out.println
+
+**Issue:** Service exceptions are caught and logged with System.out instead of proper logging framework.
+
+**Files:**
+- `backend/src/main/java/com/syntaxtype/demo/Service/lessons/GalaxyChallengeService.java` (lines 117, 139, 168)
+
+**Details:**
+```java
+} catch (Exception e) {
+    System.out.println("Error saving Galaxy Challenge: " + e.getMessage());
+    return false;
+}
+```
+
+**Impact:** No stack traces in logs, inconsistent with Spring best practices, difficult to debug.
+
+**Fix approach:** Use proper SLF4J logging with logger.error("message", e).
+
+---
+
+### Console.error Used in Frontend Instead of Error Handling
+
+**Issue:** Frontend uses console.error for error handling instead of user-friendly error states.
+
+**Files:**
+- Multiple files including `frontend/src/pages/LoginPage.js`, `frontend/src/pages/RegisterPage.js`, `frontend/src/pages/TeacherSetupAccountPage.js`
+
+**Details:**
+```javascript
+} catch (error) {
+    console.error('Error setting up account:', error);
+    // ... only sets generic error message
+}
+```
+
+**Impact:** Errors not visible to users in most cases. Difficult to diagnose issues in production.
+
+**Fix approach:** Implement proper error boundaries, toast notifications, and user-friendly error messages.
+
+---
+
+## Additional Code Quality Issues
+
+### Very Low Test Coverage
+
+**Issue:** Only 4 test files exist for entire codebase.
+
+**Files:**
+- `backend/src/test/java/com/syntaxtype/demo/Controller/statistics/LeaderboardControllerTest.java`
+- `backend/src/test/java/com/syntaxtype/demo/Service/statistics/LeaderboardServiceTest.java`
+- `backend/src/test/java/com/syntaxtype/demo/Repository/statistics/LeaderboardRepositoryTest.java`
+- `backend/src/test/java/com/syntaxtype/demo/DTO/statistics/LeaderboardEntryTest.java`
+
+**Impact:** No confidence in code correctness, regressions not caught, refactoring is risky.
+
+**Fix approach:** Add tests for all services, controllers, and repositories.
+
+---
+
+### Use of RuntimeException Instead of Custom Exceptions
+
+**Issue:** Services throw generic RuntimeException instead of domain-specific exceptions.
+
+**Files:**
+- `backend/src/main/java/com/syntaxtype/demo/Service/lessons/GalaxyChallengeService.java` (lines 38, 69, 95)
+
+**Details:**
+```java
+.orElseThrow(() -> new RuntimeException("Galaxy Challenge not found"));
+```
+
+**Impact:** Cannot differentiate between different error types, poor error handling upstream.
+
+**Fix approach:** Create custom exceptions (e.g., GalaxyChallengeNotFoundException) and a global exception handler.
+
+---
+
+### Duplicate Postgresql Dependency
+
+**Issue:** PostgreSQL driver included twice with different scopes and versions.
+
+**Files:**
+- `backend/pom.xml` (lines 57-66)
+
+**Details:**
+```xml
+<dependency>
+    <groupId>org.postgresql</groupId>
+    <artifactId>postgresql</artifactId>
+    <scope>runtime</scope>
+</dependency>
+<dependency>
+    <groupId>org.postgresql</groupId>
+    <artifactId>postgresql</artifactId>
+    <version>42.7.5</version>
+</dependency>
+```
+
+**Impact:** Maven will resolve to one version arbitrarily, unpredictable behavior.
+
+**Fix approach:** Remove the first dependency and keep only the second with explicit version.
+
+---
+
+### System.out.println in Application Startup
+
+**Issue:** Using System.out instead of logger in CommandLineRunner beans.
+
+**Files:**
+- `backend/src/main/java/com/syntaxtype\demo\DemoApplication.java` (lines 39, 48, 50, 84, 86, 88)
+
+**Details:**
+```java
+System.out.println("Creating default admin user...");
+```
+
+**Impact:** Not configurable, goes to stdout instead of log file, inconsistent with logging framework.
+
+**Fix approach:** Use SLF4J logger: `log.info("Creating default admin user...")`.
+
+---
+
+### No Pagination on List Endpoints
+
+**Issue:** All GET endpoints that return lists have no pagination.
+
+**Files:**
+- `backend/src/main/java/com/syntaxtype/demo/Controller/users/UserController.java` (line 25-27)
+- `backend/src/main/java/com/syntaxtype/demo/Controller/users/TeacherController.java` (line 27-29)
+- And similar in all list endpoints
+
+**Details:**
+```java
+@GetMapping
+public ResponseEntity<List<UserDTO>> getAllUsers() {
+    return ResponseEntity.ok(userService.findAll());
+}
+```
+
+**Impact:** Performance issues with large datasets, memory issues, slow response times.
+
+**Fix approach:** Add pagination support using Pageable and return Page<UserDTO>.
+
+---
+
+## Summary of Additional Priority Issues
+
+| Priority | Issue | Impact |
+|----------|-------|--------|
+| CRITICAL | Hardcoded API key in frontend | API quota theft, security breach |
+| HIGH | No input validation | Data corruption, security risks |
+| HIGH | Very low test coverage | No confidence in code |
+| MEDIUM | Swallowed exceptions | Difficult debugging |
+| MEDIUM | No pagination | Performance issues |
+| LOW | System.out.println usage | Inconsistent logging |
+
+---
+
+*Concerns audit: 2026-03-25*

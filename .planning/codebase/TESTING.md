@@ -1,92 +1,382 @@
 # Testing Patterns
 
-**Analysis Date:** 2026-03-14
+**Analysis Date:** 2026-03-25
 
 ## Test Framework Overview
 
-### Frontend (React)
-
-**Test Runner:** Jest (via `react-scripts`)
-
-**Testing Libraries:**
-- `@testing-library/react` v16.3.0 - React component testing
-- `@testing-library/jest-dom` v6.6.3 - Custom Jest matchers for DOM
-- `@testing-library/user-event` v13.5.0 - Simulate user interactions
-- `@testing-library/dom` v10.4.0 - DOM testing utilities
-
-**Test Commands:**
-```bash
-npm test                  # Run tests in watch mode
-npm test -- --coverage   # Run tests with coverage
-npm test -- --watchAll=false  # Run all tests once
-```
-
-**Configuration:** `frontend/src/setupTests.js`
-```javascript
-import '@testing-library/jest-dom';
-```
-
 ### Backend (Spring Boot)
 
-**Test Runner:** JUnit 5 (via Spring Boot Starter Test)
+**Primary Test Framework:** JUnit 5 (Jupiter)
 
-**Testing Dependencies (from pom.xml):**
-- `spring-boot-starter-test` - Includes JUnit, Mockito, AssertJ
-- `spring-security-test` - Security testing support
+**Dependencies from `pom.xml`:**
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-test</artifactId>
+    <scope>test</scope>
+</dependency>
+<dependency>
+    <groupId>org.springframework.security</groupId>
+    <artifactId>spring-security-test</artifactId>
+    <scope>test</scope>
+</dependency>
+```
 
-**Test Commands:**
+**Testing Dependencies Included:**
+- JUnit 5 (assertions, conditions, display names, nested tests)
+- Mockito (mocking)
+- AssertJ (fluent assertions)
+- Spring Test (Spring MVC test support)
+- Spring Security Test (security testing)
+
+**Libraries Available:**
+- Spring Boot Test (includes JUnit, Mockito, AssertJ)
+- MockMvc (for controller testing)
+- TestEntityManager (for repository testing)
+- Lombok (annotation processing)
+
+### Frontend (React)
+
+**Primary Test Framework:** Jest (via Create React App)
+
+**Dependencies from `package.json`:**
+```json
+"@testing-library/jest-dom": "^6.6.3",
+"@testing-library/react": "^16.3.0",
+"@testing-library/user-event": "^13.5.0",
+"@testing-library/dom": "^10.4.0"
+```
+
+**Configuration:**
+- ESLint extends: `react-app`, `react-app/jest`
+- Default CRA test setup in `frontend/src/setupTests.js`
+
+## Backend Testing Patterns
+
+### Test File Locations
+
+```
+backend/src/test/java/com/syntaxtype/demo/
+├── DemoApplicationTests.java              # Context load test
+├── Controller/
+│   └── statistics/
+│       └── LeaderboardControllerTest.java
+├── Service/
+│   └── statistics/
+│       └── LeaderboardServiceTest.java
+├── Repository/
+│   └── statistics/
+│       └── LeaderboardRepositoryTest.java
+└── DTO/
+    └── statistics/
+        └── LeaderboardEntryTest.java
+```
+
+**Naming Convention:** `{ClassName}Test.java`
+
+### Test Execution Commands
+
 ```bash
-mvn test                    # Run all tests
-mvn test -Dtest=ClassName  # Run specific test class
-mvn verify                  # Run tests and verify
+# Run all tests
+mvn test
+
+# Run specific test class
+mvn test -Dtest=LeaderboardControllerTest
+
+# Run with Maven wrapper (if available)
+./mvnw test
 ```
 
----
+### Controller Testing Pattern
 
-## Test File Organization
+**Framework:** `@WebMvcTest` + MockMvc
 
-### Frontend
+**Example from `LeaderboardControllerTest.java`:**
+```java
+@WebMvcTest(LeaderboardController.class)
+@AutoConfigureMockMvc(addFilters = false)  // Disable security filters for testing
+class LeaderboardControllerTest {
 
-**Location:** Tests are co-located with source files
-- Test file: `frontend/src/App.test.js`
-- Source file: `frontend/src/App.js`
+    @Autowired
+    private MockMvc mockMvc;
 
-**Naming Convention:**
-- `{ComponentName}.test.js` or `{ComponentName}.test.jsx`
-- `{ComponentName}.spec.js` or `{ComponentName}.spec.jsx`
+    @MockBean
+    private LeaderboardService leaderboardService;
 
-**Existing Tests:**
-- `frontend/src/App.test.js` - Basic React app smoke test
+    private List<LeaderboardEntry> sampleEntries;
 
-### Backend
+    @BeforeEach
+    void setUp() {
+        sampleEntries = Arrays.asList(
+            LeaderboardEntry.builder()
+                .rank(1)
+                .username("player1")
+                .wpm(120)
+                .accuracy(98)
+                .score(176.4)
+                .gameName("TYPING_TESTS")
+                .dateAchieved(LocalDateTime.now())
+                .build(),
+            // More entries...
+        );
+    }
 
-**Location:** `backend/src/test/java/com/syntaxtype/demo/`
+    @Nested
+    @DisplayName("GET /api/leaderboards/global Tests")
+    class GlobalLeaderboardTests {
 
-**Naming Convention:**
-- `{ClassName}Tests.java` for integration tests
-- `{ClassName}Test.java` for unit tests
+        @Test
+        @DisplayName("Should return global leaderboard with default metric (combined)")
+        void shouldReturnGlobalLeaderboardWithDefaultMetric() throws Exception {
+            when(leaderboardService.getGlobalTop10("combined"))
+                    .thenReturn(sampleEntries);
 
-**Existing Tests:**
-- `backend/src/test/java/com/syntaxtype/demo/DemoApplicationTests.java` - Spring context load test
-
----
-
-## Test Structure
-
-### Frontend Test Pattern
-
-```javascript
-import { render, screen } from '@testing-library/react';
-import ComponentName from './ComponentName';
-
-test('description of what is being tested', () => {
-  render(<ComponentName />);
-  const element = screen.getByText(/expected text/i);
-  expect(element).toBeInTheDocument();
-});
+            mockMvc.perform(get("/api/leaderboards/global")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$", hasSize(3)))
+                    .andExpect(jsonPath("$[0].rank", is(1)))
+                    .andExpect(jsonPath("$[0].username", is("player1")));
+        }
+    }
+}
 ```
 
-**Example from `frontend/src/App.test.js`:**
+**Key Annotations:**
+- `@WebMvcTest` - Slice test for controllers
+- `@AutoConfigureMockMvc(addFilters = false)` - Disable security filters
+- `@MockBean` - Mock Spring beans
+- `@Autowired` - Inject MockMvc
+
+**Common Assertions:**
+- `status().isOk()`
+- `status().isBadRequest()`
+- `jsonPath("$", hasSize(n))`
+- `jsonPath("$[0].field", is(value))`
+- `jsonPath("$[0]", hasKey("fieldName"))`
+
+### Service Testing Pattern
+
+**Framework:** `@ExtendWith(MockitoExtension.class)` + Mockito
+
+**Example from `LeaderboardServiceTest.java`:**
+```java
+@ExtendWith(MockitoExtension.class)
+class LeaderboardServiceTest {
+
+    @Mock
+    private LeaderboardRepository leaderboardRepository;
+
+    @InjectMocks
+    private LeaderboardService leaderboardService;
+
+    private User testUser1;
+    private User testUser2;
+    private User testUser3;
+
+    @BeforeEach
+    void setUp() {
+        testUser1 = new User();
+        testUser1.setUserId(1L);
+        testUser1.setUsername("player1");
+        
+        // More setup...
+    }
+
+    @Nested
+    @DisplayName("Combined Score Calculation Tests")
+    class CombinedScoreCalculationTests {
+
+        @Test
+        @DisplayName("Should calculate combined score with 1.5x multiplier for accuracy > 95")
+        void shouldCalculateCombinedScoreWithMultiplier() {
+            Double score = LeaderboardEntry.calculateCombinedScore(100, 98);
+            assertThat(score).isEqualTo(147.0);
+        }
+    }
+}
+```
+
+**Key Annotations:**
+- `@ExtendWith(MockitoExtension.class)` - Enable Mockito
+- `@Mock` - Mock repository dependency
+- `@InjectMocks` - Inject mocks into service
+
+**Assertion Style:** AssertJ fluent assertions
+```java
+assertThat(result).hasSize(3);
+assertThat(result.get(0).getRank()).isEqualTo(1);
+assertThat(result).isEmpty();
+```
+
+### Repository Testing Pattern
+
+**Framework:** `@DataJpaTest` + `TestEntityManager`
+
+**Example from `LeaderboardRepositoryTest.java`:**
+```java
+@DataJpaTest
+@ActiveProfiles("test")
+@DisplayName("LeaderboardRepository Tests")
+class LeaderboardRepositoryTest {
+
+    @Autowired
+    private TestEntityManager entityManager;
+
+    @Autowired
+    private LeaderboardRepository leaderboardRepository;
+
+    private User createAndPersistUser(String username, String email) {
+        User user = User.builder()
+                .username(username)
+                .email(email)
+                .password("password123")
+                .userRole(Role.USER)
+                .createdAt(LocalDateTime.now())
+                .build();
+        return entityManager.persistFlushFind(user);
+    }
+
+    private Leaderboard createAndPersistLeaderboard(User user, Category category, int wpm, int accuracy) {
+        Leaderboard leaderboard = Leaderboard.builder()
+                .user(user)
+                .category(category)
+                .wordsPerMinute(wpm)
+                .accuracy(accuracy)
+                .totalWordsTyped(500)
+                .totalTimeSpent(3600)
+                .build();
+        return entityManager.persistFlushFind(leaderboard);
+    }
+
+    @Test
+    @DisplayName("Should find top 10 by WPM for a category")
+    void shouldFindTop10ByWpmForCategory() {
+        User user1 = createAndPersistUser("user1", "user1@test.com");
+        // Create more users and leaderboard entries...
+        
+        List<Leaderboard> results = leaderboardRepository
+                .findTop10ByCategoryOrderByWordsPerMinuteDesc(Category.TYPING_TESTS);
+
+        assertEquals(3, results.size());
+        assertEquals(120, results.get(0).getWordsPerMinute());
+    }
+}
+```
+
+**Key Annotations:**
+- `@DataJpaTest` - Slice test for JPA repositories
+- `@ActiveProfiles("test")` - Use test profile
+- `@Autowired TestEntityManager` - Programmatic entity management
+
+**Key Methods:**
+- `entityManager.persistFlushFind(entity)` - Persist and return managed entity
+- Standard JUnit assertions: `assertEquals()`, `assertTrue()`, `assertFalse()`
+
+### DTO/Unit Testing Pattern
+
+**Framework:** JUnit 5 (plain unit tests, no Spring context)
+
+**Example from `LeaderboardEntryTest.java`:**
+```java
+class LeaderboardEntryTest {
+
+    @Nested
+    @DisplayName("calculateCombinedScore tests")
+    class CalculateCombinedScoreTests {
+
+        @Test
+        @DisplayName("Should calculate basic combined score")
+        void shouldCalculateBasicCombinedScore() {
+            // WPM: 100, Accuracy: 80%
+            // Base: 100 * (80 / 100.0) = 80.0
+            Double score = LeaderboardEntry.calculateCombinedScore(100, 80);
+            assertEquals(80.0, score);
+        }
+
+        @Test
+        @DisplayName("Should apply 1.5 multiplier for accuracy > 95")
+        void shouldApplyMultiplierForHighAccuracy() {
+            // WPM: 100, Accuracy: 98%
+            // Base: 100 * (98 / 100.0) = 98.0
+            // With multiplier: 98.0 * 1.5 = 147.0
+            Double score = LeaderboardEntry.calculateCombinedScore(100, 98);
+            assertEquals(147.0, score);
+        }
+    }
+
+    @Nested
+    @DisplayName("Builder pattern tests")
+    class BuilderTests {
+
+        @Test
+        @DisplayName("Should build LeaderboardEntry with all fields")
+        void shouldBuildLeaderboardEntryWithAllFields() {
+            LocalDateTime date = LocalDateTime.of(2024, 3, 15, 10, 30);
+            
+            LeaderboardEntry entry = LeaderboardEntry.builder()
+                    .rank(5)
+                    .username("builderuser")
+                    .score(125.50)
+                    .wpm(85)
+                    .accuracy(96)
+                    .gameName("CHALLENGES")
+                    .dateAchieved(date)
+                    .build();
+
+            assertEquals(5, entry.getRank());
+            assertEquals("builderuser", entry.getUsername());
+        }
+    }
+}
+```
+
+### Application Context Test
+
+**Example from `DemoApplicationTests.java`:**
+```java
+@SpringBootTest
+class DemoApplicationTests {
+
+    @Test
+    void contextLoads() {
+        // Verifies Spring context loads successfully
+    }
+}
+```
+
+## Frontend Testing Patterns
+
+### Test File Locations
+
+```
+frontend/src/
+├── App.test.js               # Main app test
+├── setupTests.js             # Jest setup with jest-dom
+└── pages/                    # Page components (no test files found)
+    ├── LoginPage.js
+    └── LeaderboardPage.js
+```
+
+**Naming Convention:** `{ComponentName}.test.js`
+
+### Test Execution Commands
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with coverage
+npm test -- --coverage
+
+# Run tests in CI mode (no watch mode)
+CI=true npm test
+```
+
+### Frontend Test Example
+
+**From `App.test.js`:**
 ```javascript
 import { render, screen } from '@testing-library/react';
 import App from './App';
@@ -98,209 +388,171 @@ test('renders learn react link', () => {
 });
 ```
 
-### Backend Test Pattern
+### Frontend Test Setup
 
-```java
-package com.syntaxtype.demo;
-
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-
-@SpringBootTest
-class ClassNameTests {
-
-    @Test
-    void contextLoads() {
-    }
-}
-```
-
-**Example from `backend/src/test/java/com/syntaxtype/demo/DemoApplicationTests.java`:**
-```java
-package com.syntaxtype.demo;
-
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-
-@SpringBootTest
-class DemoApplicationTests {
-
-    @Test
-    void contextLoads() {
-    }
-}
-```
-
----
-
-## Test Types
-
-### Frontend
-
-**Unit Tests:**
-- Test individual React components in isolation
-- Use `@testing-library/react` for rendering
-- Mock API calls with `jest.mock()` if needed
-
-**Component Tests:**
-- Test component rendering and user interactions
-- Use `@testing-library/user-event` for simulating clicks, typing
-
-**Smoke Tests:**
-- Basic tests to ensure app renders without crashing
-
-### Backend
-
-**Integration Tests:**
-- `@SpringBootTest` loads full application context
-- Tests with `@MockBean` for external dependencies
-- Uses test security with `@WithMockUser`
-
-**Context Load Tests:**
-- Verify Spring context starts successfully
-- Minimal test to catch configuration issues
-
----
-
-## Mocking
-
-### Frontend
-
-**Jest Mocks:**
+**From `setupTests.js`:**
 ```javascript
-jest.mock('axios');
-jest.mock('../utils/AuthUtils', () => ({
-    getAuthToken: () => 'mock-token',
-    setAuthToken: jest.fn()
-}));
+// jest-dom adds custom jest matchers for asserting on DOM nodes.
+// allows you to do things like:
+// expect(element).toHaveTextContent(/react/i)
+// learn more: https://github.com/testing-library/jest-dom
+import '@testing-library/jest-dom';
 ```
 
-**Testing Library Matchers (from jest-dom):**
+**Available Matchers (via jest-dom):**
 - `toBeInTheDocument()`
 - `toHaveTextContent()`
-- `toHaveValue()`
+- `toBeVisible()`
 - `toBeDisabled()`
-- `toHaveClass()`
+- `toHaveValue()`
+- And many more...
 
-### Backend
+### ESLint Configuration
 
-**Mockito (via Spring Boot Test):**
-- `@MockBean` for mocking repositories in tests
-- `Mockito.when()` for stubbing method calls
-- `Mockito.verify()` for interaction testing
+**From `package.json`:**
+```json
+"eslintConfig": {
+  "extends": [
+    "react-app",
+    "react-app/jest"
+  ]
+}
+```
 
----
+## Test Organization Patterns
+
+### JUnit 5 @Nested Classes
+
+**Pattern Used:** Nested inner classes for test organization
+
+```java
+@Nested
+@DisplayName("GET /api/leaderboards/global Tests")
+class GlobalLeaderboardTests {
+
+    @Test
+    @DisplayName("Should return global leaderboard with default metric")
+    void shouldReturnGlobalLeaderboardWithDefaultMetric() {
+        // Test implementation
+    }
+}
+
+@Nested
+@DisplayName("GET /api/leaderboards/game/{category} Tests")
+class GameLeaderboardTests {
+    // Related tests grouped here
+}
+```
+
+**Benefits:**
+- Logical grouping of related tests
+- Descriptive display names
+- Shared setup at class level
+
+### Test Data Setup Patterns
+
+**Builder Pattern for Test Data:**
+```java
+LeaderboardEntry.builder()
+    .rank(1)
+    .username("player1")
+    .wpm(120)
+    .accuracy(98)
+    .score(176.4)
+    .gameName("TYPING_TESTS")
+    .dateAchieved(LocalDateTime.now())
+    .build()
+```
+
+**Factory Methods:**
+```java
+private User createTestUser() {
+    return User.builder()
+            .userId(1L)
+            .username("testuser")
+            .email("test@example.com")
+            .password("password")
+            .userRole(Role.USER)
+            .build();
+}
+
+private Leaderboard createTestLeaderboard(User user, Category category, int wpm, int accuracy) {
+    return Leaderboard.builder()
+            .leaderboardId(1L)
+            .user(user)
+            .category(category)
+            .wordsPerMinute(wpm)
+            .accuracy(accuracy)
+            .build();
+}
+```
+
+### Test Naming Pattern
+
+**Convention:** `{Should/ShouldNot} {action} {expected result}`
+
+**Examples:**
+- `shouldReturnGlobalLeaderboardWithDefaultMetric()`
+- `shouldApplyMultiplierForHighAccuracy()`
+- `shouldReturnEmptyListWhenNoEntriesExist()`
+- `shouldAssignSameRankToTiedEntries()`
+
+### Mocking Patterns
+
+**Service Mocking (Controller Tests):**
+```java
+@MockBean
+private LeaderboardService leaderboardService;
+
+// In test:
+when(leaderboardService.getGlobalTop10("combined"))
+    .thenReturn(sampleEntries);
+```
+
+**Repository Mocking (Service Tests):**
+```java
+@Mock
+private LeaderboardRepository leaderboardRepository;
+
+// In test:
+when(leaderboardRepository.findTop10ByCategoryOrderByWordsPerMinuteDesc(Category.TYPING_TESTS))
+    .thenReturn(entries);
+```
+
+**Argument Matchers:**
+```java
+when(leaderboardService.getGlobalTop10(anyString()))
+    .thenReturn(Collections.emptyList());
+
+when(leaderboardService.getUserRankings(anyLong()))
+    .thenReturn(sampleEntries);
+```
 
 ## Coverage
 
-### Frontend
+### Backend Coverage
+- No coverage enforcement found in `pom.xml`
+- Manual coverage checking with IDE tools or Maven plugins
 
-**Coverage Report:**
-```bash
-npm test -- --coverage
-```
+### Frontend Coverage
+- Available via Jest: `npm test -- --coverage`
+- Output location: `coverage/` directory
 
-**Coverage thresholds:** Not enforced (no configuration found)
+## Known Gaps
 
-**Typical coverage areas:**
-- Component rendering
-- User interaction handlers
-- Conditional rendering logic
+**Backend:**
+- Only `Leaderboard*` classes have comprehensive tests
+- Other services, controllers, and repositories lack tests
+- No integration tests with real database (all use `@DataJpaTest` with embedded H2)
+- No test profiles configuration (`application-test.properties` not found)
 
-### Backend
-
-**Coverage:** Not currently enforced
-
-**Test scope:**
-- Service layer logic
-- Controller endpoints (integration)
-- Repository queries (via integration tests)
-
----
-
-## Test Utilities
-
-### Frontend
-
-**API Mocking:**
-- Uses development proxy (`frontend/src/setupProxy.js`)
-- Can mock with MSW (not currently configured)
-
-**Auth Testing:**
-- Mock JWT tokens in session storage
-- Test protected routes with `ProtectedRoute` component
-
-### Backend
-
-**Database:**
-- Uses main database (MySQL/PostgreSQL)
-- Consider `@DataJpaTest` for repository tests with in-memory DB
-
-**Security Testing:**
-- `@WithMockUser` for authenticated tests
-- CSRF protection handled automatically
+**Frontend:**
+- Only `App.test.js` exists (default CRA template test)
+- No tests for page components (`LoginPage`, `LeaderboardPage`, etc.)
+- No component-level tests for `Navbar`, `ProtectedRoute`, etc.
+- No API integration tests
+- No mocking of API calls
 
 ---
 
-## Recommendations for Expansion
-
-### Frontend Testing
-
-1. **Add more component tests:**
-   - Test `LoginPage.js` form validation
-   - Test `ProtectedRoute.js` auth redirects
-   - Test `Navbar.js` navigation
-
-2. **Add utility tests:**
-   - Test `AuthUtils.js` token handling
-   - Test `JwtUtils.js` decoding
-   - Test `api.js` URL resolution
-
-3. **Consider adding:**
-   - `msw` (Mock Service Worker) for API mocking
-   - Snapshot testing for complex components
-
-### Backend Testing
-
-1. **Add service tests:**
-   - Test `UserService.java` business logic
-   - Test DTO conversions
-
-2. **Add controller tests:**
-   - Use `@WebMvcTest` for isolated controller tests
-   - Test request/response handling
-
-3. **Add repository tests:**
-   - Use `@DataJpaTest` with H2 in-memory database
-
----
-
-## Running Tests
-
-### Frontend
-```bash
-# Development - watch mode
-npm test
-
-# Single run
-npm test -- --watchAll=false
-
-# With coverage
-npm test -- --coverage --watchAll=false
-```
-
-### Backend
-```bash
-# All tests
-mvn test
-
-# Specific class
-mvn test -Dtest=DemoApplicationTests
-
-# Skip tests
-mvn clean package -DskipTests
-```
-
----
-
-*Testing analysis: 2026-03-14*
+*Testing analysis: 2026-03-25*

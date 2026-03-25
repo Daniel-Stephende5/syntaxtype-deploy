@@ -1,213 +1,179 @@
 # Architecture
 
-**Analysis Date:** 2026-03-14
+**Analysis Date:** 2026-03-25
 
 ## Pattern Overview
 
-**Overall:** Spring Boot REST API Backend + React SPA Frontend with JWT Authentication
+**Overall:** Layered Architecture with RESTful API
 
 **Key Characteristics:**
-- Monolithic Spring Boot backend exposing REST APIs
-- React frontend using react-router-dom for navigation
-- JWT-based stateless authentication with role-based access control (RBAC)
-- PostgreSQL database with JPA/Hibernate ORM
-- CORS-enabled communication between frontend and backend
+- Backend follows Spring Boot MVC pattern with Repository/Service/Controller layers
+- Frontend uses React SPA with client-side routing
+- JWT-based stateless authentication
+- Role-based access control (RBAC) with four roles: USER, ADMIN, TEACHER, STUDENT
+- Backend exposes RESTful API consumed by React frontend
 
 ## Layers
 
-**Backend (Spring Boot):**
-```
-com.syntaxtype.demo/
-├── Controller/     # REST API endpoints
-├── Service/       # Business logic
-├── Repository/     # Data access (JPA)
-├── Entity/        # JPA entities/database models
-├── DTO/           # Data Transfer Objects
-├── Exception/     # Custom exception handling
-└── Controller/auth/security/  # JWT & Security
-```
+### Backend (Spring Boot)
 
-**Frontend (React):**
-```
-frontend/src/
-├── pages/         # Page components (routes)
-├── components/    # Reusable UI components
-├── utils/         # API, Auth, JWT utilities
-└── css/           # Stylesheets
-```
-
-### Backend Layers
-
-**Controller Layer:**
+**Presentation Layer (Controllers):**
 - Location: `backend/src/main/java/com/syntaxtype/demo/Controller/`
-- Handles HTTP requests/responses
-- Uses `@RestController` and `@RequestMapping` annotations
-- Delegates to Service layer
-- Examples:
-  - `AuthController.java` - `/api/auth/*` - Login, registration
-  - `UserController.java` - `/api/users/*` - User CRUD
-  - `LessonsController.java` - `/api/lessons/*` - Lessons management
+- Contains: REST controllers handling HTTP requests
+- Depends on: Service layer
+- Used by: Frontend via REST API calls
+- Pattern: `@RestController` with `@RequestMapping` for route organization
 
 **Service Layer:**
 - Location: `backend/src/main/java/com/syntaxtype/demo/Service/`
-- Contains business logic
-- Uses `@Service` annotation
-- Coordinates between Controller and Repository
-- Examples:
-  - `UserService.java` - User management, role assignment
-  - `LessonsService.java` - Lesson CRUD operations
-  - `ScoreService.java` - Scoring logic
+- Contains: Business logic classes (`*Service.java`)
+- Depends on: Repository layer
+- Used by: Controllers
+- Pattern: `@Service` annotation with `@RequiredArgsConstructor` for dependency injection
 
 **Repository Layer:**
 - Location: `backend/src/main/java/com/syntaxtype/demo/Repository/`
-- Extends `JpaRepository` for CRUD operations
-- Contains custom query methods
-- Examples:
-  - `UserRepository.java` - User data access
-  - `LessonsRepository.java` - Lesson queries
+- Contains: JPA repository interfaces extending `JpaRepository`
+- Depends on: JPA/Hibernate
+- Used by: Service layer
+- Pattern: Spring Data JPA with custom query methods
 
 **Entity Layer:**
 - Location: `backend/src/main/java/com/syntaxtype/demo/Entity/`
-- JPA entities mapped to database tables
-- Uses Lombok for boilerplate reduction
-- Examples:
-  - `User.java` - Users table
-  - `Lessons.java` - Lessons table
-  - `Role.java` - Enum for user roles (ADMIN, TEACHER, STUDENT, USER)
+- Contains: JPA entity classes mapped to database tables
+- Used by: Repository layer for ORM mapping
+- Pattern: Lombok annotations (`@Getter`, `@Setter`, `@Builder`)
 
 **DTO Layer:**
 - Location: `backend/src/main/java/com/syntaxtype/demo/DTO/`
-- Data transfer objects for API requests/responses
-- Separates internal entities from external API contracts
-- Examples:
-  - `UserDTO.java` - User data transfer
-  - `LessonsDTO.java` - Lesson data transfer
+- Contains: Data Transfer Objects for API communication
+- Purpose: Separate internal entity structure from API contracts
+- Pattern: Immutable DTOs with Lombok `@Data`, `@Builder`
 
-### Frontend Layers
+### Frontend (React)
 
-**Page Components:**
-- Location: `frontend/src/pages/`
-- Full page views mapped to routes
-- Contains business logic specific to the page
-- Examples:
-  - `LoginPage.js` - Authentication
-  - `TypingTest.js` - Typing game
-  - `Dashboard.js` - User dashboard
-
-**Reusable Components:**
+**Component Layer:**
 - Location: `frontend/src/components/`
-- Shared UI components
-- Examples:
-  - `Navbar.js` - Navigation header
-  - `ProtectedRoute.js` - Route guards
-  - `AdminManageUsers.js` - Admin functionality
+- Contains: Reusable UI components (Navbar, Dashboard, ProtectedRoute, etc.)
+- Pattern: Functional React components with hooks
 
-**Utilities:**
+**Page Layer:**
+- Location: `frontend/src/pages/`
+- Contains: Route-specific page components
+- Pattern: Container components that fetch data and render children
+
+**Utility Layer:**
 - Location: `frontend/src/utils/`
-- `api.js` - API URL resolution
-- `AuthUtils.js` - Token storage and axios header management
-- `JwtUtils.js` - JWT decoding and validation
+- Contains: `api.js` (API URL resolution), `AuthUtils.js` (token management), `JwtUtils.js` (JWT decoding)
+- Pattern: Pure JavaScript utility functions
 
 ## Data Flow
 
 **Authentication Flow:**
-
 1. User submits login credentials via `LoginPage.js`
 2. Axios POST to `/api/auth/login`
 3. `AuthController.loginUser()` validates credentials
-4. `UserService.findByEmail()` retrieves user
-5. `BCryptPasswordEncoder` matches password
-6. `JwtUtil.generateToken()` creates JWT with role, userId, isTempPassword claims
-7. Token returned to frontend
-8. `AuthUtils.setAuthToken()` stores in localStorage and sets axios header
-9. `ProtectedRoute` validates token and role on each protected route
+4. `JwtUtil.generateToken()` creates JWT with userId, role, isTempPassword claims
+5. Frontend stores token in localStorage via `setAuthToken()`
+6. Subsequent requests include `Authorization: Bearer <token>` header
 
-**API Request Flow:**
+**Protected Route Flow:**
+1. `ProtectedRoute.js` component wraps protected routes
+2. On mount, checks localStorage for JWT token
+3. Decodes JWT to extract role, userId, isTempPassword
+4. Validates role against `allowedRoles` prop
+5. For STUDENT: checks if profile exists via `/api/students/user/{userId}`
+6. For TEACHER: checks if profile exists via `/api/teachers/user/{userId}`
+7. Redirects to appropriate form if profile incomplete
 
-1. Frontend component calls API via axios
-2. Token included in Authorization header
-3. Backend `JwtAuthFilter` (if enabled) validates token
-4. `CustomUserDetailsService` loads user details
-5. Spring Security sets authentication context
-6. Controller receives authenticated request
-7. Service processes business logic
-8. Repository interacts with PostgreSQL
-9. Response flows back through layers
-
-**Lesson Creation Flow:**
-
-1. Teacher navigates to `/lesson` (ProtectedRoute validates TEACHER role)
-2. `CreateLessonModule.js` form submits to `/api/lessons`
-3. `LessonsController.createLesson()` receives LessonsDTO
-4. `LessonsService.save()` converts DTO to Entity
-5. `LessonsRepository.save()` persists to PostgreSQL
-6. Saved entity converted back to DTO and returned
+**CRUD Operations:**
+1. Controller receives HTTP request with `@RequestBody` DTO
+2. Service layer processes business logic
+3. Repository layer performs database operations via JPA
+4. Response returned as DTO via `ResponseEntity`
 
 ## Key Abstractions
 
-**User Roles:**
-- ADMIN - Full system access, user management
-- TEACHER - Create lessons, challenges, view students
-- STUDENT - Take lessons, play games, track progress
-- USER - Basic authenticated user
+**User Entity Hierarchy:**
+- `User.java` - Base user entity with common fields (username, email, password, role)
+- `Student.java` - Extends User with student-specific profile data
+- `Teacher.java` - Extends User with teacher-specific profile data
+- `Admin.java` - Extends User for admin users
+- Pattern: Role discriminator in User entity, separate tables for profiles
 
-**API Design:**
-- RESTful endpoints with standard HTTP methods
-- JSON request/response bodies
-- DTOs for input/output validation
-- Role-based endpoint protection via `@PreAuthorize`
+**Lesson/Content System:**
+- `Lessons.java` - Core lesson content entity
+- `Topics.java` - Lesson categorization
+- `Quiz.java` / `QuizItem.java` - Quiz questions
+- `Challenge.java` / `GalaxyChallenge.java` - Coding challenges
+- Pattern: One-to-many relationships between Topics and Lessons
 
-**State Management:**
-- JWT stored in localStorage
-- Session data in sessionStorage (userId, role, token)
-- React Context not heavily used
-- Route-based conditional rendering via ProtectedRoute
+**Statistics System:**
+- `UserStatistics.java` - Per-user statistics
+- `Achievements.java` / `StudentAchievements.java` - Achievement definitions and unlocks
+- `LessonAttempts.java` - Track lesson completions
+- `Leaderboard.java` - Aggregated leaderboard data
+- `Scoring.java` - Score records
 
 ## Entry Points
 
-**Backend:**
+**Backend Entry Point:**
 - Location: `backend/src/main/java/com/syntaxtype/demo/DemoApplication.java`
-- Main method: `SpringApplication.run(DemoApplication.class, args)`
-- Runs on port 8080 (configurable via PORT env var)
-- CommandLineRunner beans for initialization:
-  - Creates default admin user
-  - Creates sample Galaxy Challenge
+- Triggers: Application startup via `SpringApplication.run()`
+- Responsibilities: Application bootstrap, admin user creation, initial data seeding
 
-**Frontend:**
+**Frontend Entry Point:**
 - Location: `frontend/src/index.js`
-- Renders React app into DOM
-- `App.js` contains Router and all routes
-- Development server on port 3000 (via react-scripts)
+- Triggers: React app initialization
+- Responsibilities: Renders `App.js` component, mounts to DOM
+
+**Frontend App Router:**
+- Location: `frontend/src/App.js`
+- Triggers: Browser navigation
+- Responsibilities: Route definition with ProtectedRoute/PublicOnlyRoute wrappers
+
+## API Design
+
+**Base Path:** `/api`
+
+**Authentication Endpoints:**
+- `POST /api/auth/register` - Public user registration
+- `POST /api/auth/register/student` - Student registration
+- `POST /api/auth/register/teacher` - Teacher registration (ADMIN only)
+- `POST /api/auth/login` - User login, returns JWT
+
+**User Endpoints:**
+- `GET /api/users` - List all users (ADMIN only)
+- `GET /api/users/id/{userId}` - Get user by ID
+- `PATCH /api/users/{userId}/email` - Update email
+- `DELETE /api/users/{id}` - Delete user
+
+**Statistics Endpoints:**
+- `GET /api/statistics/leaderboard` - Public leaderboard
+- `GET /api/statistics/user-stats/{userId}` - User statistics
+- `POST /api/statistics/scoring` - Submit score
 
 ## Error Handling
 
-**Backend:**
-- Custom `GlobalExceptionHandler` or `RestExceptionHandler`
-- Returns proper HTTP status codes (400, 401, 404, 409, 500)
-- `@ControllerAdvice` for centralized exception handling
+**Backend Strategy:**
+- `GlobalExceptionHandler.java` - Catches unhandled exceptions
+- `RestExceptionHandler.java` - REST-specific error responses
+- `UsernameConflictException.java` - Custom business exception
+- Pattern: `@ExceptionHandler` methods returning `ResponseEntity`
 
-**Frontend:**
+**Frontend Strategy:**
 - Axios catch blocks handle API errors
-- Error state displayed to users via Alert components
-- ProtectedRoute handles auth failures with redirects
+- Error messages displayed via Alert components
+- 401/403 responses trigger redirect to login
 
 ## Cross-Cutting Concerns
 
-**Authentication:** JWT with BCrypt password encoding
-- `JwtUtil.java` - Token generation/validation
-- `CustomUserDetailsService.java` - User loading
-- `SecurityConfig.java` - CORS, session policy, endpoint protection
-
-**Logging:**
-- Configured in `application.properties`
-- `logging.level.backend=DEBUG`
-- Spring Security debug logging enabled
-
-**CORS:**
-- Configured in `SecurityConfig.java`
-- Allowed origins: localhost:3000, localhost:5173, syntaxtype-deploy-omega.vercel.app
-- Credentials allowed, exposed Authorization header
+**Authentication:** Spring Security with JWT tokens (currently partially disabled in SecurityConfig)
+**Authorization:** `@PreAuthorize` annotations on controller methods
+**CORS:** Configured for localhost:3000, localhost:5173, Vercel deployment
+**Logging:** Spring Boot logging with DEBUG level for security and web filters
+**Database:** PostgreSQL via Render deployment, JPA/Hibernate ORM
 
 ---
 
-*Architecture analysis: 2026-03-14*
+*Architecture analysis: 2026-03-25*

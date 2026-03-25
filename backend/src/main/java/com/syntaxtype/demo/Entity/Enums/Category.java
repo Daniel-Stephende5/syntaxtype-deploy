@@ -1,10 +1,16 @@
 package com.syntaxtype.demo.Entity.Enums;
 
 public enum Category {
-    CHALLENGES,
     TYPING_TESTS,
     FALLING_WORDS,
-    CROSSWORD,
     GALAXY,
+    GRID,
+    BOOKWORM,
+    CROSSWORD,
+    FOUR_PICS,
+    CODE_CHALLENGES,
+    MAP,
+    SYNTAX_SAVER,
+    CHALLENGES,
     OVERALL
 }
