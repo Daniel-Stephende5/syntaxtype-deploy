@@ -279,9 +279,10 @@ const submitScore = async () => {
   try {
     // Calculate accuracy from the test
     const { code, answers } = selectedChallenge;
-    let fullExpected = code;
-    answers.forEach((answer) => {
-      fullExpected = fullExpected.replace("___", answer);
+    const parts = code.split('___');
+    let fullExpected = parts[0];
+    answers.forEach((answer, i) => {
+      fullExpected += answer + (parts[i + 1] || '');
     });
     const trimmedInput = input.slice(0, fullExpected.length);
     let correctChars = 0;
