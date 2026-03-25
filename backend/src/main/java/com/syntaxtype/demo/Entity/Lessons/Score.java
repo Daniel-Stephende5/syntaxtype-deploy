@@ -1,5 +1,6 @@
 package com.syntaxtype.demo.Entity.Lessons;
 
+import com.syntaxtype.demo.Entity.Users.User;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -17,6 +18,10 @@ public class Score {
     private String challengeType;
     private double wpm;
     private LocalDateTime submittedAt = LocalDateTime.now();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 
     // No-args constructor
     public Score() {
@@ -78,6 +83,14 @@ public class Score {
 
     public void setSubmittedAt(LocalDateTime submittedAt) {
         this.submittedAt = submittedAt;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 
     // toString (excluding submittedAt)
