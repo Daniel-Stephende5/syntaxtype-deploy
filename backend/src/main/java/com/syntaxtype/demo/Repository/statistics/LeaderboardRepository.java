@@ -11,6 +11,7 @@ import java.util.List;
 
 public interface LeaderboardRepository extends JpaRepository<Leaderboard, Long> {
     Optional<Leaderboard> findByUser(User user);
+    Optional<Leaderboard> findByUserAndCategory(User user, Category category);
     List<Leaderboard> findByWordsPerMinute(Integer wordsPerMinute);
     List<Leaderboard> findByAccuracy(Integer accuracy);
     List<Leaderboard> findByTotalWordsTyped(Integer totalWordsTyped);

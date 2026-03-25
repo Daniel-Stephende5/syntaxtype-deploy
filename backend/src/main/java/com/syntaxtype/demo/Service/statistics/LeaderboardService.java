@@ -359,9 +359,7 @@ public class LeaderboardService {
             boolean isTypingGame = category == Category.TYPING_TESTS || category == Category.FALLING_WORDS;
 
             // Find existing leaderboard entry for user + category
-            Optional<Leaderboard> existingEntry = leaderboardRepository.findByUser(user).stream()
-                    .filter(lb -> lb.getCategory() == category)
-                    .findFirst();
+            Optional<Leaderboard> existingEntry = leaderboardRepository.findByUserAndCategory(user, category);
 
             boolean isNewBest = false;
             Integer currentRank = null;
