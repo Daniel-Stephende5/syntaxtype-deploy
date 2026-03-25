@@ -32,7 +32,7 @@ export default function QuizMenu() {
           className="quiz-item"
           onClick={() => setSelected("syntax")}
         >
-          🧠 Syntax Saver Challenge
+          🧠 Code Block Assembly
         </button>
 
         {/* ✅ ITEM 2: 4 Pics */}
