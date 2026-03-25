@@ -31,6 +31,8 @@ const [useLives, setUseLives] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [gameWpm, setGameWpm] = useState(0);
   const [gameAccuracy, setGameAccuracy] = useState(0);
+  const [correctChars, setCorrectChars] = useState(0);
+  const [totalChars, setTotalChars] = useState(0);
 
   const wordIdCounter = useRef(0);
   const fallingWordsRef = useRef([]);
@@ -76,12 +78,11 @@ useEffect(() => {
   if (isGameOver) {
     // Calculate WPM and accuracy for the game
     // Assuming average word length of 5 characters
-    const totalChars = score * 5;
+    const totalCharsTyped = score * 5;
     const minutes = gameDuration / 60;
-    const wpm = minutes > 0 ? Math.round(totalChars / 5 / minutes) : 0;
-    // Accuracy would need to be tracked during gameplay; using 100% as fallback for now
-    // In a real implementation, you'd track correct/incorrect keystrokes
-    const accuracy = 100;
+    const wpm = minutes > 0 ? Math.round(totalCharsTyped / 5 / minutes) : 0;
+    // Calculate accuracy based on tracked keystrokes
+    const accuracy = totalChars > 0 ? Math.round((correctChars / totalChars) * 100) : 100;
     
     setGameWpm(wpm);
     setGameAccuracy(accuracy);
@@ -89,7 +90,7 @@ useEffect(() => {
     // Show submit button instead of auto-submitting
     setShowSubmitButton(true);
   }
-},  [isGameOver, score, gameDuration]);
+},  [isGameOver, score, gameDuration, correctChars, totalChars]);
 
 // Submit score to leaderboard with JWT authentication
 const submitScore = async () => {
@@ -217,6 +218,8 @@ const handleRestart = () => {
     setShowSubmitButton(false);
     setGameWpm(0);
     setGameAccuracy(0);
+    setCorrectChars(0);
+    setTotalChars(0);
     wordIdCounter.current = 0;
   
     if (challenge?.challengeId) {
@@ -232,6 +235,7 @@ const handleRestart = () => {
   };
   const handleInputChange = (e) => {
     const value = e.target.value;
+    const prevLength = currentInput.length;
     setCurrentInput(value);
 
     if (value === "") {
@@ -240,6 +244,20 @@ const handleRestart = () => {
     }
 
     const match = fallingWordsRef.current.find(word => word.text.startsWith(value));
+
+    // Track keystrokes for accuracy
+    if (value.length > prevLength) {
+      const newCharIndex = value.length - 1;
+      const newChar = value[newCharIndex];
+      
+      if (match) {
+        const expectedChar = match.text[newCharIndex];
+        if (newChar === expectedChar) {
+          setCorrectChars(prev => prev + 1);
+        }
+      }
+      setTotalChars(prev => prev + 1);
+    }
 
     if (match) {
       setActiveWordId(match.id);
