@@ -583,9 +583,7 @@ const CrosswordGame = () => {
         </div>
  
         <div style={styles.controls}>
-          <button onClick={revealAll} style={{ ...styles.btn, background: "#fcd34d" }}>
-            Reveal All
-          </button>
+          
           <button onClick={newPuzzle} style={{ ...styles.btn, background: "#ef4444", color: "#fff" }}>
             New Puzzle
           </button>
