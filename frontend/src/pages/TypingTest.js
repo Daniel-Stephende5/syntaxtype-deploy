@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "../css/typingtest.css";
 import { API_BASE } from "../utils/api";
-import { getAuthToken } from "../utils/AuthUtils";
+import { useScoreSubmission } from '../hooks/useScoreSubmission';
 import CircularProgress from "@mui/material/CircularProgress";
 import Button from "@mui/material/Button";
 import Snackbar from "@mui/material/Snackbar";
@@ -28,11 +28,8 @@ const [blankInputs, setBlankInputs] = useState([]);
  const [showCursor, setShowCursor] = useState(true);
  
  // Leaderboard submission state
- const [showSubmitButton, setShowSubmitButton] = useState(false);
- const [isSubmitting, setIsSubmitting] = useState(false);
- const [submitSuccess, setSubmitSuccess] = useState(null);
- const [submitMessage, setSubmitMessage] = useState("");
- const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [showSubmitButton, setShowSubmitButton] = useState(false);
+  const { submitScore, isSubmitting, submitMessage, submitSuccess, snackbarOpen, setSnackbarOpen } = useScoreSubmission();
  
    const navigate = useNavigate();
   const toggleMenu = () => setIsMenuOpen((prev) => !prev);
@@ -262,73 +259,34 @@ const completeTest = () => {
   setShowSubmitButton(true);
 };
 
-// Submit score to leaderboard with JWT authentication
-const submitScore = async () => {
-  const token = getAuthToken();
-  
-  if (!token) {
-    setSubmitMessage("Please login to save your score to the leaderboard");
-    setSubmitSuccess(false);
-    setSnackbarOpen(true);
-    return;
+// Submit score to leaderboard
+const handleSubmitScore = async () => {
+  // Calculate accuracy from the test
+  const { code, answers } = selectedChallenge;
+  const parts = code.split('___');
+  let fullExpected = parts[0];
+  answers.forEach((answer, i) => {
+    fullExpected += answer + (parts[i + 1] || '');
+  });
+  const trimmedInput = input.slice(0, fullExpected.length);
+  let correctChars = 0;
+  for (let i = 0; i < fullExpected.length; i++) {
+    if (trimmedInput[i] === fullExpected[i]) {
+      correctChars++;
+    }
   }
+  const totalChars = fullExpected.length;
+  const accuracy = totalChars > 0 ? Math.round((correctChars / totalChars) * 100) : 0;
   
-  setIsSubmitting(true);
-  setSubmitMessage("");
+  const payload = {
+    wpm: wpm,
+    accuracy: accuracy,
+    score: score
+  };
   
-  try {
-    // Calculate accuracy from the test
-    const { code, answers } = selectedChallenge;
-    const parts = code.split('___');
-    let fullExpected = parts[0];
-    answers.forEach((answer, i) => {
-      fullExpected += answer + (parts[i + 1] || '');
-    });
-    const trimmedInput = input.slice(0, fullExpected.length);
-    let correctChars = 0;
-    for (let i = 0; i < fullExpected.length; i++) {
-      if (trimmedInput[i] === fullExpected[i]) {
-        correctChars++;
-      }
-    }
-    const totalChars = fullExpected.length;
-    const accuracy = totalChars > 0 ? Math.round((correctChars / totalChars) * 100) : 0;
-    
-    const response = await fetch(`${API_BASE}/api/scores/TYPING_TESTS`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        wpm: wpm,
-        accuracy: accuracy,
-        score: score
-      })
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || "Failed to submit score");
-    }
-    
-    const data = await response.json();
-    setSubmitSuccess(true);
-    let successMessage = "Score submitted!";
-    if (data.isNewBest) {
-      successMessage = "New best score!";
-    }
-    if (data.rank) {
-      successMessage += ` Your rank is #${data.rank}.`;
-    }
-    setSubmitMessage(successMessage);
+  const success = await submitScore('TYPING_TESTS', payload);
+  if (success) {
     setShowSubmitButton(false);
-  } catch (err) {
-    setSubmitSuccess(false);
-    setSubmitMessage(err.message || "Failed to submit score. Please try again.");
-  } finally {
-    setIsSubmitting(false);
-    setSnackbarOpen(true);
   }
 };
 
@@ -826,7 +784,7 @@ return (
                 <Button
                   variant="contained"
                   color="primary"
-                  onClick={submitScore}
+                  onClick={handleSubmitScore}
                   disabled={isSubmitting}
                   startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
                   sx={{ minWidth: 200 }}

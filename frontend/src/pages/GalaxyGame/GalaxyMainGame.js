@@ -3,8 +3,7 @@ import { useBackground } from "./GalaxyBackground";
 import { loadAssets } from "./assets";
 import { getEnemiesByLevel } from "./GalaxyLibrary";
 import { spawnEnemy, updateEnemies, drawEnemies, cleanupEnemies } from "./GalaxyEnemy";
-import { getAuthToken } from "../../utils/AuthUtils";
-import { API_BASE } from "../../utils/api";
+import { useScoreSubmission } from '../../hooks/useScoreSubmission';
 
 const GalaxyMainGame = () => {
   const canvasRef = useRef(null);
@@ -34,9 +33,7 @@ const GalaxyMainGame = () => {
   
   // Score submission states
   const [showSubmitButton, setShowSubmitButton] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState("");
-  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const { submitScore, isSubmitting, submitMessage, submitSuccess, snackbarOpen, setSnackbarOpen } = useScoreSubmission();
 
   const { initStars, drawBackground } = useBackground();
 
@@ -57,53 +54,14 @@ const GalaxyMainGame = () => {
   };
   
   // Submit score to leaderboard
-  const submitScore = async () => {
-    const token = getAuthToken();
+  const handleSubmitScore = async () => {
+    const payload = {
+      score: scoreRef.current
+    };
     
-    if (!token) {
-      setSubmitMessage("Please login to save your score to the leaderboard");
-      setSubmitSuccess(false);
-      return;
-    }
-    
-    setIsSubmitting(true);
-    setSubmitMessage("");
-    
-    try {
-      const response = await fetch(`${API_BASE}/api/scores/GALAXY`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          wpm: 0,
-          accuracy: 100,
-          score: scoreRef.current
-        })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to submit score");
-      }
-      
-      const data = await response.json();
-      setSubmitSuccess(true);
-      let successMessage = "Score submitted!";
-      if (data.isNewBest) {
-        successMessage = "New best score!";
-      }
-      if (data.rank) {
-        successMessage += ` Your rank is #${data.rank}.`;
-      }
-      setSubmitMessage(successMessage);
+    const success = await submitScore('GALAXY', payload);
+    if (success) {
       setShowSubmitButton(false);
-    } catch (err) {
-      setSubmitSuccess(false);
-      setSubmitMessage(err.message || "Failed to submit score. Please try again.");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -391,7 +349,7 @@ const GalaxyMainGame = () => {
                 <p style={{ color: submitSuccess ? "#4caf50" : "#f44336" }}>{submitMessage}</p>
               ) : (
                 <button 
-                  onClick={submitScore}
+                  onClick={handleSubmitScore}
                   style={{
                     padding: "15px 40px",
                     fontSize: "1.5rem",

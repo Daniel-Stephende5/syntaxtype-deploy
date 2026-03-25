@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import '../css/FallingTypingTest.css';
 import { API_BASE } from '../utils/api';
-import { getAuthToken } from '../utils/AuthUtils';
+import { useScoreSubmission } from '../hooks/useScoreSubmission';
 import CircularProgress from "@mui/material/CircularProgress";
 import Button from "@mui/material/Button";
 import Snackbar from "@mui/material/Snackbar";
@@ -25,10 +25,7 @@ const [useLives, setUseLives] = useState(false);
   
   // Leaderboard submission state
   const [showSubmitButton, setShowSubmitButton] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(null);
-  const [submitMessage, setSubmitMessage] = useState("");
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const { submitScore, isSubmitting, submitMessage, submitSuccess, snackbarOpen, setSnackbarOpen } = useScoreSubmission();
   const [gameWpm, setGameWpm] = useState(0);
   const [gameAccuracy, setGameAccuracy] = useState(0);
   const [correctChars, setCorrectChars] = useState(0);
@@ -92,56 +89,17 @@ useEffect(() => {
   }
 },  [isGameOver, score, gameDuration, correctChars, totalChars]);
 
-// Submit score to leaderboard with JWT authentication
-const submitScore = async () => {
-  const token = getAuthToken();
+// Submit score to leaderboard
+const handleSubmitScore = async () => {
+  const payload = {
+    wpm: gameWpm,
+    accuracy: gameAccuracy,
+    score: score
+  };
   
-  if (!token) {
-    setSubmitMessage("Please login to save your score to the leaderboard");
-    setSubmitSuccess(false);
-    setSnackbarOpen(true);
-    return;
-  }
-  
-  setIsSubmitting(true);
-  setSubmitMessage("");
-  
-  try {
-    const response = await fetch(`${API_BASE}/api/scores/FALLING_WORDS`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        wpm: gameWpm,
-        accuracy: gameAccuracy,
-        score: score
-      })
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || "Failed to submit score");
-    }
-    
-    const data = await response.json();
-    setSubmitSuccess(true);
-    let successMessage = "Score submitted!";
-    if (data.isNewBest) {
-      successMessage = "New best score!";
-    }
-    if (data.rank) {
-      successMessage += ` Your rank is #${data.rank}.`;
-    }
-    setSubmitMessage(successMessage);
+  const success = await submitScore('FALLING_WORDS', payload);
+  if (success) {
     setShowSubmitButton(false);
-  } catch (err) {
-    setSubmitSuccess(false);
-    setSubmitMessage(err.message || "Failed to submit score. Please try again.");
-  } finally {
-    setIsSubmitting(false);
-    setSnackbarOpen(true);
   }
 };
 useEffect(() => {
@@ -367,7 +325,7 @@ return (
                 <Button
                   variant="contained"
                   color="primary"
-                  onClick={submitScore}
+                  onClick={handleSubmitScore}
                   disabled={isSubmitting}
                   startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
                   sx={{ fontSize: '16px', padding: '12px 24px' }}
