@@ -450,25 +450,23 @@ public class LeaderboardService {
             return null;
         }
 
-        // Sort by appropriate metric
-        List<Leaderboard> sorted = entries.stream()
-                .sorted((a, b) -> {
-                    if (isTypingGame) {
+        // Sort by appropriate metric (only needed for typing games)
+        List<Leaderboard> sortedEntries;
+        if (isTypingGame) {
+            sortedEntries = entries.stream()
+                    .sorted((a, b) -> {
                         Double scoreA = LeaderboardEntry.calculateCombinedScore(a.getWordsPerMinute(), a.getAccuracy());
                         Double scoreB = LeaderboardEntry.calculateCombinedScore(b.getWordsPerMinute(), b.getAccuracy());
                         return scoreB.compareTo(scoreA);
-                    } else {
-                        // Already sorted by score in query, but keep for consistency
-                        Integer scoreA = a.getScore() != null ? a.getScore() : 0;
-                        Integer scoreB = b.getScore() != null ? b.getScore() : 0;
-                        return scoreB.compareTo(scoreA);
-                    }
-                })
-                .toList();
+                    })
+                    .toList();
+        } else {
+            sortedEntries = entries; // Already sorted by DB query
+        }
 
         // Find user's position
-        for (int i = 0; i < sorted.size(); i++) {
-            if (sorted.get(i).getUser().getUserId().equals(user.getUserId())) {
+        for (int i = 0; i < sortedEntries.size(); i++) {
+            if (sortedEntries.get(i).getUser().getUserId().equals(user.getUserId())) {
                 return i + 1; // 1-based rank
             }
         }

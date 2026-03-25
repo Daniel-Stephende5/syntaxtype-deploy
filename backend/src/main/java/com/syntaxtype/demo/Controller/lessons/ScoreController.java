@@ -18,6 +18,7 @@ import com.syntaxtype.demo.Entity.Lessons.Score;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/scores")
@@ -95,10 +96,10 @@ public class ScoreController {
 
         // Save to Score table (always)
         Score score = new Score();
-        score.setScore(request.getScore() != null ? request.getScore() : 0);
-        score.setTimeInSeconds(request.getTimeSpent() != null ? request.getTimeSpent() : 0);
+        score.setScore(Optional.ofNullable(request.getScore()).orElse(0));
+        score.setTimeInSeconds(Optional.ofNullable(request.getTimeSpent()).orElse(0));
         score.setChallengeType(categoryEnum.name());
-        score.setWpm(request.getWpm() != null ? request.getWpm() : 0);
+        score.setWpm(Optional.ofNullable(request.getWpm()).orElse(0));
         score.setSubmittedAt(LocalDateTime.now());
         score.setUser(userDetails.getUser());
         scoreService.saveScore(score);
@@ -107,9 +108,9 @@ public class ScoreController {
         LeaderboardUpdateResult result = leaderboardService.updateLeaderboardIfBetter(
                 username,
                 categoryEnum,
-                request.getWpm() != null ? request.getWpm() : 0,
-                request.getAccuracy() != null ? request.getAccuracy() : 100,
-                request.getScore() != null ? request.getScore() : 0
+                Optional.ofNullable(request.getWpm()).orElse(0),
+                Optional.ofNullable(request.getAccuracy()).orElse(100),
+                Optional.ofNullable(request.getScore()).orElse(0)
         );
 
         return ResponseEntity.ok(result);
