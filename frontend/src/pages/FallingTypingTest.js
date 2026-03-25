@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import '../css/FallingTypingTest.css';
 import { API_BASE } from '../utils/api';
+import { getAuthToken } from '../utils/AuthUtils';
+import CircularProgress from "@mui/material/CircularProgress";
+import Button from "@mui/material/Button";
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
 
 const GAME_AREA_HEIGHT = 500;
 
@@ -15,8 +20,17 @@ const FallingTypingTest = () => {
     const latestScoreRef = useRef(score);
   const [isGameOver, setIsGameOver] = useState(false);
   const [lives, setLives] = useState(null);
-  const [useLives, setUseLives] = useState(false);
+const [useLives, setUseLives] = useState(false);
   const [speed, setSpeed] = useState(1);
+  
+  // Leaderboard submission state
+  const [showSubmitButton, setShowSubmitButton] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(null);
+  const [submitMessage, setSubmitMessage] = useState("");
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [gameWpm, setGameWpm] = useState(0);
+  const [gameAccuracy, setGameAccuracy] = useState(0);
 
   const wordIdCounter = useRef(0);
   const fallingWordsRef = useRef([]);
@@ -57,30 +71,71 @@ const FallingTypingTest = () => {
 useEffect(() => {
   latestScoreRef.current = score;            
       }, [score]);
-  // Timer countdown
-  useEffect(() => {
+// Timer countdown
+useEffect(() => {
   if (isGameOver) {
-    // Submit score to backend
-    fetch(`${API_BASE}/api/scores/falling`, {
+    // Calculate WPM and accuracy for the game
+    // Assuming average word length of 5 characters
+    const totalChars = score * 5;
+    const minutes = gameDuration / 60;
+    const wpm = minutes > 0 ? Math.round(totalChars / 5 / minutes) : 0;
+    // Accuracy would need to be tracked during gameplay; using 100% as fallback for now
+    // In a real implementation, you'd track correct/incorrect keystrokes
+    const accuracy = 100;
+    
+    setGameWpm(wpm);
+    setGameAccuracy(accuracy);
+    
+    // Show submit button instead of auto-submitting
+    setShowSubmitButton(true);
+  }
+},  [isGameOver, score, gameDuration]);
+
+// Submit score to leaderboard with JWT authentication
+const submitScore = async () => {
+  const token = getAuthToken();
+  
+  if (!token) {
+    setSubmitMessage("Please login to save your score to the leaderboard");
+    setSubmitSuccess(false);
+    setSnackbarOpen(true);
+    return;
+  }
+  
+  setIsSubmitting(true);
+  setSubmitMessage("");
+  
+  try {
+    const response = await fetch(`${API_BASE}/api/scores/FALLING_WORDS`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
       },
       body: JSON.stringify({
-        score,
-        timeInSeconds: gameDuration,
-        challengeType: "falling",
-      }),
-    })
-    .then((res) => {
-      if (!res.ok) throw new Error("Failed to save falling score");
-      console.log("✅ Falling score submitted!");
-    })
-    .catch((err) => {
-      console.error("❌ Error submitting falling score:", err);
+        wpm: gameWpm,
+        accuracy: gameAccuracy,
+        score: score
+      })
     });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Failed to submit score");
+    }
+    
+    const data = await response.json();
+    setSubmitSuccess(true);
+    setSubmitMessage(data.message || "Score submitted! Rank: " + (data.rank || "?"));
+    setShowSubmitButton(false);
+  } catch (err) {
+    setSubmitSuccess(false);
+    setSubmitMessage(err.message || "Failed to submit score. Please try again.");
+  } finally {
+    setIsSubmitting(false);
+    setSnackbarOpen(true);
   }
-},  [isGameOver, score, gameDuration]);
+};
 useEffect(() => {
   if (isGameOver || timeLeft <= 0) return;
 
@@ -151,7 +206,7 @@ useEffect(() => {
     };
   }, [availableWords, isGameOver, useLives, speed]);
 
-  const handleRestart = () => {
+const handleRestart = () => {
     const challenge = JSON.parse(sessionStorage.getItem("fallingChallenge"));
     setFallingWords([]);
     fallingWordsRef.current = [];
@@ -159,6 +214,9 @@ useEffect(() => {
     setActiveWordId(null);
     setScore(0);
     setIsGameOver(false);
+    setShowSubmitButton(false);
+    setGameWpm(0);
+    setGameAccuracy(0);
     wordIdCounter.current = 0;
   
     if (challenge?.challengeId) {
@@ -209,8 +267,24 @@ useEffect(() => {
 ))
   };
 
-  return (
-    <div style={{ padding: "2rem" }}>
+return (
+    <>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={5000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity={submitSuccess ? "success" : "error"}
+          sx={{ width: "100%" }}
+        >
+          {submitMessage}
+        </Alert>
+      </Snackbar>
+      
+      <div style={{ padding: "2rem" }}>
       <h2>Falling Typing Test</h2>
       <p>Score: {score} | Time Left: {timeLeft}s {useLives && `| Lives: ${lives}`}</p>
 
@@ -242,26 +316,58 @@ useEffect(() => {
           </div>
         ))}
 
-        {isGameOver && (
+{isGameOver && (
           <div
             style={{
               position: 'absolute',
               top: '40%',
               left: '50%',
               transform: 'translate(-50%, -50%)',
-              background: 'rgba(0,0,0,0.7)',
-              padding: '20px',
-              borderRadius: '10px',
+              background: 'rgba(0,0,0,0.85)',
+              padding: '30px',
+              borderRadius: '15px',
               color: 'white',
               fontSize: '24px',
-              textAlign: 'center'
+              textAlign: 'center',
+              minWidth: '300px'
             }}
           >
-            <p>Game Over!</p>
-            <p>Final Score: {score}</p>
-            <button onClick={handleRestart} style={{ padding: '10px 20px', fontSize: '16px' }}>
-              Restart
-            </button>
+            <p style={{ marginBottom: '10px' }}>Game Over!</p>
+            <p style={{ fontSize: '18px', color: '#aaa', marginBottom: '20px' }}>
+              Score: {score} | WPM: {gameWpm} | Accuracy: {gameAccuracy}%
+            </p>
+            
+            {showSubmitButton && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={submitScore}
+                  disabled={isSubmitting}
+                  startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
+                  sx={{ fontSize: '16px', padding: '12px 24px' }}
+                >
+                  {isSubmitting ? "Submitting..." : "Submit to Leaderboard"}
+                </Button>
+                
+                {!isSubmitting && (
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    onClick={handleRestart}
+                    sx={{ fontSize: '14px', padding: '8px 16px' }}
+                  >
+                    Play Again
+                  </Button>
+                )}
+              </div>
+            )}
+            
+            {!showSubmitButton && (
+              <button onClick={handleRestart} style={{ padding: '10px 20px', fontSize: '16px' }}>
+                Play Again
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -277,6 +383,7 @@ useEffect(() => {
         />
       )}
     </div>
+    </>
   );
 };
 

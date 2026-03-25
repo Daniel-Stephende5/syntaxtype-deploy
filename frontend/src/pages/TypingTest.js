@@ -2,7 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "../css/typingtest.css";
 import { API_BASE } from "../utils/api";
- import codeChallenges from "./codeChallenges";
+import { getAuthToken } from "../utils/AuthUtils";
+import CircularProgress from "@mui/material/CircularProgress";
+import Button from "@mui/material/Button";
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
+import codeChallenges from "./codeChallenges";
 const TypingTest = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [challenges, setChallenges] = useState([]);
@@ -19,9 +24,17 @@ const TypingTest = () => {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [wpm, setWpm] = useState(0);
   const [score, setScore] = useState(0);
-  const [blankInputs, setBlankInputs] = useState([]);
+const [blankInputs, setBlankInputs] = useState([]);
  const [showCursor, setShowCursor] = useState(true);
-  const navigate = useNavigate();
+ 
+ // Leaderboard submission state
+ const [showSubmitButton, setShowSubmitButton] = useState(false);
+ const [isSubmitting, setIsSubmitting] = useState(false);
+ const [submitSuccess, setSubmitSuccess] = useState(null);
+ const [submitMessage, setSubmitMessage] = useState("");
+ const [snackbarOpen, setSnackbarOpen] = useState(false);
+ 
+   const navigate = useNavigate();
   const toggleMenu = () => setIsMenuOpen((prev) => !prev);
  
   // ✅ Fetch challenge list
@@ -241,9 +254,74 @@ const completeTest = () => {
       if (!res.ok) throw new Error("Failed to save score");
       console.log("✅ Score submitted successfully!");
     })
-    .catch((err) => {
+.catch((err) => {
       console.error("❌ Error submitting score:", err);
     });
+    
+  // Show submit to leaderboard button after test completion
+  setShowSubmitButton(true);
+};
+
+// Submit score to leaderboard with JWT authentication
+const submitScore = async () => {
+  const token = getAuthToken();
+  
+  if (!token) {
+    setSubmitMessage("Please login to save your score to the leaderboard");
+    setSubmitSuccess(false);
+    setSnackbarOpen(true);
+    return;
+  }
+  
+  setIsSubmitting(true);
+  setSubmitMessage("");
+  
+  try {
+    // Calculate accuracy from the test
+    const { code, answers } = selectedChallenge;
+    let fullExpected = code;
+    answers.forEach((answer) => {
+      fullExpected = fullExpected.replace("___", answer);
+    });
+    const trimmedInput = input.slice(0, fullExpected.length);
+    let correctChars = 0;
+    for (let i = 0; i < fullExpected.length; i++) {
+      if (trimmedInput[i] === fullExpected[i]) {
+        correctChars++;
+      }
+    }
+    const totalChars = fullExpected.length;
+    const accuracy = totalChars > 0 ? Math.round((correctChars / totalChars) * 100) : 0;
+    
+    const response = await fetch(`${API_BASE}/api/scores/TYPING_TESTS`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        wpm: wpm,
+        accuracy: accuracy,
+        score: score
+      })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Failed to submit score");
+    }
+    
+    const data = await response.json();
+    setSubmitSuccess(true);
+    setSubmitMessage(data.message || "Score submitted! Rank: " + (data.rank || "?"));
+    setShowSubmitButton(false);
+  } catch (err) {
+    setSubmitSuccess(false);
+    setSubmitMessage(err.message || "Failed to submit score. Please try again.");
+  } finally {
+    setIsSubmitting(false);
+    setSnackbarOpen(true);
+  }
 };
 
  /*const getParagraphChars = () => {
@@ -441,6 +519,21 @@ return (
  
   return (
     <>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={5000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity={submitSuccess ? "success" : "error"}
+          sx={{ width: "100%" }}
+        >
+          {submitMessage}
+        </Alert>
+      </Snackbar>
+      
       <nav className="navbar">
         <button className="hamburger-icon" onClick={toggleMenu}>☰</button>
         <div className="navbar-left">
@@ -718,6 +811,41 @@ return (
               >
                 Submit Test
               </button>
+            )}
+            
+            {isTestComplete && showSubmitButton && (
+              <div style={{ marginTop: "1rem", display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={submitScore}
+                  disabled={isSubmitting}
+                  startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
+                  sx={{ minWidth: 200 }}
+                >
+                  {isSubmitting ? "Submitting..." : "Submit to Leaderboard"}
+                </Button>
+                
+                {!isSubmitting && (
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    onClick={() => {
+                      setShowSubmitButton(false);
+                      setInput("");
+                      setIsTestComplete(false);
+                      setStartTime(null);
+                      setElapsedTime(0);
+                      setWpm(0);
+                      setScore(0);
+                      setBlankInputs(new Array(selectedChallenge.answers.length).fill(""));
+                    }}
+                    sx={{ minWidth: 120 }}
+                  >
+                    Retry
+                  </Button>
+                )}
+              </div>
             )}
           </>
         )}
