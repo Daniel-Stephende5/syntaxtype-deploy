@@ -97,4 +97,22 @@ public interface LeaderboardRepository extends JpaRepository<Leaderboard, Long> 
      */
     @Query("SELECT l FROM Leaderboard l JOIN FETCH l.user WHERE l.category = :category ORDER BY l.score DESC")
     List<Leaderboard> findTopNByCategoryOrderByScoreDesc(@Param("category") Category category, Pageable pageable);
+
+    /**
+     * Retrieves top N leaderboard entries for a category ordered by combined score descending.
+     * Combined score = wpm * (accuracy / 100.0) with 1.5x multiplier if accuracy > 95.
+     * Uses native query for database-level sorting to ensure accurate ranking.
+     *
+     * @param category The game category (as string)
+     * @param pageable Pageable with limit
+     * @return List of top N Leaderboard entries ordered by combined score
+     */
+    @Query(value = "SELECT l.* FROM leaderboards l " +
+           "WHERE l.category = :category " +
+           "ORDER BY (CASE WHEN l.accuracy > 95 THEN l.words_per_minute * (l.accuracy / 100.0) * 1.5 " +
+           "ELSE l.words_per_minute * (l.accuracy / 100.0) END) DESC",
+           nativeQuery = true)
+    List<Leaderboard> findTopNByCategoryOrderByCombinedScoreDesc(
+            @Param("category") String category,
+            Pageable pageable);
 }
