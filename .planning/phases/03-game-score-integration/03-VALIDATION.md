@@ -77,7 +77,7 @@ created: 2026-03-25
 3. Complete typing test with known WPM and accuracy
 4. Click "Submit to Leaderboard" button
 5. Verify:
-   - API request sent to `/api/scores/typing`
+   - API request sent to `/api/scores/TYPING_TESTS`
    - Response includes `{success: true, isNewBest: boolean, rank: number}`
    - UI shows appropriate message ("Score submitted!" or "New best score!")
    - Leaderboard page shows updated entry
@@ -106,7 +106,7 @@ created: 2026-03-25
 3. Complete game (survive duration or reach target)
 4. Click "Submit to Leaderboard" button
 5. Verify:
-   - API request sent to `/api/scores/falling-typing`
+   - API request sent to `/api/scores/FALLING_WORDS`
    - Response includes `{success: true, isNewBest: boolean, rank: number}`
    - UI shows success message
    - Leaderboard page shows updated entry
@@ -135,7 +135,7 @@ created: 2026-03-25
 3. Complete game (reach wave/level target)
 4. Click "Submit to Leaderboard" button
 5. Verify:
-   - API request sent to `/api/scores/galaxy`
+   - API request sent to `/api/scores/GALAXY`
    - Response includes `{success: true, isNewBest: boolean, rank: number}`
    - UI shows success message
    - Leaderboard page shows updated entry
@@ -164,7 +164,7 @@ created: 2026-03-25
 3. Complete grid puzzle within time limit
 4. Click "Submit to Leaderboard" button
 5. Verify:
-   - API request sent to `/api/scores/grid`
+   - API request sent to `/api/scores/GRID`
    - Response includes `{success: true, isNewBest: boolean, rank: number}`
    - UI shows success message
    - Leaderboard page shows updated entry
@@ -193,7 +193,7 @@ created: 2026-03-25
 3. Complete reading challenge
 4. Click "Submit to Leaderboard" button
 5. Verify:
-   - API request sent to `/api/scores/bookworm`
+   - API request sent to `/api/scores/BOOKWORM`
    - Response includes `{success: true, isNewBest: boolean, rank: number}`
    - UI shows success message
    - Leaderboard page shows updated entry
@@ -222,7 +222,7 @@ created: 2026-03-25
 3. Complete crossword puzzle
 4. Click "Submit to Leaderboard" button
 5. Verify:
-   - API request sent to `/api/scores/crossword`
+   - API request sent to `/api/scores/CROSSWORD`
    - Response includes `{success: true, isNewBest: boolean, rank: number}`
    - UI shows success message
    - Leaderboard page shows updated entry
@@ -251,7 +251,7 @@ created: 2026-03-25
 3. Complete picture puzzle
 4. Click "Submit to Leaderboard" button
 5. Verify:
-   - API request sent to `/api/scores/four-pics`
+   - API request sent to `/api/scores/FOUR_PICS`
    - Response includes `{success: true, isNewBest: boolean, rank: number}`
    - UI shows success message
    - Leaderboard page shows updated entry
@@ -276,17 +276,17 @@ created: 2026-03-25
 
 **Test Case:** Submit score from SyntaxSaver game with valid authentication
 1. Login as test user
-2. Navigate to `/syntax-safer`
+2. Navigate to `/syntax-saver`
 3. Complete syntax challenge
 4. Click "Submit to Leaderboard" button
 5. Verify:
-   - API request sent to `/api/scores/syntax-safer`
+   - API request sent to `/api/scores/SYNTAX_SAVER`
    - Response includes `{success: true, isNewBest: boolean, rank: number}`
    - UI shows success message
    - Leaderboard page shows updated entry
 
 **Test Case:** Submit score without authentication
-1. Navigate to `/syntax-safer` as guest
+1. Navigate to `/syntax-saver` as guest
 2. Complete challenge
 3. Click "Submit to Leaderboard"
 4. Verify redirect to login or error message
