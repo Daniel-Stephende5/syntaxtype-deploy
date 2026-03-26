@@ -1364,10 +1364,16 @@ export default function GridGame() {
     totalStarsRef.current += stars;
   }, []);
   
-  const next = useCallback((stars = 0)=>{ 
+  const next = useCallback((stars = 0) => { 
     handleStageComplete(stars);
-    if(stage<STAGES.length-1) setStage(s=>s+1); else setDone(true); 
-  },[stage, handleStageComplete]);
+    setStage(s => {
+      if (s < STAGES.length - 1) {
+        return s + 1;
+      }
+      setDone(true);
+      return s;
+    });
+  }, [handleStageComplete]);
   
   // Reset totalStars when restarting
   const handleRestart = useCallback(() => {
