@@ -1,309 +1,152 @@
 import React, { useState, useEffect } from "react";
-// import "./SyntaxSaverLesson.css";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { API_BASE } from '../utils/api';
-import { useScoreSubmission } from '../hooks/useScoreSubmission';
+import { lessons as quizLessons, quizTitle } from "./QuizData";
+import CodeWormBattle from "./CodeWormBattle";
 
-export default function SyntaxSaverLesson({ quizId = 1, onBack }) {
-  const [title, setTitle] = useState("");
-  const [lessons, setLessons] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+export default function SyntaxSaverLesson({ onBack }) {
+  // --- force remount key ---
+  const [resetKey, setResetKey] = useState(0);
   const [step, setStep] = useState(0);
   const [score, setScore] = useState(0);
   const [feedback, setFeedback] = useState("");
-  const [isLessonComplete, setIsLessonComplete] = useState(false);
-  
-  // Score submission states
-  const [showSubmitButton, setShowSubmitButton] = useState(false);
-  const { submitScore, isSubmitting, submitMessage, submitSuccess } = useScoreSubmission();
 
-  // ======================================================
-  // 🔹 FETCH QUIZ FROM BACKEND
-  // ======================================================
-  useEffect(() => {
-    const fetchQuiz = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/api/quiz/${quizId}`);
-        if (!res.ok) throw new Error("Failed to fetch quiz");
-        const data = await res.json();
+  const lessons = quizLessons;
+  const current = lessons[step];
 
-        console.log("🧩 Raw quiz data from backend:", data);
-
-        setTitle(data.title || `Quiz ${quizId}`);
-
-        // ✅ Parse each question safely
-        const parsedItems = (data.items || []).map((item) => {
-          let parsedData = {};
-          try {
-            if (typeof item.data === "string" && item.data.trim() !== "") {
-             let cleaned = item.data;
-
-// 1️⃣ Handle escaped backslashes (from DB or Java serialization)
-cleaned = cleaned
-  .replace(/\\{2,}/g, "\\") // turn \\\" → \"
-  .replace(/"\s*\[\s*"/g, '["') // fix accidental extra quotes before arrays
-  .replace(/"\s*\]\s*"/g, '"]'); // fix accidental extra quotes after arrays
-
-// 2️⃣ Try multiple parsing attempts
-try {
-  parsedData = JSON.parse(cleaned);
-} catch (err1) {
-  try {
-    parsedData = JSON.parse(cleaned.replace(/\\"/g, '"')); // fallback: unescape quotes
-  } catch (err2) {
-    console.warn(`⚠️ Still failed to parse item ${item.id}`, cleaned);
-  }
-}
-            }
-          } catch (err) {
-            console.warn(`⚠️ Failed to parse item ${item.id}:`, item.data, err);
-          }
-          return { ...item, ...parsedData };
-        });
-
-        console.log("✅ Parsed quiz items:", parsedItems);
-        setLessons(parsedItems);
-      } catch (err) {
-        console.error("❌ Error loading quiz:", err);
-        setError("⚠️ Could not load quiz from server.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchQuiz();
-  }, [quizId]);
-
-  // ======================================================
-  // 🔹 QUIZ NAVIGATION
-  // ======================================================
   const handleNext = (points = 0) => {
-    setScore((prev) => prev + points);
+    setScore(prev => prev + points);
     setFeedback("");
-    if (step < lessons.length - 1) {
-      setStep((prev) => prev + 1);
-    } else {
-      setFeedback("🎉 Lesson Complete! You mastered this quiz!");
-      setIsLessonComplete(true);
-      setShowSubmitButton(true);
+    if (step < lessons.length - 1) setStep(prev => prev + 1);
+    else setFeedback("🎉 Lesson Complete!");
+  };
+
+  const handleBackStep = () => {
+    if (step > 0) {
+      setStep(prev => prev - 1);
+      setFeedback("");
     }
   };
-  
-  // ======================================================
-  // 🔹 RENDER LOGIC
-  // ======================================================
-  if (loading) return <p>⏳ Loading quiz...</p>;
-  if (error) return <p className="error">{error}</p>;
-  if (!lessons || lessons.length === 0)
-    return <p>📭 No lessons found for this quiz.</p>;
 
-  const current = lessons[step];
-  console.log("🎯 Current question:", current);
+  const handleBackToMenu = () => {
+    const confirmLeave = window.confirm(
+      "Are you sure you want to exit the lesson? Your progress will be lost."
+    );
+    if (confirmLeave) {
+      // Reset state before leaving
+      setStep(0);
+      setScore(0);
+      setFeedback("");
+      setResetKey(prev => prev + 1); // force remount
+      onBack();
+    }
+  };
 
   return (
-    <div className="lesson-container">
-      <h2>🧠 {title}</h2>
-      <p>
-        Step {step + 1} of {lessons.length}
-      </p>
+    <div className="lesson-container" key={resetKey}>
+      <h2>🧠 {quizTitle}</h2>
+      <p>Step {step + 1} of {lessons.length}</p>
 
       {current.type === "match" && (
-        <MatchQuestion
-          data={current}
-          onNext={handleNext}
-          setFeedback={setFeedback}
-        />
+        <MatchQuestion data={current} onNext={handleNext} setFeedback={setFeedback} />
       )}
-
       {current.type === "reorder" && (
-        <ReorderQuestion
-          data={current}
-          onNext={handleNext}
-          setFeedback={setFeedback}
-        />
+        <ReorderQuestion data={current} onNext={handleNext} setFeedback={setFeedback} />
       )}
-
-      {current.type === "typing" && (
-        <TypingChallenge
-          data={current}
-          onNext={handleNext}
-          setFeedback={setFeedback}
-        />
+      {current.type === "battle" && (
+        <CodeWormBattle blocks={current.blocks} scrambled={current.scrambled} onNext={handleNext} />
       )}
 
       <p className="feedback">{feedback}</p>
       <p className="score">⭐ Score: {score}</p>
 
-      {/* Leaderboard Submit Button */}
-      {showSubmitButton && (
-        <div style={{ marginTop: "15px" }}>
-          {isSubmitting ? (
-            <p style={{ color: "#666" }}>Submitting score...</p>
-          ) : submitMessage ? (
-            <p style={{ color: submitSuccess ? "#4caf50" : "#f44336", fontWeight: "bold" }}>
-              {submitMessage}
-            </p>
-          ) : (
-            <button 
-              onClick={() => {
-                submitScore('SYNTAX_SAVER', { wpm: 0, accuracy: 100, score });
-                setShowSubmitButton(false);
-              }}
-              style={{
-                padding: "12px 24px",
-                fontSize: "14px",
-                cursor: "pointer",
-                borderRadius: "5px",
-                backgroundColor: "#4caf50",
-                color: "white",
-                border: "none",
-                marginRight: "10px"
-              }}
-            >
-              Submit to Leaderboard
-            </button>
-          )}
-        </div>
-      )}
-
-      <button className="back-btn" onClick={onBack}>
-        🔙 Back to Menu
-      </button>
+      <div style={{ marginTop: 20, display: "flex", gap: 10, justifyContent: "center" }}>
+        {step > 0 && <button onClick={handleBackStep}>⬅️ Previous</button>}
+        <button onClick={handleBackToMenu}>🏠 Menu</button>
+      </div>
     </div>
   );
 }
 
-// ======================================================
-// 🔹 MATCH QUESTION
-// ======================================================
+// --- MatchQuestion ---
 function MatchQuestion({ data, onNext, setFeedback }) {
-  const options = Array.isArray(data.options)
-    ? data.options.map((opt) => (typeof opt === "string" ? { label: opt } : opt))
-    : [];
-
-  if (options.length === 0) return <p>⚠️ No options for this question.</p>;
-
-  const correctAnswer =
-    data.correct ||
-    data.correctAnswer ||
-    data.answer ||
-    data.correct_option ||
-    "";
-
-  const normalize = (s) => (s ?? "").toString().trim().toLowerCase();
-
-  const handleClick = (opt) => {
-    const chosen = normalize(opt.label || opt.value || opt);
-    const correct = normalize(correctAnswer);
-
-    if (chosen === correct) {
+  const normalize = s => (s ?? "").toString().trim().toLowerCase();
+  const handleClick = opt => {
+    if (normalize(opt) === normalize(data.correct)) {
       setFeedback("✅ Correct!");
       onNext(10);
-    } else {
-      setFeedback("❌ Try again!");
-    }
+    } else setFeedback("❌ Try again!");
   };
 
   return (
     <div className="question">
       <h3>{data.question}</h3>
       <div className="options">
-        {options.map((opt, i) => (
-          <button key={i} className="option" onClick={() => handleClick(opt)}>
-            {opt.icon ? <span className="icon">{opt.icon}</span> : null}{" "}
-            {opt.label}
-          </button>
+        {data.options.map((opt, i) => (
+          <button key={i} onClick={() => handleClick(opt)}>{opt}</button>
         ))}
       </div>
     </div>
   );
 }
 
-// ======================================================
-// 🔹 REORDER QUESTION
-// ======================================================
-function ReorderQuestion({ data, onNext, setFeedback }) {
-  // Ensure `parts` is a clean array
-  let parts = [];
-  if (Array.isArray(data.parts)) {
-    parts = data.parts;
-  } else if (typeof data.parts === "string") {
-    try {
-      parts = JSON.parse(data.parts);
-    } catch {
-      parts = [];
-    }
+// --- ReorderQuestion ---
+const scramble = arr => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
   }
+  return a;
+};
 
-  const [order, setOrder] = React.useState([...parts]);
+function ReorderQuestion({ data, onNext, setFeedback }) {
+  const [order, setOrder] = useState([]);
+  useEffect(() => setOrder(scramble(data.parts)), [data.parts]);
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
     const newOrder = Array.from(order);
-    const [moved] = newOrder.splice(result.source.index, 1);
-    newOrder.splice(result.destination.index, 0, moved);
+    const [removed] = newOrder.splice(result.source.index, 1);
+    newOrder.splice(result.destination.index, 0, removed);
     setOrder(newOrder);
   };
 
   const handleSubmit = () => {
-    // Normalize correct order whether it’s strings or indexes
-    let expected = [];
-    if (Array.isArray(data.correctOrder)) {
-      if (typeof data.correctOrder[0] === "number") {
-        expected = data.correctOrder.map((i) => parts[i]);
-      } else {
-        expected = data.correctOrder;
-      }
-    }
-
-    if (JSON.stringify(order) === JSON.stringify(expected)) {
-      setFeedback("✅ Nice! That's the correct syntax.");
+    if (JSON.stringify(order) === JSON.stringify(data.parts)) {
+      setFeedback("✅ Correct!");
       onNext(15);
     } else {
-      setFeedback("❌ Not quite. Try rearranging again.");
+      setFeedback("❌ Not correct. Try again.");
     }
   };
 
   return (
     <div className="question">
       <h3>{data.question}</h3>
-
       <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId="parts" direction="horizontal">
+        <Droppable droppableId="droppable" direction="horizontal">
           {(provided) => (
             <div
-              {...provided.droppableProps}
               ref={provided.innerRef}
-              className="reorder-area"
+              {...provided.droppableProps}
+              style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}
             >
               {order.map((part, index) => (
-                <Draggable
-                  key={part + index}
-                  draggableId={part + index}
-                  index={index}
-                >
+                <Draggable key={index} draggableId={`part-${index}`} index={index}>
                   {(provided, snapshot) => (
                     <div
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
-                      className={`part ${
-                        snapshot.isDragging ? "dragging" : ""
-                      }`}
                       style={{
+                        padding: "8px 12px",
+                        background: snapshot.isDragging ? "#9fe3ff" : "#0c5b0bff",
+                        color: "white",
+                        fontWeight: "bold",
+                        borderRadius: 4,
+                        cursor: "grab",
                         userSelect: "none",
-                        padding: "10px 14px",
-                        background: "#7EE081",
-                        borderRadius: "8px",
-                        border: "1px solid #ccc",
-                        backgroundColor: snapshot.isDragging
-                          ? "#e0f7fa"
-                          : "#fafafa",
-                        boxShadow: snapshot.isDragging
-                          ? "0 2px 6px rgba(0,0,0,0.2)"
-                          : "none",
-                        ...provided.draggableProps.style,
+                        ...provided.draggableProps.style
                       }}
                     >
                       {part}
@@ -316,45 +159,7 @@ function ReorderQuestion({ data, onNext, setFeedback }) {
           )}
         </Droppable>
       </DragDropContext>
-
-      <button className="submit-btn" onClick={handleSubmit}>
-        Check Order
-      </button>
-    </div>
-  );
-}
-
-
-// ======================================================
-// 🔹 TYPING QUESTION
-// ======================================================
-function TypingChallenge({ data, onNext, setFeedback }) {
-  const [input, setInput] = useState("");
-
-  const handleSubmit = () => {
-    const normalize = (s) => s.replace(/\s+/g, "").trim();
-    if (normalize(input) === normalize(data.correctCode)) {
-      setFeedback("✅ Correct! Syntax fixed!");
-      onNext(20);
-    } else {
-      setFeedback("❌ Check your syntax again.");
-    }
-  };
-
-  return (
-    <div className="question">
-      <h3>{data.question}</h3>
-      {data.buggyCode && <pre className="code-block">{data.buggyCode}</pre>}
-      <textarea
-        rows="6"
-        className="code-input"
-        placeholder="Type your corrected code here..."
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-      />
-      <button className="submit-btn" onClick={handleSubmit}>
-        Submit
-      </button>
+      <button onClick={handleSubmit}>Check Order</button>
     </div>
   );
 }
