@@ -1320,15 +1320,14 @@ for (int a=0;a<R;a++)
           </div>
         ) : (
           <>
-            <div style={{marginTop: 16, fontSize: 14, color: "#666"}}>
-              <span style={{fontWeight: 600, color: "#22c55e"}}>{totalStars}</span> stars collected 
+            <div className="completion-score-details">
+              <span className="completion-stars-count">{totalStars}</span> stars collected 
               (Score: <strong>{totalStars * 10}</strong>)
             </div>
             <button 
-              className="btn btn-primary" 
+              className="btn btn-primary completion-submit-btn" 
               onClick={() => submitScore('GRID', { score: totalStars * 10, wpm: 0, accuracy: Math.round((totalStars / MAX_POSSIBLE_STARS) * 100) })}
               disabled={isSubmitting}
-              style={{marginTop: 8}}
             >
               {isSubmitting ? "Submitting..." : `Submit Score (${totalStars * 10} pts)`}
             </button>

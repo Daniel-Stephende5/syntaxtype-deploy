@@ -207,6 +207,9 @@
 .cl-item{display:flex;align-items:center;gap:9px;background:var(--paper-dark);padding:7px 11px;border-radius:var(--r-sm);font-size:12px;font-weight:500;color:var(--ink);}
 .cl-diff{font-family:'DM Mono',monospace;font-size:9px;font-weight:700;padding:2px 7px;border-radius:99px;flex-shrink:0;letter-spacing:.04em;}
 .completion-code{background:#1e1e2e;color:#a6e3a1;font-family:'DM Mono',monospace;font-size:11.5px;line-height:1.7;border-radius:var(--r);padding:13px 17px;width:100%;text-align:left;}
+.completion-score-details{margin-top:16px;font-size:14px;color:#666;}
+.completion-stars-count{font-weight:600;color:#22c55e;}
+.completion-submit-btn{margin-top:8px;}
 
 /* ── Responsive ── */
 @media(max-width:720px){
