@@ -5,6 +5,12 @@ import { useScoreSubmission } from '../hooks/useScoreSubmission';
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 
+// Star and scoring constants
+const MAX_STAGES = 20;
+const MAX_STARS_PER_STAGE = 3;
+const MAX_POSSIBLE_STARS = MAX_STAGES * MAX_STARS_PER_STAGE; // 60
+const DEFAULT_STARS = 1;
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ROWS = 8;
 const COLS = 8;
@@ -1320,7 +1326,7 @@ for (int a=0;a<R;a++)
             </div>
             <button 
               className="btn btn-primary" 
-              onClick={() => submitScore('GRID', { score: totalStars * 10, wpm: 0, accuracy: Math.round((totalStars / 60) * 100) })}
+              onClick={() => submitScore('GRID', { score: totalStars * 10, wpm: 0, accuracy: Math.round((totalStars / MAX_POSSIBLE_STARS) * 100) })}
               disabled={isSubmitting}
               style={{marginTop: 8}}
             >
