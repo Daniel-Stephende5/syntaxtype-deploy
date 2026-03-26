@@ -1,7 +1,7 @@
 # Database Documentation
 
 **Part of:** SyntaxType - Educational Typing Platform  
-**Last Updated:** 2026-03-25
+**Last Updated:** 2026-03-25 (updated with User-Score relationship)
 
 ---
 
