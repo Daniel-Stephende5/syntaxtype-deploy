@@ -287,7 +287,7 @@ function S1Watch({onComplete}) {
         {done&&<Callout type="success">✅ The loop ran <strong>4 times</strong>. i went 0→1→2→3. Each iteration = one step.</Callout>}
         <BtnRow>
           <button className="btn btn-primary" onClick={play} disabled={running}>{running?"▶ Running…":done?"▶ Watch again":"▶ Play"}</button>
-          {done&&<button className="btn btn-success" onClick={onComplete}>Got it! Next →</button>}
+          {done&&<button className="btn btn-success" onClick={() => onComplete(DEFAULT_STARS)}>Got it! Next →</button>}
         </BtnRow>
       </div>
       <div className="stage-right"><Grid player={player} targets={[{...scene.pokemon,caught:false,emoji:"⭐"}]} trail={trail} flash={flash}/></div>
@@ -342,7 +342,7 @@ function S2Fill({onComplete}) {
         {msg&&<Callout type={mtype}>{msg}</Callout>}
         <BtnRow>
           <button className="btn btn-primary" onClick={run} disabled={running||!val}>{running?"Running…":"▶ Run"}</button>
-          {won&&<button className="btn btn-success" onClick={() => onComplete(1)}>Next →</button>}
+          {won&&<button className="btn btn-success" onClick={() => onComplete(DEFAULT_STARS)}>Next →</button>}
         </BtnRow>
       </div>
       <div className="stage-right"><Grid player={player} targets={[{...scene.pokemon,caught:false}]} trail={trail} flash={flash}/></div>
@@ -410,7 +410,7 @@ function S3Direction({onComplete}) {
         {tries>=2&&!won&&<Callout type="hint">💡 Row 0 is at the top. Going DOWN = row number increases = r++.</Callout>}
         <BtnRow>
           <button className="btn btn-primary" onClick={run} disabled={running||!chosen}>{running?"Running…":"▶ Run"}</button>
-          {won&&<button className="btn btn-success" onClick={onComplete}>Next →</button>}
+          {won&&<button className="btn btn-success" onClick={() => onComplete(DEFAULT_STARS)}>Next →</button>}
         </BtnRow>
       </div>
       <div className="stage-right"><Grid player={player} targets={[{...scene.pokemon,caught:false}]} trail={trail} flash={flash}/></div>
@@ -498,7 +498,7 @@ function S5TwoBlanks({onComplete}) {
         {msg&&<Callout type={mtype}>{msg}</Callout>}
         <BtnRow>
           <button className="btn btn-primary" onClick={run} disabled={running||!v1||!v2}>{running?"Running…":"▶ Run"}</button>
-          {won&&<button className="btn btn-success" onClick={onComplete}>Next →</button>}
+          {won&&<button className="btn btn-success" onClick={() => onComplete(DEFAULT_STARS)}>Next →</button>}
         </BtnRow>
       </div>
       <div className="stage-right"><Grid player={player} targets={[{...pk,caught:false}]} trail={trail} flash={flash}/></div>
@@ -556,7 +556,7 @@ function S6ChooseDirs({onComplete}) {
         {msg&&<Callout type={mtype}>{msg}</Callout>}
         <BtnRow>
           <button className="btn btn-primary" onClick={run} disabled={running||!d1||!d2}>{running?"Running…":"▶ Run"}</button>
-          {won&&<button className="btn btn-success" onClick={onComplete}>Next →</button>}
+          {won&&<button className="btn btn-success" onClick={() => onComplete(DEFAULT_STARS)}>Next →</button>}
         </BtnRow>
       </div>
       <div className="stage-right"><Grid player={player} targets={[{...pk,caught:false}]} trail={trail} flash={flash}/></div>
@@ -698,7 +698,7 @@ function S10Countdown({onComplete}) {
           {msg&&<Callout type={mtype}>{msg}</Callout>}
           <BtnRow>
             <button className="btn btn-primary" onClick={run} disabled={running||!val}>{running?"Running…":"▶ Run"}</button>
-            {won&&<button className="btn btn-success" onClick={onComplete}>Next →</button>}
+            {won&&<button className="btn btn-success" onClick={() => onComplete(DEFAULT_STARS)}>Next →</button>}
           </BtnRow>
         </>}
       </div>
@@ -760,7 +760,7 @@ function S11Coords({onComplete}) {
         {msg&&<Callout type={mtype}>{msg}</Callout>}
         <BtnRow>
           <button className="btn btn-primary" onClick={run} disabled={running||!v1||!v2}>{running?"Running…":"▶ Run"}</button>
-          {won&&<button className="btn btn-success" onClick={onComplete}>Next →</button>}
+          {won&&<button className="btn btn-success" onClick={() => onComplete(DEFAULT_STARS)}>Next →</button>}
         </BtnRow>
       </div>
       <div className="stage-right"><Grid player={player} targets={[{...pk,caught:false}]} trail={trail} flash={flash}/></div>
@@ -818,7 +818,7 @@ function S12While({onComplete}) {
           {msg&&<Callout type={mtype}>{msg}</Callout>}
           <BtnRow>
             <button className="btn btn-primary" onClick={run} disabled={running||!val}>{running?"Running…":"▶ Run"}</button>
-            {won&&<button className="btn btn-success" onClick={onComplete}>Next →</button>}
+            {won&&<button className="btn btn-success" onClick={() => onComplete(DEFAULT_STARS)}>Next →</button>}
           </BtnRow>
         </>}
       </div>
@@ -874,7 +874,7 @@ function S13WhileCond({onComplete}) {
           {msg&&<Callout type={mtype}>{msg}</Callout>}
           <BtnRow>
             <button className="btn btn-primary" onClick={run} disabled={running||!val}>{running?"Running…":"▶ Run"}</button>
-            {won&&<button className="btn btn-success" onClick={onComplete}>Next →</button>}
+            {won&&<button className="btn btn-success" onClick={() => onComplete(DEFAULT_STARS)}>Next →</button>}
           </BtnRow>
         </>}
       </div>
@@ -1037,7 +1037,7 @@ function S16OffByOne({onComplete}) {
           ))}
         </div>
         {msg&&<Callout type={mtype}>{msg}</Callout>}
-        {won&&<BtnRow><button className="btn btn-success" onClick={() => onComplete(1)}>Next →</button></BtnRow>}
+        {won&&<BtnRow><button className="btn btn-success" onClick={() => onComplete(DEFAULT_STARS)}>Next →</button></BtnRow>}
       </div>
       <div className="stage-right"><Grid player={player} targets={[{...pk,caught:false}]} trail={trail} flash={flash}/></div>
     </div>
@@ -1129,7 +1129,7 @@ function S18Collect({onComplete}) {
         <BtnRow>
           <button className="btn btn-ghost" onClick={()=>{setCode(starter(pl.row,pl.col));setPlayer({...pl});setTargets(allTargets.map(t=>({...t})));setTrail([]);setFlash(false);setWon(false);setMsg(null);}} disabled={running}>↩ Reset</button>
           <button className="btn btn-primary" onClick={doRun} disabled={running}>{running?"Running…":"▶ Run"}</button>
-          {won&&<button className="btn btn-success" onClick={() => onComplete(1)}>Next →</button>}
+          {won&&<button className="btn btn-success" onClick={() => onComplete(DEFAULT_STARS)}>Next →</button>}
         </BtnRow>
       </div>
       <div className="stage-right"><Grid player={player} targets={targets} trail={trail} flash={flash}/></div>
