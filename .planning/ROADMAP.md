@@ -16,6 +16,7 @@
 - [x] **Phase 3b: Quality Improvements** - Additional review fixes (useScoreSubmission hook, React state, Optional) ✅
 - [x] **Phase 3c: Final Cleanup & E2E Tests** - Apply hook to remaining games, define e2e tests ✅
 - [x] **Phase 3d: Rank Calculation Fix** - Native query for combined score sorting ✅
+- [ ] **Phase 3e: GridGame Scoring Cleanup** - Constants, star awards, React optimization
 - [ ] **Phase 4: Security & Error Handling** - Enable JWT auth, externalize secrets, configure exception handlers
 - [ ] **Phase 5: Backend Quality & Testing** - Fix data layer issues, add security tests
 - [ ] **Phase 6: Backend Modularization** - Restructure codebase into domain-based modules
