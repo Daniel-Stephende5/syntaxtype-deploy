@@ -154,7 +154,7 @@ export default function CodeWormBattle({ onNext }) {
           <img src={enemySprite} alt="enemy" width={250} height={250} />
           <p>Enemy HP: {Math.round(enemyHP)}</p>
         </div>
-      </div>
+      
 
       {/* Assembled code */}
        <div
