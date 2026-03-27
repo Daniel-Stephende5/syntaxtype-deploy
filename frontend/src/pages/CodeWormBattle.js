@@ -83,21 +83,21 @@ export default function CodeWormBattle({ onNext }) {
     if (valid) {
       dmg = assembled.length * 5;
       setFlash(true);
-      setTimeout(() => setFlash(false), 500);
+      setTimeout(() => setFlash(false), 300);
       setFeedback(`⚔️ Valid code! Damage: ${dmg}`);
     } else {
       dmg = Math.floor(Math.random() * 3) + 1;
       setFeedback(`❌ Code error! Minimal damage: ${dmg}`);
     }
 
-    // 🔥 Player attack animation (FIXED)
+    // 🔥 Player attack motion
     setPlayerSprite(playerAttack);
     setIsAttacking(true);
 
-    await sleep(200); // lunge
-    setIsAttacking(false);
+    await sleep(200); // forward lunge
 
-    await sleep(600); // finish gif
+    setIsAttacking(false);
+    await sleep(600); // finish animation
     setPlayerSprite(playerIdle);
 
     setEnemyHP((hp) => Math.max(0, hp - dmg));
@@ -108,8 +108,9 @@ export default function CodeWormBattle({ onNext }) {
       return;
     }
 
-    await sleep(400);
+    await sleep(300);
 
+    // 🔥 Enemy counter
     const enemyDmg =
       assembled.length < 3
         ? Math.floor(Math.random() * 10) + 5
@@ -117,8 +118,12 @@ export default function CodeWormBattle({ onNext }) {
 
     setFeedback("🐛 Enemy counterattacks!");
     setEnemySprite(enemyAttack);
+    setIsAttacking(true);
 
-    await sleep(900);
+    await sleep(300);
+
+    setIsAttacking(false);
+    await sleep(600);
     setEnemySprite(enemyIdle);
 
     setPlayerHP((hp) => Math.max(0, hp - enemyDmg));
@@ -131,6 +136,7 @@ export default function CodeWormBattle({ onNext }) {
     setFeedback(
       `⚔️ Turn complete! You dealt ${dmg}, enemy dealt ${enemyDmg}.`
     );
+
     setAssembled([]);
   };
 
@@ -139,13 +145,19 @@ export default function CodeWormBattle({ onNext }) {
       <h2>🐛 CodeWorm Battle</h2>
       <h4>{feedback || "Assemble blocks to attack!"}</h4>
 
-      {/* ✅ FIXED BATTLE AREA */}
+      {/* 🔥 BATTLEFIELD */}
       <div
         style={{
           position: "relative",
           width: 500,
-          height: 300,
+          height: 260,
           margin: "0 auto 20px auto",
+          border: "3px solid #333",
+          borderRadius: 10,
+          overflow: "hidden",
+          background: "#222",
+          boxShadow: flash ? "0 0 20px red inset" : "none",
+          transition: "0.2s",
         }}
       >
         {/* Player */}
@@ -154,15 +166,12 @@ export default function CodeWormBattle({ onNext }) {
           alt="player"
           style={{
             position: "absolute",
-            left: 60,
+            left: isAttacking ? 140 : 60,
             bottom: 0,
             width: 250,
             height: 250,
             zIndex: 2,
-            transform: isAttacking
-              ? "translateX(50px)"
-              : "translateX(0px)",
-            transition: "transform 0.2s ease",
+            transition: "left 0.2s ease",
           }}
         />
 
@@ -172,23 +181,21 @@ export default function CodeWormBattle({ onNext }) {
           alt="enemy"
           style={{
             position: "absolute",
-            right: 60,
+            right: isAttacking ? 140 : 60,
             bottom: 0,
             width: 250,
             height: 250,
             zIndex: 1,
-            transform: isAttacking
-              ? "translateX(-20px) scaleX(-1)"
-              : "translateX(0px) scaleX(-1)",
-            transition: "transform 0.2s ease",
+            transform: "scaleX(-1)",
+            transition: "right 0.2s ease",
           }}
         />
 
         {/* HP */}
-        <div style={{ position: "absolute", left: 60, top: 0 }}>
+        <div style={{ position: "absolute", left: 10, top: 10, color: "#fff" }}>
           Player HP: {playerHP}
         </div>
-        <div style={{ position: "absolute", right: 60, top: 0 }}>
+        <div style={{ position: "absolute", right: 10, top: 10, color: "#fff" }}>
           Enemy HP: {Math.round(enemyHP)}
         </div>
       </div>
@@ -203,8 +210,6 @@ export default function CodeWormBattle({ onNext }) {
           display: "flex",
           flexWrap: "wrap",
           gap: 6,
-          boxShadow: flash ? "0 0 20px 5px #4caf50" : "none",
-          transition: "0.2s",
         }}
       >
         {assembled.map((block, i) => (
