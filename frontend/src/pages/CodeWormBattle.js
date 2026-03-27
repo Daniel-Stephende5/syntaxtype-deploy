@@ -161,35 +161,37 @@ export default function CodeWormBattle({ onNext }) {
         }}
       >
         {/* Player */}
-        <img
-          src={playerSprite}
-          alt="player"
-          style={{
-            position: "absolute",
-            left: isAttacking ? 140 : 60,
-            bottom: 0,
-            width: 250,
-            height: 250,
-            zIndex: 2,
-            transition: "left 0.2s ease",
-          }}
-        />
+   <img
+  src={playerSprite}
+  alt="player"
+  style={{
+    position: "absolute",
+    left: isAttacking ? 120 : 20, // 👈 starts far, moves forward
+    bottom: 0,
+    width: 250,
+    height: 250,
+    zIndex: 2,
+    transition: "left 0.2s ease",
+  }}
+/>
 
         {/* Enemy */}
         <img
-          src={enemySprite}
-          alt="enemy"
-          style={{
-            position: "absolute",
-            right: isAttacking ? 140 : 60,
-            bottom: 0,
-            width: 250,
-            height: 250,
-            zIndex: 1,
-            transform: "scaleX(-1)",
-            transition: "right 0.2s ease",
-          }}
-        />
+  src={enemySprite}
+  alt="enemy"
+  style={{
+    position: "absolute",
+    right: isAttacking ? 20 : 20, // stays same base
+    bottom: 0,
+    width: 250,
+    height: 250,
+    zIndex: 1,
+    transform: isAttacking
+      ? "translateX(-40px) scaleX(-1)" // 👈 recoil effect
+      : "translateX(0px) scaleX(-1)",
+    transition: "transform 0.2s ease",
+  }}
+/>
 
         {/* HP */}
         <div style={{ position: "absolute", left: 10, top: 10, color: "#fff" }}>
