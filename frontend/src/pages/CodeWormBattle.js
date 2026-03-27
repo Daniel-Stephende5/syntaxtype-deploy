@@ -187,8 +187,8 @@ export default function CodeWormBattle({ onNext }) {
     height: 250,
     zIndex: 1,
     transform: isAttacking
-      ? "translateX(-40px) scaleX(-1)" // 👈 recoil effect
-      : "translateX(0px) scaleX(-1)",
+      ? "translateX(-40px) scaleX(0)" // 👈 recoil effect
+      : "translateX(0px) scaleX(0)",
     transition: "transform 0.2s ease",
   }}
 />
