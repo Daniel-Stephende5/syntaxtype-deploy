@@ -145,59 +145,16 @@ export default function CodeWormBattle({ onNext }) {
     overflow: "hidden",
   }}
 >
-  {/* Player Sprite Window */}
-  <div 
-    style={{ 
-      width: 250, 
-      height: 250, 
-      overflow: "hidden", 
-      textAlign: "center",
-      position: "relative",
-      marginRight: -20, // Negative margin pulls them even closer if needed
-    }}
-  >
-    <img
-      src={playerSprite}
-      key={playerSprite} // Helps reset GIF animation
-      alt="player"
-      style={{
-        width: "100%",
-        height: "100%",
-        objectFit: "contain",
-        transform: `translateX(${isPlayerAttacking ? 40 : 0}px)`,
-        transition: "transform 0.2s ease-out",
-      }}
-    />
-    <p style={{ fontWeight: "bold", margin: 0 }}>HP: {playerHP}</p>
-  </div>
-
-  {/* Enemy Sprite Window */}
-  <div 
-    style={{ 
-      width: 250, 
-      height: 250, 
-      overflow: "hidden", 
-      textAlign: "center",
-      position: "relative",
-      marginLeft: -20, // Negative margin pulls them even closer
-    }}
-  >
-    <img
-      src={enemySprite}
-      key={enemySprite} // Helps reset GIF animation
-      alt="enemy"
-      style={{
-        width: "100%",
-        height: "100%",
-        objectFit: "contain",
-        /* scaleX(-1) flips them, translateX(40) now moves them LEFT toward player */
-        transform: `scaleX(-1) translateX(${isEnemyAttacking ? 40 : 0}px)`,
-        transition: "transform 0.2s ease-out",
-      }}
-    />
-    <p style={{ fontWeight: "bold", margin: 0, color: "red" }}>HP: {enemyHP}</p>
-  </div>
-</div>
+  <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+        <div style={{ textAlign: "center" }}>
+          <img src={playerSprite} alt="player" width={250} height={250} />
+          <p>Player HP: {playerHP}</p>
+        </div>
+        <div style={{ textAlign: "center" }}>
+          <img src={enemySprite} alt="enemy" width={250} height={250} />
+          <p>Enemy HP: {Math.round(enemyHP)}</p>
+        </div>
+      </div>
 
       {/* Assembled code */}
        <div
