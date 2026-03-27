@@ -7,17 +7,18 @@ export default function CodeWormBattle({ onNext }) {
   const [feedback, setFeedback] = useState("");
   const [flash, setFlash] = useState(false);
   const [shuffledBank, setShuffledBank] = useState([]);
+  const [isAttacking, setIsAttacking] = useState(false);
 
   const playerIdle = "/images/idle.png";
   const playerAttack = "/images/sprite.gif";
   const enemyIdle = "/images/enemy_idle.png";
   const enemyAttack = "/images/enemy2.gif";
+
   const [playerSprite, setPlayerSprite] = useState(playerIdle);
   const [enemySprite, setEnemySprite] = useState(enemyIdle);
 
   const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
-  // ✅ Full valid sentences (atomic, no partial acceptance)
   const validSentences = [
     ["void attack", "(", "Player player", ",", "Enemy enemy", ")"],
     ["{", "int dmg = rand() % 6 + 5;"],
@@ -26,10 +27,8 @@ export default function CodeWormBattle({ onNext }) {
     ["return dmg;", "}"],
   ];
 
-  // Flatten valid sentences for bank
   const bank = [
     ...validSentences.flat(),
-    // Junk / trap blocks
     "console.log('Hello')",
     "int x = 0;",
     "while(true){}",
@@ -40,7 +39,6 @@ export default function CodeWormBattle({ onNext }) {
     "enemy = dmg;",
   ];
 
-  // Shuffle array utility
   const shuffleArray = (arr) => [...arr].sort(() => Math.random() - 0.5);
 
   useEffect(() => {
@@ -49,23 +47,26 @@ export default function CodeWormBattle({ onNext }) {
 
   const handleAddBlock = (block) =>
     setAssembled((prev) => [...prev, block]);
+
   const handleRemoveBlock = (index) =>
     setAssembled((prev) => prev.filter((_, i) => i !== index));
 
-  // ✅ Checks if assembled array contains only **full valid sentences**
   const isValidAssembly = (blocks) => {
     let i = 0;
     while (i < blocks.length) {
       let matched = false;
       for (let sentence of validSentences) {
         const slice = blocks.slice(i, i + sentence.length);
-        if (slice.length === sentence.length && slice.every((b, idx) => b === sentence[idx])) {
+        if (
+          slice.length === sentence.length &&
+          slice.every((b, idx) => b === sentence[idx])
+        ) {
           matched = true;
-          i += sentence.length; // jump over matched sentence
+          i += sentence.length;
           break;
         }
       }
-      if (!matched) return false; // any unmatched sequence invalidates assembly
+      if (!matched) return false;
     }
     return true;
   };
@@ -80,20 +81,25 @@ export default function CodeWormBattle({ onNext }) {
 
     let dmg = 0;
     if (valid) {
-      // Full sentences only → damage based on number of blocks
       dmg = assembled.length * 5;
       setFlash(true);
       setTimeout(() => setFlash(false), 500);
       setFeedback(`⚔️ Valid code! Damage: ${dmg}`);
     } else {
-      // Any incomplete sentence → minimal damage
       dmg = Math.floor(Math.random() * 3) + 1;
       setFeedback(`❌ Code error! Minimal damage: ${dmg}`);
     }
 
+    // 🔥 Player attack animation (FIXED)
     setPlayerSprite(playerAttack);
-    await sleep(800);
+    setIsAttacking(true);
+
+    await sleep(200); // lunge
+    setIsAttacking(false);
+
+    await sleep(600); // finish gif
     setPlayerSprite(playerIdle);
+
     setEnemyHP((hp) => Math.max(0, hp - dmg));
 
     if (enemyHP - dmg <= 0) {
@@ -104,15 +110,17 @@ export default function CodeWormBattle({ onNext }) {
 
     await sleep(400);
 
-    // Dynamic enemy retaliation
     const enemyDmg =
       assembled.length < 3
-        ? Math.floor(Math.random() * 10) + 5 // spam penalty
+        ? Math.floor(Math.random() * 10) + 5
         : Math.floor(Math.random() * 6) + 3;
+
     setFeedback("🐛 Enemy counterattacks!");
     setEnemySprite(enemyAttack);
+
     await sleep(900);
     setEnemySprite(enemyIdle);
+
     setPlayerHP((hp) => Math.max(0, hp - enemyDmg));
 
     if (playerHP - enemyDmg <= 0) {
@@ -131,42 +139,57 @@ export default function CodeWormBattle({ onNext }) {
       <h2>🐛 CodeWorm Battle</h2>
       <h4>{feedback || "Assemble blocks to attack!"}</h4>
 
-      {/* Player / Enemy display */}
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
-        <div style={{ textAlign: "center" }}>
-          <img
-  src={playerSprite}
-  alt="player"
-  style={{
-    position: "absolute",
-    left: 80,
-    bottom: 0,
-    width: 250,
-    height: 250,
-    zIndex: 2,
-    transform: isAttacking ? "translateX(40px)" : "translateX(0px)",
-    transition: "transform 0.2s ease",
-  }}
-/>
-           <div style={{ position: "absolute", left: 80, top: 0 }}>
-  
-  <p>Player HP: {playerHP}</p></div> 
+      {/* ✅ FIXED BATTLE AREA */}
+      <div
+        style={{
+          position: "relative",
+          width: 500,
+          height: 300,
+          margin: "0 auto 20px auto",
+        }}
+      >
+        {/* Player */}
+        <img
+          src={playerSprite}
+          alt="player"
+          style={{
+            position: "absolute",
+            left: 60,
+            bottom: 0,
+            width: 250,
+            height: 250,
+            zIndex: 2,
+            transform: isAttacking
+              ? "translateX(50px)"
+              : "translateX(0px)",
+            transition: "transform 0.2s ease",
+          }}
+        />
+
+        {/* Enemy */}
+        <img
+          src={enemySprite}
+          alt="enemy"
+          style={{
+            position: "absolute",
+            right: 60,
+            bottom: 0,
+            width: 250,
+            height: 250,
+            zIndex: 1,
+            transform: isAttacking
+              ? "translateX(-20px) scaleX(-1)"
+              : "translateX(0px) scaleX(-1)",
+            transition: "transform 0.2s ease",
+          }}
+        />
+
+        {/* HP */}
+        <div style={{ position: "absolute", left: 60, top: 0 }}>
+          Player HP: {playerHP}
         </div>
-        <div style={{ textAlign: "center" }}>
-          <img
-    src={enemySprite}
-    alt="enemy"
-    style={{
-      position: "absolute",
-      right: 80, // move closer to center
-      bottom: 0,
-      width: 250,
-      height: 250,
-      zIndex: 1,
-    }}
-  /> <div style={{ position: "absolute", right: 80, top: 0 }}>
- 
-          <p>Enemy HP: {Math.round(enemyHP)}</p> </div>
+        <div style={{ position: "absolute", right: 60, top: 0 }}>
+          Enemy HP: {Math.round(enemyHP)}
         </div>
       </div>
 
@@ -195,7 +218,6 @@ export default function CodeWormBattle({ onNext }) {
               fontFamily: "monospace",
               background: "#0c5b0bff",
               color: "white",
-              transition: "0.3s",
             }}
           >
             {block}
@@ -222,9 +244,7 @@ export default function CodeWormBattle({ onNext }) {
               padding: "6px 12px",
               borderRadius: 6,
               border: "1px solid #333",
-              background: validSentences.flat().includes(block)
-                ? "#0c5b0bff"
-                : "#0c5b0bff", // junk in red
+              background: "#0c5b0bff",
               color: "white",
               fontFamily: "monospace",
               cursor: "pointer",
