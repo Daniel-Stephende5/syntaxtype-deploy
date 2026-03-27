@@ -130,50 +130,74 @@ export default function CodeWormBattle({ onNext }) {
       <h4>{feedback || "Assemble blocks to attack!"}</h4>
 
       {/* Battlefield container */}
-     <div
+    <div
   style={{
     position: "relative",
     width: 650,
-    height: 300,
+    height: 350,
     margin: "0 auto 20px",
     border: "2px solid #333",
-    overflow: "hidden",
     borderRadius: 12,
-    background: "#fafafa",
+    background: "#414041",
+    display: "flex",         // Added Flexbox
+    justifyContent: "center", // Pulls both sprites to the center
+    alignItems: "flex-end",   // Keeps them on the "floor"
+    overflow: "hidden",
   }}
 >
-        {/* Player */}
-         <div style={{ position: "absolute", left: 50, bottom: 0, textAlign: "center" }}>
-          <img
-            src={playerSprite}
-            alt="player"
-            style={{
-              width: 250,
-              height: 250,
-              transform: `translateX(${isPlayerAttacking ? 60 : 0}px)`,
-              transition: "transform 0.3s ease",
-              zIndex: 2,
-            }}
-          />
-          <p>HP: {playerHP}</p>
-        </div>
+  {/* Player Sprite Window */}
+  <div 
+    style={{ 
+      width: 250, 
+      height: 250, 
+      overflow: "hidden", 
+      textAlign: "center",
+      position: "relative",
+      marginRight: -20, // Negative margin pulls them even closer if needed
+    }}
+  >
+    <img
+      src={playerSprite}
+      key={playerSprite} // Helps reset GIF animation
+      alt="player"
+      style={{
+        width: "100%",
+        height: "100%",
+        objectFit: "contain",
+        transform: `translateX(${isPlayerAttacking ? 40 : 0}px)`,
+        transition: "transform 0.2s ease-out",
+      }}
+    />
+    <p style={{ fontWeight: "bold", margin: 0 }}>HP: {playerHP}</p>
+  </div>
 
-        {/* Enemy */}
-          <div style={{ position: "absolute", right: 50, bottom: 0, textAlign: "center" }}>
-          <img
-            src={enemySprite}
-            alt="enemy"
-            style={{
-              width: 250,
-              height: 250,
-              transform: `translateX(${isEnemyAttacking ? -60 : 0}px) scaleX(-1)`,
-              transition: "transform 0.3s ease",
-              zIndex: 1,
-            }}
-          />
-          <p>HP: {enemyHP}</p>
-        </div>
-      </div>
+  {/* Enemy Sprite Window */}
+  <div 
+    style={{ 
+      width: 250, 
+      height: 250, 
+      overflow: "hidden", 
+      textAlign: "center",
+      position: "relative",
+      marginLeft: -20, // Negative margin pulls them even closer
+    }}
+  >
+    <img
+      src={enemySprite}
+      key={enemySprite} // Helps reset GIF animation
+      alt="enemy"
+      style={{
+        width: "100%",
+        height: "100%",
+        objectFit: "contain",
+        /* scaleX(-1) flips them, translateX(40) now moves them LEFT toward player */
+        transform: `scaleX(-1) translateX(${isEnemyAttacking ? 40 : 0}px)`,
+        transition: "transform 0.2s ease-out",
+      }}
+    />
+    <p style={{ fontWeight: "bold", margin: 0, color: "red" }}>HP: {enemyHP}</p>
+  </div>
+</div>
 
       {/* Assembled code */}
        <div
