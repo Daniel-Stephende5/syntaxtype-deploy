@@ -130,20 +130,20 @@ export default function CodeWormBattle({ onNext }) {
       <h4>{feedback || "Assemble blocks to attack!"}</h4>
 
       {/* Battlefield container */}
-      <div
-        style={{
-          position: "relative",
-          width: 650,
-          height: 300,
-          margin: "0 auto 20px",
-          border: "2px solid #333",
-          overflow: "hidden",
-          borderRadius: 12,
-          background: "#fafafa",
-        }}
-      >
+     <div
+  style={{
+    position: "relative",
+    width: 650,
+    height: 300,
+    margin: "0 auto 20px",
+    border: "2px solid #333",
+    overflow: "hidden",
+    borderRadius: 12,
+    background: "#fafafa",
+  }}
+>
         {/* Player */}
-        <div style={{ position: "absolute", left: 50, bottom: 0, textAlign: "center" }}>
+         <div style={{ position: "absolute", left: 50, bottom: 0, textAlign: "center" }}>
           <img
             src={playerSprite}
             alt="player"
@@ -159,7 +159,7 @@ export default function CodeWormBattle({ onNext }) {
         </div>
 
         {/* Enemy */}
-        <div style={{ position: "absolute", right: 50, bottom: 0, textAlign: "center" }}>
+          <div style={{ position: "absolute", right: 50, bottom: 0, textAlign: "center" }}>
           <img
             src={enemySprite}
             alt="enemy"
@@ -176,7 +176,7 @@ export default function CodeWormBattle({ onNext }) {
       </div>
 
       {/* Assembled code */}
-      <div
+       <div
         style={{
           minHeight: 50,
           border: "2px dashed #ccc",
@@ -207,6 +207,7 @@ export default function CodeWormBattle({ onNext }) {
           </div>
         ))}
       </div>
+
 
       {/* Bank */}
       <div
