@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
 import { useBackground } from "./GalaxyBackground";
 import { loadAssets } from "./assets";
-import { getEnemiesByLevel } from "./GalaxyLibrary";
+import { getEnemiesByLevel, easyEnemies } from "./GalaxyLibrary";
 import { spawnEnemy, updateEnemies, drawEnemies, cleanupEnemies } from "./GalaxyEnemy";
 import { useScoreSubmission } from '../../hooks/useScoreSubmission';
 
@@ -34,6 +35,10 @@ const GalaxyMainGame = () => {
   // Score submission states
   const [showSubmitButton, setShowSubmitButton] = useState(false);
   const { submitScore, isSubmitting, submitMessage, submitSuccess, snackbarOpen, setSnackbarOpen } = useScoreSubmission();
+
+  // Challenge loading from URL
+  const { id: challengeId } = useParams();
+  const [challengeData, setChallengeData] = useState(null);
 
   const { initStars, drawBackground } = useBackground();
 
@@ -120,6 +125,22 @@ const GalaxyMainGame = () => {
       })
       .catch((err) => console.error("Asset load failed", err));
   }, []);
+
+  // --- CHALLENGE LOADING ---
+  useEffect(() => {
+    if (challengeId) {
+      fetch(`${process.env.REACT_APP_API_BASE_URL || ''}/api/challenges/galaxy/${challengeId}`)
+        .then(res => {
+          if (!res.ok) throw new Error("Challenge not found");
+          return res.json();
+        })
+        .then(data => setChallengeData(data))
+        .catch(err => {
+          console.error("Failed to load challenge:", err);
+          // Fall back to default words
+        });
+    }
+  }, [challengeId]);
 
   // --- INPUT HANDLING ---
   useEffect(() => {
@@ -261,7 +282,17 @@ const GalaxyMainGame = () => {
         const activeCount = enemiesRef.current.filter(en => !en.remove && !en.destroyed).length;
         if (!bossActive && spawnTimerRef.current > 1.8 && activeCount < maxEnemies) {
           spawnTimerRef.current = 0;
-          const enemiesToSpawn = getEnemiesByLevel(gameTimeRef.current * 1000);
+          
+          // Get words from challenge or use default library
+          let wordList = [];
+          if (challengeData?.questions) {
+            wordList = challengeData.questions.map(q => q.question);
+          } else {
+            // Use default library
+            wordList = easyEnemies.map(e => e.word);
+          }
+          
+          const enemiesToSpawn = getEnemiesByLevel(gameTimeRef.current * 1000, wordList);
           
           if (enemiesToSpawn.some(e => e.type === "boss")) {
             enemiesRef.current.forEach(en => { en.destroyed = true; en.remove = true; });
@@ -314,7 +345,7 @@ const GalaxyMainGame = () => {
       window.removeEventListener("resize", resize);
       cancelAnimationFrame(animationRef.current);
     };
-  }, [gameReady, isPaused, gameOver, initStars, drawBackground]);
+  }, [gameReady, isPaused, gameOver, initStars, drawBackground, challengeData]);
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "black", overflow: "hidden" }}>

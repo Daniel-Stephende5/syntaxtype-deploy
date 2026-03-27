@@ -5,6 +5,12 @@ import { useScoreSubmission } from '../hooks/useScoreSubmission';
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 
+// Star and scoring constants
+const MAX_STAGES = 20;
+const MAX_STARS_PER_STAGE = 3;
+const MAX_POSSIBLE_STARS = MAX_STAGES * MAX_STARS_PER_STAGE; // 60
+const DEFAULT_STARS = 1;
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ROWS = 8;
 const COLS = 8;
@@ -281,7 +287,7 @@ function S1Watch({onComplete}) {
         {done&&<Callout type="success">✅ The loop ran <strong>4 times</strong>. i went 0→1→2→3. Each iteration = one step.</Callout>}
         <BtnRow>
           <button className="btn btn-primary" onClick={play} disabled={running}>{running?"▶ Running…":done?"▶ Watch again":"▶ Play"}</button>
-          {done&&<button className="btn btn-success" onClick={onComplete}>Got it! Next →</button>}
+          {done&&<button className="btn btn-success" onClick={() => onComplete(DEFAULT_STARS)}>Got it! Next →</button>}
         </BtnRow>
       </div>
       <div className="stage-right"><Grid player={player} targets={[{...scene.pokemon,caught:false,emoji:"⭐"}]} trail={trail} flash={flash}/></div>
@@ -336,7 +342,7 @@ function S2Fill({onComplete}) {
         {msg&&<Callout type={mtype}>{msg}</Callout>}
         <BtnRow>
           <button className="btn btn-primary" onClick={run} disabled={running||!val}>{running?"Running…":"▶ Run"}</button>
-          {won&&<button className="btn btn-success" onClick={onComplete}>Next →</button>}
+          {won&&<button className="btn btn-success" onClick={() => onComplete(DEFAULT_STARS)}>Next →</button>}
         </BtnRow>
       </div>
       <div className="stage-right"><Grid player={player} targets={[{...scene.pokemon,caught:false}]} trail={trail} flash={flash}/></div>
@@ -404,7 +410,7 @@ function S3Direction({onComplete}) {
         {tries>=2&&!won&&<Callout type="hint">💡 Row 0 is at the top. Going DOWN = row number increases = r++.</Callout>}
         <BtnRow>
           <button className="btn btn-primary" onClick={run} disabled={running||!chosen}>{running?"Running…":"▶ Run"}</button>
-          {won&&<button className="btn btn-success" onClick={onComplete}>Next →</button>}
+          {won&&<button className="btn btn-success" onClick={() => onComplete(DEFAULT_STARS)}>Next →</button>}
         </BtnRow>
       </div>
       <div className="stage-right"><Grid player={player} targets={[{...scene.pokemon,caught:false}]} trail={trail} flash={flash}/></div>
@@ -418,7 +424,7 @@ function S4Write1({onComplete}) {
   const dist=pk.col-pl.col;
   const starter=(r,c)=>`#include <stdio.h>\nint main() {\n    int r = ${r}, c = ${c};\n\n    for (int i = 0; i < ___; i++) {\n        c++;\n        MOVE(r, c);\n    }\n    return 0;\n}`;
   const [code,setCode]=useState(starter(pl.row,pl.col));
-  const {player,trail,running,flash,msg,msgType,won,reset,run}=useRunner(pl,[{...pk}]);
+  const {player,trail,running,flash,msg,msgType,won,stars,reset,run}=useRunner(pl,[{...pk}]);
 
   async function doRun(){
     const result=await run(code,pl,[{...pk,caught:false}],[]);
@@ -437,7 +443,7 @@ function S4Write1({onComplete}) {
         <BtnRow>
           <button className="btn btn-ghost" onClick={()=>{setCode(starter(pl.row,pl.col));reset();}} disabled={running}>↩ Reset</button>
           <button className="btn btn-primary" onClick={doRun} disabled={running}>{running?"Running…":"▶ Run"}</button>
-          {won&&<button className="btn btn-success" onClick={onComplete}>Next →</button>}
+          {won&&<button className="btn btn-success" onClick={() => onComplete(stars)}>Next →</button>}
         </BtnRow>
       </div>
       <div className="stage-right"><Grid player={player} targets={[{...pk,caught:false}]} trail={trail} flash={flash}/></div>
@@ -492,7 +498,7 @@ function S5TwoBlanks({onComplete}) {
         {msg&&<Callout type={mtype}>{msg}</Callout>}
         <BtnRow>
           <button className="btn btn-primary" onClick={run} disabled={running||!v1||!v2}>{running?"Running…":"▶ Run"}</button>
-          {won&&<button className="btn btn-success" onClick={onComplete}>Next →</button>}
+          {won&&<button className="btn btn-success" onClick={() => onComplete(DEFAULT_STARS)}>Next →</button>}
         </BtnRow>
       </div>
       <div className="stage-right"><Grid player={player} targets={[{...pk,caught:false}]} trail={trail} flash={flash}/></div>
@@ -550,7 +556,7 @@ function S6ChooseDirs({onComplete}) {
         {msg&&<Callout type={mtype}>{msg}</Callout>}
         <BtnRow>
           <button className="btn btn-primary" onClick={run} disabled={running||!d1||!d2}>{running?"Running…":"▶ Run"}</button>
-          {won&&<button className="btn btn-success" onClick={onComplete}>Next →</button>}
+          {won&&<button className="btn btn-success" onClick={() => onComplete(DEFAULT_STARS)}>Next →</button>}
         </BtnRow>
       </div>
       <div className="stage-right"><Grid player={player} targets={[{...pk,caught:false}]} trail={trail} flash={flash}/></div>
@@ -564,7 +570,7 @@ function S7Write2({onComplete}) {
   const cd=pk.col-pl.col,rd=pk.row-pl.row;
   const starter=(r,c)=>`#include <stdio.h>\nint main() {\n    int r = ${r}, c = ${c};\n\n    // Loop 1: move right\n    for (int i = 0; i < ___; i++) {\n        c++;\n        MOVE(r, c);\n    }\n\n    // Loop 2: move down\n    for (int i = 0; i < ___; i++) {\n        r++;\n        MOVE(r, c);\n    }\n    return 0;\n}`;
   const [code,setCode]=useState(starter(pl.row,pl.col));
-  const {player,trail,running,flash,msg,msgType,won,reset,run}=useRunner(pl,[{...pk}]);
+  const {player,trail,running,flash,msg,msgType,won,stars,reset,run}=useRunner(pl,[{...pk}]);
   async function doRun(){await run(code,pl,[{...pk,caught:false}],[]);}
   return (
     <div className="stage-wrap">
@@ -579,7 +585,7 @@ function S7Write2({onComplete}) {
         <BtnRow>
           <button className="btn btn-ghost" onClick={()=>{setCode(starter(pl.row,pl.col));reset();}} disabled={running}>↩ Reset</button>
           <button className="btn btn-primary" onClick={doRun} disabled={running}>{running?"Running…":"▶ Run"}</button>
-          {won&&<button className="btn btn-success" onClick={onComplete}>Next →</button>}
+          {won&&<button className="btn btn-success" onClick={() => onComplete(stars)}>Next →</button>}
         </BtnRow>
       </div>
       <div className="stage-right"><Grid player={player} targets={[{...pk,caught:false}]} trail={trail} flash={flash}/></div>
@@ -594,7 +600,7 @@ function S8Debug({onComplete}) {
   const fixed=`#include <stdio.h>\nint main() {\n    int r = 2, c = 1;\n\n    for (int i = 0; i < 4; i++) {\n        c++;\n        MOVE(r, c);\n    }\n\n    for (int i = 0; i < 3; i++) {\n        r++;\n        MOVE(r, c);\n    }\n    return 0;\n}`;
   const [code,setCode]=useState(buggy);
   const [hints,setHints]=useState(0);
-  const {player,trail,running,flash,msg,msgType,won,reset,run}=useRunner(pl,[{...pk}]);
+  const {player,trail,running,flash,msg,msgType,won,stars,reset,run}=useRunner(pl,[{...pk}]);
   const hintList=["💡 Count how many columns from start to target.","💡 The second loop should move DOWN — check the variable.","💡 r++ = down, c++ = right. Which one does each loop need?"];
   async function doRun(){await run(code,pl,[{...pk,caught:false}],[]);}
   return (
@@ -609,7 +615,7 @@ function S8Debug({onComplete}) {
           {hints<3&&!won&&<button className="btn btn-ghost" onClick={()=>setHints(h=>h+1)} disabled={running}>💡 Hint</button>}
           <button className="btn btn-ghost" onClick={()=>setCode(fixed)} disabled={running}>👁 Show fix</button>
           <button className="btn btn-primary" onClick={doRun} disabled={running}>{running?"Running…":"▶ Run"}</button>
-          {won&&<button className="btn btn-success" onClick={onComplete}>Next →</button>}
+          {won&&<button className="btn btn-success" onClick={() => onComplete(stars)}>Next →</button>}
         </BtnRow>
       </div>
       <div className="stage-right"><Grid player={player} targets={[{...pk,caught:false}]} trail={trail} flash={flash}/></div>
@@ -623,7 +629,7 @@ function S9Obstacle({onComplete}) {
   const obs=[{row:4,col:2},{row:4,col:3},{row:4,col:4}];
   const starter=(r,c)=>`#include <stdio.h>\nint main() {\n    int r = ${r}, c = ${c};\n\n    // Rocks block the direct right path!\n    // Go UP first, then RIGHT.\n\n    for (int i = 0; i < ___; i++) {\n        r--;\n        MOVE(r, c);\n    }\n    for (int i = 0; i < ___; i++) {\n        c++;\n        MOVE(r, c);\n    }\n    return 0;\n}`;
   const [code,setCode]=useState(starter(pl.row,pl.col));
-  const {player,trail,running,flash,msg,msgType,won,reset,run}=useRunner(pl,[{...pk}],obs);
+  const {player,trail,running,flash,msg,msgType,won,stars,reset,run}=useRunner(pl,[{...pk}],obs);
   async function doRun(){await run(code,pl,[{...pk,caught:false}],obs);}
   return (
     <div className="stage-wrap">
@@ -635,7 +641,7 @@ function S9Obstacle({onComplete}) {
         <BtnRow>
           <button className="btn btn-ghost" onClick={()=>{setCode(starter(pl.row,pl.col));reset();}} disabled={running}>↩ Reset</button>
           <button className="btn btn-primary" onClick={doRun} disabled={running}>{running?"Running…":"▶ Run"}</button>
-          {won&&<button className="btn btn-success" onClick={onComplete}>Next →</button>}
+          {won&&<button className="btn btn-success" onClick={() => onComplete(stars)}>Next →</button>}
         </BtnRow>
       </div>
       <div className="stage-right"><Grid player={player} targets={[{...pk,caught:false}]} trail={trail} flash={flash} obstacles={obs}/></div>
@@ -692,7 +698,7 @@ function S10Countdown({onComplete}) {
           {msg&&<Callout type={mtype}>{msg}</Callout>}
           <BtnRow>
             <button className="btn btn-primary" onClick={run} disabled={running||!val}>{running?"Running…":"▶ Run"}</button>
-            {won&&<button className="btn btn-success" onClick={onComplete}>Next →</button>}
+            {won&&<button className="btn btn-success" onClick={() => onComplete(DEFAULT_STARS)}>Next →</button>}
           </BtnRow>
         </>}
       </div>
@@ -754,7 +760,7 @@ function S11Coords({onComplete}) {
         {msg&&<Callout type={mtype}>{msg}</Callout>}
         <BtnRow>
           <button className="btn btn-primary" onClick={run} disabled={running||!v1||!v2}>{running?"Running…":"▶ Run"}</button>
-          {won&&<button className="btn btn-success" onClick={onComplete}>Next →</button>}
+          {won&&<button className="btn btn-success" onClick={() => onComplete(DEFAULT_STARS)}>Next →</button>}
         </BtnRow>
       </div>
       <div className="stage-right"><Grid player={player} targets={[{...pk,caught:false}]} trail={trail} flash={flash}/></div>
@@ -812,7 +818,7 @@ function S12While({onComplete}) {
           {msg&&<Callout type={mtype}>{msg}</Callout>}
           <BtnRow>
             <button className="btn btn-primary" onClick={run} disabled={running||!val}>{running?"Running…":"▶ Run"}</button>
-            {won&&<button className="btn btn-success" onClick={onComplete}>Next →</button>}
+            {won&&<button className="btn btn-success" onClick={() => onComplete(DEFAULT_STARS)}>Next →</button>}
           </BtnRow>
         </>}
       </div>
@@ -868,7 +874,7 @@ function S13WhileCond({onComplete}) {
           {msg&&<Callout type={mtype}>{msg}</Callout>}
           <BtnRow>
             <button className="btn btn-primary" onClick={run} disabled={running||!val}>{running?"Running…":"▶ Run"}</button>
-            {won&&<button className="btn btn-success" onClick={onComplete}>Next →</button>}
+            {won&&<button className="btn btn-success" onClick={() => onComplete(DEFAULT_STARS)}>Next →</button>}
           </BtnRow>
         </>}
       </div>
@@ -897,7 +903,7 @@ function S14Nested({onComplete}) {
   const starter=(r,c)=>`#include <stdio.h>\nint main() {\n    int r = ${r}, c = ${c};\n\n    // Outer loop: move down 4 steps\n    for (int step = 0; step < ___; step++) {\n        r++;\n        // Inner: move right 1 step each time\n        for (int j = 0; j < ___; j++) {\n            c++;\n            MOVE(r, c);\n        }\n    }\n    return 0;\n}`;
   const [tab,setTab]=useState("watch");
   const [code,setCode]=useState(starter(0,0));
-  const {player:p2,trail:t2,running:r2,flash:f2,msg:m2,msgType:mt2,won:w2,reset:reset2,run:run2}=useRunner(pl,[{...pk}]);
+  const {player:p2,trail:t2,running:r2,flash:f2,msg:m2,msgType:mt2,won:w2,stars:w2Stars,reset:reset2,run:run2}=useRunner(pl,[{...pk}]);
 
   async function watchPlay(){
     setRunning(true);setPlayer({...pl});setTrail([]);setDone(false);
@@ -938,7 +944,7 @@ function S14Nested({onComplete}) {
           <BtnRow>
             <button className="btn btn-ghost" onClick={()=>{setCode(starter(0,0));reset2();}} disabled={r2}>↩ Reset</button>
             <button className="btn btn-primary" onClick={doRun} disabled={r2}>{r2?"Running…":"▶ Run"}</button>
-            {w2&&<button className="btn btn-success" onClick={onComplete}>Next →</button>}
+            {w2&&<button className="btn btn-success" onClick={() => onComplete(w2Stars)}>Next →</button>}
           </BtnRow>
         </>}
       </div>
@@ -958,7 +964,7 @@ function S15MultiObs({onComplete}) {
   const obs=[{row:2,col:1},{row:2,col:2},{row:2,col:3},{row:2,col:4},{row:5,col:3},{row:5,col:4},{row:5,col:5},{row:5,col:6}];
   const starter=(r,c)=>`#include <stdio.h>\nint main() {\n    int r = ${r}, c = ${c};\n\n    // Two walls block direct paths.\n    // Plan a route that avoids both!\n\n    return 0;\n}`;
   const [code,setCode]=useState(starter(pl.row,pl.col));
-  const {player,trail,running,flash,msg,msgType,won,reset,run}=useRunner(pl,[{...pk}],obs);
+  const {player,trail,running,flash,msg,msgType,won,stars,reset,run}=useRunner(pl,[{...pk}],obs);
   async function doRun(){await run(code,pl,[{...pk,caught:false}],obs);}
   return (
     <div className="stage-wrap">
@@ -974,7 +980,7 @@ function S15MultiObs({onComplete}) {
         <BtnRow>
           <button className="btn btn-ghost" onClick={()=>{setCode(starter(pl.row,pl.col));reset();}} disabled={running}>↩ Reset</button>
           <button className="btn btn-primary" onClick={doRun} disabled={running}>{running?"Running…":"▶ Run"}</button>
-          {won&&<button className="btn btn-success" onClick={onComplete}>Next →</button>}
+          {won&&<button className="btn btn-success" onClick={() => onComplete(stars)}>Next →</button>}
         </BtnRow>
       </div>
       <div className="stage-right"><Grid player={player} targets={[{...pk,caught:false}]} trail={trail} flash={flash} obstacles={obs}/></div>
@@ -1031,7 +1037,7 @@ function S16OffByOne({onComplete}) {
           ))}
         </div>
         {msg&&<Callout type={mtype}>{msg}</Callout>}
-        {won&&<BtnRow><button className="btn btn-success" onClick={onComplete}>Next →</button></BtnRow>}
+        {won&&<BtnRow><button className="btn btn-success" onClick={() => onComplete(DEFAULT_STARS)}>Next →</button></BtnRow>}
       </div>
       <div className="stage-right"><Grid player={player} targets={[{...pk,caught:false}]} trail={trail} flash={flash}/></div>
     </div>
@@ -1043,7 +1049,7 @@ function S17Reverse({onComplete}) {
   const pl={row:6,col:7},pk={row:2,col:1};
   const starter=(r,c)=>`#include <stdio.h>\nint main() {\n    int r = ${r}, c = ${c};\n\n    // You're at bottom-right, target is top-left!\n    // Move UP and LEFT.\n\n    return 0;\n}`;
   const [code,setCode]=useState(starter(pl.row,pl.col));
-  const {player,trail,running,flash,msg,msgType,won,reset,run}=useRunner(pl,[{...pk}]);
+  const {player,trail,running,flash,msg,msgType,won,stars,reset,run}=useRunner(pl,[{...pk}]);
   async function doRun(){await run(code,pl,[{...pk,caught:false}],[]);}
   return (
     <div className="stage-wrap">
@@ -1058,7 +1064,7 @@ function S17Reverse({onComplete}) {
         <BtnRow>
           <button className="btn btn-ghost" onClick={()=>{setCode(starter(pl.row,pl.col));reset();}} disabled={running}>↩ Reset</button>
           <button className="btn btn-primary" onClick={doRun} disabled={running}>{running?"Running…":"▶ Run"}</button>
-          {won&&<button className="btn btn-success" onClick={onComplete}>Next →</button>}
+          {won&&<button className="btn btn-success" onClick={() => onComplete(stars)}>Next →</button>}
         </BtnRow>
       </div>
       <div className="stage-right"><Grid player={player} targets={[{...pk,caught:false}]} trail={trail} flash={flash}/></div>
@@ -1123,7 +1129,7 @@ function S18Collect({onComplete}) {
         <BtnRow>
           <button className="btn btn-ghost" onClick={()=>{setCode(starter(pl.row,pl.col));setPlayer({...pl});setTargets(allTargets.map(t=>({...t})));setTrail([]);setFlash(false);setWon(false);setMsg(null);}} disabled={running}>↩ Reset</button>
           <button className="btn btn-primary" onClick={doRun} disabled={running}>{running?"Running…":"▶ Run"}</button>
-          {won&&<button className="btn btn-success" onClick={onComplete}>Next →</button>}
+          {won&&<button className="btn btn-success" onClick={() => onComplete(DEFAULT_STARS)}>Next →</button>}
         </BtnRow>
       </div>
       <div className="stage-right"><Grid player={player} targets={targets} trail={trail} flash={flash}/></div>
@@ -1179,7 +1185,7 @@ function S19Shortest({onComplete}) {
         <BtnRow>
           <button className="btn btn-ghost" onClick={()=>{setCode(starter(pl.row,pl.col));setPlayer({...pl});setTrail([]);setFlash(false);setWon(false);setMsg(null);setStars(0);setMoveCount(0);}} disabled={running}>↩ Reset</button>
           <button className="btn btn-primary" onClick={doRun} disabled={running}>{running?"Running…":"▶ Run"}</button>
-          {won&&<button className="btn btn-success" onClick={onComplete}>Next →</button>}
+          {won&&<button className="btn btn-success" onClick={() => onComplete(stars)}>Next →</button>}
         </BtnRow>
       </div>
       <div className="stage-right"><Grid player={player} targets={[{...pk,caught:false}]} trail={trail} flash={flash} obstacles={obs}/></div>
@@ -1258,7 +1264,7 @@ function S20Grand({onComplete}) {
           <button className="btn btn-ghost" onClick={newBoard} disabled={running}>🎲 New board</button>
           <button className="btn btn-ghost" onClick={()=>{setCode(makeCode(board.pl.row,board.pl.col));setPlayer({...board.pl});setTrail([]);setFlash(false);setWon(false);setMsg(null);setStars(0);setMoveCount(0);}} disabled={running}>↩ Reset</button>
           <button className="btn btn-primary" onClick={doRun} disabled={running}>{running?"Running…":"▶ Run"}</button>
-          {won&&<button className="btn btn-success" onClick={onComplete}>Finish 🎓</button>}
+          {won&&<button className="btn btn-success" onClick={() => onComplete(stars)}>Finish 🎓</button>}
         </BtnRow>
       </div>
       <div className="stage-right"><Grid player={player} targets={[{...board.pk,caught:false}]} trail={trail} flash={flash} obstacles={board.obs}/></div>
@@ -1267,7 +1273,7 @@ function S20Grand({onComplete}) {
 }
 
 // ─── COMPLETION ───────────────────────────────────────────────────────────────
-function Completion({onRestart, submitScore, isSubmitting, submitSuccess, submitMessage, snackbarOpen, setSnackbarOpen}) {
+function Completion({totalStars, onRestart, submitScore, isSubmitting, submitSuccess, submitMessage, snackbarOpen, setSnackbarOpen}) {
   const items=[
     ["Intro",   "A for loop runs N times — the number controls how many steps"],
     ["Intro",   "r is the row, c is the column. Row 0 is at the top"],
@@ -1313,14 +1319,19 @@ for (int a=0;a<R;a++)
             ✓ Score submitted to leaderboard!
           </div>
         ) : (
-          <button 
-            className="btn btn-primary" 
-            onClick={() => submitScore('GRID', { score: 60, wpm: 0, accuracy: 0 })}
-            disabled={isSubmitting}
-            style={{marginTop: 20}}
-          >
-            {isSubmitting ? "Submitting..." : "Submit Score to Leaderboard"}
-          </button>
+          <>
+            <div className="completion-score-details">
+              <span className="completion-stars-count">{totalStars}</span> stars collected 
+              (Score: <strong>{totalStars * 10}</strong>)
+            </div>
+            <button 
+              className="btn btn-primary completion-submit-btn" 
+              onClick={() => submitScore('GRID', { score: totalStars * 10, wpm: 0, accuracy: Math.round((totalStars / MAX_POSSIBLE_STARS) * 100) })}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Submitting..." : `Submit Score (${totalStars * 10} pts)`}
+            </button>
+          </>
         )}
         
         <button className="btn btn-ghost" onClick={onRestart} style={{marginTop: 12}}>↩ Start over</button>
@@ -1345,13 +1356,37 @@ const SCENE_COMPONENTS = [
 export default function GridGame() {
   const [stage,setStage] = useState(0);
   const [done,setDone]   = useState(false);
-  const next = useCallback(()=>{ if(stage<STAGES.length-1) setStage(s=>s+1); else setDone(true); },[stage]);
+  const totalStarsRef = useRef(0);
+  
+  // Callback to accumulate stars when a stage completes
+  const handleStageComplete = useCallback((stars = 0) => {
+    totalStarsRef.current += stars;
+  }, []);
+  
+  const next = useCallback((stars = 0) => { 
+    handleStageComplete(stars);
+    setStage(s => {
+      if (s < STAGES.length - 1) {
+        return s + 1;
+      }
+      setDone(true);
+      return s;
+    });
+  }, [handleStageComplete]);
+  
+  // Reset totalStars when restarting
+  const handleRestart = useCallback(() => {
+    totalStarsRef.current = 0;
+    setStage(0);
+    setDone(false);
+  }, []);
   
   // Score submission state
   const { submitScore, isSubmitting, submitMessage, submitSuccess, snackbarOpen, setSnackbarOpen } = useScoreSubmission();
   
   if(done) return <Completion 
-    onRestart={()=>{setStage(0);setDone(false);}}
+    totalStars={totalStarsRef.current}
+    onRestart={handleRestart}
     submitScore={submitScore}
     isSubmitting={isSubmitting}
     submitSuccess={submitSuccess}

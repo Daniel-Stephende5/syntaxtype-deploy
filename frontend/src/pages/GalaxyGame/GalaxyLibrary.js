@@ -93,8 +93,20 @@ export const bossEnemy2 = {
 // --- Combined library based on level ---
 // GalaxyLibrary.js
 
-export function getEnemiesByLevel(currentTime = 0) {
+export function getEnemiesByLevel(currentTime = 0, customWordList = null) {
   const enemies = [];
+  
+  // If custom words provided, use them instead of default pool
+  if (customWordList && customWordList.length > 0) {
+    // Spawn enemies with custom words (no bosses for challenges)
+    const randomIndex = Math.floor(Math.random() * customWordList.length);
+    enemies.push({ 
+      type: "typing", 
+      word: customWordList[randomIndex], 
+      speed: 40 + Math.random() * 20 
+    });
+    return enemies;
+  }
   
   // 🔥 Check Boss 1 (60s)
   if (currentTime - (bossEnemy.lastSpawn || 0) >= 60000) {
