@@ -42,7 +42,8 @@ export default function SyntaxSaverLesson({ onBack }) {
   };
 
   return (
-    <div className="lesson-container" key={resetKey}>
+     <div className="lesson-container"> {/* NEW */}
+    <div className="lesson-card" key={resetKey}> {/* UPDATED */}
       <h2>🧠 {quizTitle}</h2>
       <p>Step {step + 1} of {lessons.length}</p>
 
@@ -59,11 +60,12 @@ export default function SyntaxSaverLesson({ onBack }) {
       <p className="feedback">{feedback}</p>
       <p className="score">⭐ Score: {score}</p>
 
-      <div style={{ marginTop: 20, display: "flex", gap: 10, justifyContent: "center" }}>
+      <div className="lesson-buttons">
         {step > 0 && <button onClick={handleBackStep}>⬅️ Previous</button>}
         <button onClick={handleBackToMenu}>🏠 Menu</button>
       </div>
     </div>
+  </div>
   );
 }
 
