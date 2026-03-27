@@ -20,7 +20,6 @@ export default function CodeWormBattle({ onNext }) {
 
   const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
-  // Valid sentences for the code game
   const validSentences = [
     ["void attack", "(", "Player player", ",", "Enemy enemy", ")"],
     ["{", "int dmg = rand() % 6 + 5;"],
@@ -29,7 +28,6 @@ export default function CodeWormBattle({ onNext }) {
     ["return dmg;", "}"],
   ];
 
-  // Flatten for bank and add junk
   const bank = [
     ...validSentences.flat(),
     "console.log('Hello')",
@@ -42,13 +40,10 @@ export default function CodeWormBattle({ onNext }) {
     "enemy = dmg;",
   ];
 
-  // Shuffle array
-  const shuffleArray = (arr) => [...arr].sort(() => Math.random() - 0.5);
-  useEffect(() => setShuffledBank(shuffleArray(bank)), []);
+  useEffect(() => setShuffledBank([...bank].sort(() => Math.random() - 0.5)), []);
 
   const handleAddBlock = (block) => setAssembled((prev) => [...prev, block]);
-  const handleRemoveBlock = (index) =>
-    setAssembled((prev) => prev.filter((_, i) => i !== index));
+  const handleRemoveBlock = (index) => setAssembled((prev) => prev.filter((_, i) => i !== index));
 
   const isValidAssembly = (blocks) => {
     let i = 0;
@@ -56,10 +51,7 @@ export default function CodeWormBattle({ onNext }) {
       let matched = false;
       for (let sentence of validSentences) {
         const slice = blocks.slice(i, i + sentence.length);
-        if (
-          slice.length === sentence.length &&
-          slice.every((b, idx) => b === sentence[idx])
-        ) {
+        if (slice.length === sentence.length && slice.every((b, idx) => b === sentence[idx])) {
           matched = true;
           i += sentence.length;
           break;
@@ -78,10 +70,8 @@ export default function CodeWormBattle({ onNext }) {
 
     const valid = isValidAssembly(assembled);
     let dmg = valid ? assembled.length * 5 : Math.floor(Math.random() * 3) + 1;
-
     setFlash(valid);
-    if (valid) setFeedback(`⚔️ Valid code! Damage: ${dmg}`);
-    else setFeedback(`❌ Code error! Minimal damage: ${dmg}`);
+    setFeedback(valid ? `⚔️ Valid code! Damage: ${dmg}` : `❌ Code error! Minimal damage: ${dmg}`);
 
     // --- Player attacks ---
     setIsPlayerAttacking(true);
@@ -118,9 +108,7 @@ export default function CodeWormBattle({ onNext }) {
       return;
     }
 
-    setFeedback(
-      `⚔️ Turn complete! You dealt ${dmg}, enemy dealt ${enemyDmg}.`
-    );
+    setFeedback(`⚔️ Turn complete! You dealt ${dmg}, enemy dealt ${enemyDmg}.`);
     setAssembled([]);
   };
 
@@ -129,35 +117,52 @@ export default function CodeWormBattle({ onNext }) {
       <h2>🐛 CodeWorm Battle</h2>
       <h4>{feedback || "Assemble blocks to attack!"}</h4>
 
-      {/* Battlefield container */}
-    <div
-  style={{
-    position: "relative",
-    width: 650,
-    height: 350,
-    margin: "0 auto 20px",
-    border: "2px solid #333",
-    borderRadius: 12,
-    background: "#414041",
-    display: "flex",         // Added Flexbox
-    justifyContent: "center", // Pulls both sprites to the center
-    alignItems: "flex-end",   // Keeps them on the "floor"
-    overflow: "hidden",
-  }}
->
-  <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
-        <div style={{ textAlign: "center" }}>
-          <img src={playerSprite} alt="player" width={250} height={250} />
-          <p>Player HP: {playerHP}</p>
+      {/* Battlefield */}
+      <div
+        style={{
+          position: "relative",
+          width: 650,
+          height: 350,
+          margin: "0 auto 20px",
+          border: "2px solid #333",
+          borderRadius: 12,
+          background: "#414041",
+          overflow: "hidden",
+        }}
+      >
+        {/* Player */}
+        <div style={{ position: "absolute", left: 50, bottom: 0, textAlign: "center" }}>
+          <img
+            src={playerSprite}
+            alt="player"
+            width={250}
+            height={250}
+            style={{
+              transform: `translateX(${isPlayerAttacking ? 60 : 0}px)`,
+              transition: "transform 0.3s ease",
+            }}
+          />
+          <p style={{ color: "white" }}>HP: {playerHP}</p>
         </div>
-        <div style={{ textAlign: "center" }}>
-          <img src={enemySprite} alt="enemy" width={250} height={250} />
-          <p>Enemy HP: {Math.round(enemyHP)}</p>
+
+        {/* Enemy */}
+        <div style={{ position: "absolute", right: 50, bottom: 0, textAlign: "center" }}>
+          <img
+            src={enemySprite}
+            alt="enemy"
+            width={250}
+            height={250}
+            style={{
+              transform: `translateX(${isEnemyAttacking ? -60 : 0}px) scaleX(-1)`,
+              transition: "transform 0.3s ease",
+            }}
+          />
+          <p style={{ color: "white" }}>HP: {enemyHP}</p>
         </div>
-      
+      </div>
 
       {/* Assembled code */}
-       <div
+      <div
         style={{
           minHeight: 50,
           border: "2px dashed #ccc",
@@ -188,7 +193,6 @@ export default function CodeWormBattle({ onNext }) {
           </div>
         ))}
       </div>
-
 
       {/* Bank */}
       <div
