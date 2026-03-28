@@ -18,7 +18,8 @@
 - [x] **Phase 3d: Rank Calculation Fix** - Native query for combined score sorting ✅
 - [x] **Phase 3e: GridGame Scoring Cleanup** - Constants, star awards, React optimization ✅
 - [x] **Phase 3f: Galaxy Challenge Loading Fix** - Load challenges by ID from URL ✅
-- [ ] **Phase 4: Teacher Dashboard & Student Progress** - Teachers view student scores and progress
+- [x] **Phase 4: Teacher Dashboard & Student Progress** - Teachers view student scores and progress ✅
+- [ ] **Phase 4a: Teacher Dashboard Bugfixes** - Fix issues from Phase 4 testing
 - [ ] **Phase 5: Security & Error Handling** - Enable JWT auth, externalize secrets, configure exception handlers
 - [ ] **Phase 6: Backend Quality & Testing** - Fix data layer issues, add security tests
 - [ ] **Phase 7: Backend Modularization** - Restructure codebase into domain-based modules
@@ -199,6 +200,20 @@ Plans:
 
 ---
 
+### Phase 4a: Teacher Dashboard Bugfixes
+
+**Goal:** Fix any bugs discovered during Phase 4 testing
+
+**Depends on:** Phase 4
+
+**Success Criteria:**
+1. All reported bugs from Phase 4 testing are resolved
+2. No regressions in existing functionality
+
+**Plans:** TBD
+
+---
+
 ### Phase 5: Security & Error Handling
 
 **Goal:** Users can securely access the application with JWT authentication, and API errors return proper responses
@@ -306,7 +321,11 @@ Plans:
 | 3b - Quality Improvements | Code review fixes | (4 issues) | ✅ Complete |
 | 3c - Final Cleanup & E2E Tests | Code review fixes | (5 issues) | ✅ Complete |
 | 3d - Rank Calculation Fix | Native query fix | (1 issue) | ✅ Complete |
-| 4 - Security & Error Handling | JWT auth | SEC-01 to SEC-06, ERR-01 to ERR-05 | Pending |
+| 3e - GridGame Scoring Cleanup | Constants, stars | (multiple) | ✅ Complete |
+| 3f - Galaxy Challenge Loading | URL param loading | (1 issue) | ✅ Complete |
+| 4 - Teacher Dashboard | Student progress | TCHR-01 to TCHR-03 | ✅ Complete |
+| 4a - Teacher Dashboard Bugfixes | Fix Phase 4 issues | TBD | Pending |
+| 5 - Security & Error Handling | JWT auth | SEC-01 to SEC-06, ERR-01 to ERR-05 | Pending |
 | 5 - Backend Quality & Testing | Quality | BQ-01 to BQ-05, TEST-01 to TEST-03 | Pending |
 | 6 - Backend Modularization | Structure | (restructuring) | Pending |
 | 7 - Frontend Improvements | Modernize | FQ-01 to FQ-04 | Pending |
@@ -327,6 +346,9 @@ Plans:
 | 3c. Final Cleanup & E2E Tests | ✅ Complete | 2026-03-25 |
 | 3d. Rank Calculation Fix | ✅ Complete | 2026-03-25 |
 | 3e. GridGame Scoring Cleanup | ✅ Complete | 2026-03-26 |
+| 3f. Galaxy Challenge Loading | ✅ Complete | 2026-03-26 |
+| 4. Teacher Dashboard & Student Progress | ✅ Complete | 2026-03-29 |
+| 4a. Teacher Dashboard Bugfixes | Not started | - |
 | 3f. Galaxy Challenge Loading | ✅ Complete | 2026-03-26 |
 | 4. Teacher Dashboard & Student Progress | Plan 01 complete | 2026-03-29 |
 | 5. Security & Error Handling | Not started | - |
