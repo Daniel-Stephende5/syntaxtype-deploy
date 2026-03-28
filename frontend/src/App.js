@@ -36,6 +36,7 @@ import Bookworm from './pages/Bookworm';
 import Quiz from './pages/QuizMenu';
 import CrosswordGame from './pages/CrosswordGame';
 import LeaderboardPage from './pages/LeaderboardPage';
+import TeacherDashboard from './pages/TeacherDashboard';
 
 
 const App = () => {
@@ -95,6 +96,24 @@ const App = () => {
           element={
             <ProtectedRoute allowedRoles={['TEACHER']}>
               <TeacherSetupAccountPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Teacher Dashboard */}
+        <Route
+          path="/teacher/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']}>
+              <TeacherDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/students/:id"
+          element={
+            <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']}>
+              <TeacherDashboard />
             </ProtectedRoute>
           }
         />
