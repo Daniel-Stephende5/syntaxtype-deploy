@@ -29,6 +29,12 @@ Eight unique game modes to practice and improve typing skills:
 - JWT authentication
 - Progress tracking per user
 
+### Teacher Dashboard
+- **Dashboard Overview**: Teachers see summary cards with class statistics (total students, average scores, top performers)
+- **Student Progress**: View all students with their best WPM, accuracy, and combined scores across all games
+- **Student Detail**: Click any student to see detailed progress including per-game scores, completion counts, and recent activity
+- **Class Leaderboard**: Track class performance and identify students needing support
+
 ### Lesson System
 - Teachers can create custom lessons
 - Quiz functionality with multiple question types
@@ -291,6 +297,77 @@ Response (200):
 }
 ```
 
+### Teacher Dashboard
+
+#### Get Dashboard Summary
+```http
+GET /api/teacher/dashboard/summary
+Authorization: Bearer {token}
+Role: TEACHER or ADMIN
+
+Response (200):
+{
+  "totalStudents": 25,
+  "averageWpm": 72.5,
+  "averageAccuracy": 91.2,
+  "averageCombinedScore": 98.4,
+  "topPerformers": [
+    {
+      "studentId": 5,
+      "username": "topstudent",
+      "bestWpm": 95,
+      "bestAccuracy": 98,
+      "combinedScore": 139.6
+    }
+  ]
+}
+```
+
+#### Get All Students Progress
+```http
+GET /api/teacher/students
+Authorization: Bearer {token}
+Role: TEACHER or ADMIN
+
+Response (200):
+{
+  "students": [
+    {
+      "studentId": 1,
+      "username": "student1",
+      "bestWpm": 85,
+      "bestAccuracy": 96,
+      "combinedScore": 122.4,
+      "gamesCompleted": 12
+    }
+  ]
+}
+```
+
+#### Get Student Detail
+```http
+GET /api/teacher/students/1
+Authorization: Bearer {token}
+Role: TEACHER or ADMIN
+
+Response (200):
+{
+  "studentId": 1,
+  "username": "student1",
+  "totalGamesCompleted": 45,
+  "scores": [
+    {
+      "gameName": "TYPING_TESTS",
+      "bestWpm": 85,
+      "bestAccuracy": 96,
+      "combinedScore": 122.4,
+      "gamesPlayed": 15,
+      "lastPlayed": "2026-03-28T14:30:00"
+    }
+  ]
+}
+```
+
 ### Score Submission
 
 #### Submit Score
@@ -518,6 +595,16 @@ test: add unit tests for score service
 
 ## Changelog
 
+### v1.1 (2026-03-29)
+
+**Phase 4 Complete: Teacher Dashboard & Student Progress**
+
+- ✅ Teacher Dashboard with class overview and summary cards
+- ✅ Student progress table showing all students with key metrics
+- ✅ Student detail view with per-game scores and completion counts
+- ✅ REST API endpoints for teacher data access
+- ✅ Role-based access (TEACHER, ADMIN)
+
 ### v1.0 (2026-03-25)
 
 **Phase 1-3 Complete**
@@ -539,7 +626,10 @@ test: add unit tests for score service
 A: Navigate to `/register` or use the Register button on the login page.
 
 **Q: What roles are available?**
-A: `STUDENT`, `TEACHER`, `ADMIN`. Students can play games, Teachers can create lessons, Admins manage users.
+A: `STUDENT`, `TEACHER`, `ADMIN`. Students can play games and track progress, Teachers can create lessons and view student progress, Admins manage users.
+
+**Q: How do teachers view student progress?**
+A: Teachers with the TEACHER or ADMIN role can access `/teacher/dashboard` to see class overview and `/teacher/students/{id}` for individual student details.
 
 **Q: How is the combined score calculated?**
 A: `WPM × (Accuracy/100) × 1.5` if accuracy > 95%, otherwise `WPM × (Accuracy/100)`.
@@ -627,4 +717,4 @@ This project is part of a capstone/academic project.
 
 ---
 
-*Last updated: 2026-03-25*
+*Last updated: 2026-03-29*
