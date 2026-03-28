@@ -18,11 +18,12 @@
 - [x] **Phase 3d: Rank Calculation Fix** - Native query for combined score sorting ✅
 - [x] **Phase 3e: GridGame Scoring Cleanup** - Constants, star awards, React optimization ✅
 - [x] **Phase 3f: Galaxy Challenge Loading Fix** - Load challenges by ID from URL ✅
-- [ ] **Phase 4: Security & Error Handling** - Enable JWT auth, externalize secrets, configure exception handlers
-- [ ] **Phase 5: Backend Quality & Testing** - Fix data layer issues, add security tests
-- [ ] **Phase 6: Backend Modularization** - Restructure codebase into domain-based modules
-- [ ] **Phase 7: Frontend Improvements** - Migrate to Vite, fix quality issues
-- [ ] **Phase 8: Polish & Production Readiness** - Add logging, caching, integration tests
+- [ ] **Phase 4: Teacher Dashboard & Student Progress** - Teachers view student scores and progress
+- [ ] **Phase 5: Security & Error Handling** - Enable JWT auth, externalize secrets, configure exception handlers
+- [ ] **Phase 6: Backend Quality & Testing** - Fix data layer issues, add security tests
+- [ ] **Phase 7: Backend Modularization** - Restructure codebase into domain-based modules
+- [ ] **Phase 8: Frontend Improvements** - Migrate to Vite, fix quality issues
+- [ ] **Phase 9: Polish & Production Readiness** - Add logging, caching, integration tests
 
 ---
 
@@ -176,11 +177,28 @@ Plans:
 
 ---
 
-### Phase 4: Security & Error Handling
+### Phase 4: Teacher Dashboard & Student Progress
+
+**Goal:** Teachers can view student progress and scores to provide guidance
+
+**Depends on:** Phase 3
+
+**Success Criteria:**
+1. Teacher can view list of their assigned students
+2. Teacher can view individual student progress (games played, scores, WPM trends)
+3. Teacher can view class/section leaderboard
+4. Student profiles show assigned teacher info
+5. API endpoints secured for teacher access only
+
+**Plans:** TBD
+
+---
+
+### Phase 5: Security & Error Handling
 
 **Goal:** Users can securely access the application with JWT authentication, and API errors return proper responses
 
-**Depends on:** Phase 3
+**Depends on:** Phase 4
 
 **Requirements:** SEC-01 to SEC-06, ERR-01 to ERR-05
 
@@ -196,11 +214,11 @@ Plans:
 
 ---
 
-### Phase 5: Backend Quality & Testing
+### Phase 6: Backend Quality & Testing
 
 **Goal:** Backend data layer is consistent and reliable; authentication is properly tested
 
-**Depends on:** Phase 4
+**Depends on:** Phase 5
 
 **Requirements:** BQ-01 to BQ-05, TEST-01 to TEST-03
 
@@ -217,11 +235,11 @@ Plans:
 
 ---
 
-### Phase 6: Backend Modularization
+### Phase 7: Backend Modularization
 
 **Goal:** Codebase organized by domain for improved maintainability
 
-**Depends on:** Phase 5
+**Depends on:** Phase 6
 
 **Requirements:** (Code restructuring)
 
@@ -235,11 +253,11 @@ Plans:
 
 ---
 
-### Phase 7: Frontend Improvements
+### Phase 8: Frontend Improvements
 
 **Goal:** Modern build system with improved code quality
 
-**Depends on:** Phase 6
+**Depends on:** Phase 7
 
 **Requirements:** FQ-01 to FQ-04
 
@@ -253,11 +271,11 @@ Plans:
 
 ---
 
-### Phase 8: Polish & Production Readiness
+### Phase 9: Polish & Production Readiness
 
 **Goal:** Production-ready application with observability
 
-**Depends on:** Phase 7
+**Depends on:** Phase 8
 
 **Requirements:** (Final hardening)
 
@@ -303,11 +321,14 @@ Plans:
 | 3b. Quality Improvements | ✅ Complete | 2026-03-25 |
 | 3c. Final Cleanup & E2E Tests | ✅ Complete | 2026-03-25 |
 | 3d. Rank Calculation Fix | ✅ Complete | 2026-03-25 |
-| 4. Security & Error Handling | Not started | - |
-| 5. Backend Quality & Testing | Not started | - |
-| 6. Backend Modularization | Not started | - |
-| 7. Frontend Improvements | Not started | - |
-| 8. Polish & Production Readiness | Not started | - |
+| 3e. GridGame Scoring Cleanup | ✅ Complete | 2026-03-26 |
+| 3f. Galaxy Challenge Loading | ✅ Complete | 2026-03-26 |
+| 4. Teacher Dashboard & Student Progress | Planning | - |
+| 5. Security & Error Handling | Not started | - |
+| 6. Backend Quality & Testing | Not started | - |
+| 7. Backend Modularization | Not started | - |
+| 8. Frontend Improvements | Not started | - |
+| 9. Polish & Production Readiness | Not started | - |
 
 ---
 
