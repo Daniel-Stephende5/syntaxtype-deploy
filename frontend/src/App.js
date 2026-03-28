@@ -37,6 +37,7 @@ import Quiz from './pages/QuizMenu';
 import CrosswordGame from './pages/CrosswordGame';
 import LeaderboardPage from './pages/LeaderboardPage';
 import TeacherDashboard from './pages/TeacherDashboard';
+import TeacherStudentDetail from './pages/TeacherStudentDetail';
 
 
 const App = () => {
@@ -113,7 +114,7 @@ const App = () => {
           path="/teacher/students/:id"
           element={
             <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']}>
-              <TeacherDashboard />
+              <TeacherStudentDetail />
             </ProtectedRoute>
           }
         />
