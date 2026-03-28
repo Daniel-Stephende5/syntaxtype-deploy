@@ -17,7 +17,7 @@
 | Item | Value |
 |------|-------|
 | **Current Phase** | 4 - Teacher Dashboard & Student Progress |
-| **Current Plan** | 04-02 executed |
+| **Current Plan** | 04-01 executed |
 | **Status** | ✅ Complete |
 | **Progress** | [=============================] 8/8 phases |
 
@@ -53,7 +53,7 @@
 | 2 - Leaderboard Frontend | LB-05 to LB-07 | ✅ Complete |
 | 3 - Game Score Integration | SCORE-01 to SCORE-09 | ✅ Complete |
 | 3a - Bug Fixes & Code Quality | (Code review fixes) | ✅ Complete |
-| 4 - Teacher Dashboard | TCHR-01 to TCHR-03 | ✅ Plan 02 complete |
+| 4 - Teacher Dashboard | TCHR-01 to TCHR-03 | ✅ Plan 01 complete |
 | 5 - Security & Error Handling | SEC-01 to SEC-06, ERR-01 to ERR-05 | Pending |
 | 6 - Backend Quality & Testing | BQ-01 to BQ-05, TEST-01 to TEST-03 | Pending |
 | 7 - Frontend Improvements | FQ-01 to FQ-04 | Pending |
@@ -175,9 +175,11 @@
 ### Plans Created & Executed
 - **04-01:** Backend API endpoints ✅ Complete
   - StudentProgressDTO with username, email, totalGamesPlayed, averageWpm, averageAccuracy
+  - TeacherDashboardController at /api/teacher endpoints
   - GET /api/teacher/students - List all students with summary stats
-  - GET /api/teacher/students/:id - Detailed progress for one student
+  - GET /api/teacher/students/{studentId} - Detailed progress for one student
   - GET /api/teacher/leaderboard - Class leaderboard (all students)
+  - TeacherService methods: getAllStudentsWithProgress(), getStudentProgress(), getClassLeaderboard()
 - **04-02:** Teacher Dashboard Frontend ✅ Complete
   - TeacherDashboard.js with Students tab (card grid) and Leaderboard tab (table)
   - Route /teacher/dashboard protected for TEACHER, ADMIN roles
@@ -203,7 +205,7 @@
 
 ### What's Next
 
-1. Execute Phase 4 Plan 03 (Student Detail Page)
+1. Execute Phase 4 Plan 02 (Teacher Dashboard Frontend) or Plan 03 (Student Detail Page)
 
 ---
 

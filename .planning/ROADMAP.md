@@ -190,7 +190,12 @@ Plans:
 4. Student profiles show assigned teacher info
 5. API endpoints secured for teacher access only
 
-**Plans:** TBD
+**Plans:** 3 plans
+
+Plans:
+- [x] 04-01-PLAN.md — Backend DTO and API endpoints
+- [x] 04-02-PLAN.md — Frontend Teacher Dashboard page
+- [x] 04-03-PLAN.md — Frontend Student Detail view
 
 ---
 
@@ -323,7 +328,7 @@ Plans:
 | 3d. Rank Calculation Fix | ✅ Complete | 2026-03-25 |
 | 3e. GridGame Scoring Cleanup | ✅ Complete | 2026-03-26 |
 | 3f. Galaxy Challenge Loading | ✅ Complete | 2026-03-26 |
-| 4. Teacher Dashboard & Student Progress | Planning | - |
+| 4. Teacher Dashboard & Student Progress | Plan 01 complete | 2026-03-29 |
 | 5. Security & Error Handling | Not started | - |
 | 6. Backend Quality & Testing | Not started | - |
 | 7. Backend Modularization | Not started | - |
