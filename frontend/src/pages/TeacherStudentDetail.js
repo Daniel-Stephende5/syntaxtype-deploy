@@ -23,7 +23,7 @@ import {
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SpeedIcon from "@mui/icons-material/Speed";
-import AccuracyIcon from "@mui/icons-material/Accuracy";
+import PercentIcon from "@mui/icons-material/Percent";
 import SportsEsportsIcon from "@mui/icons-material/SportsEsports";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import { apiUrl } from "../utils/api";
@@ -251,7 +251,7 @@ const TeacherStudentDetail = () => {
           <Grid item xs={12} sm={4}>
             <Card elevation={2}>
               <CardContent sx={{ textAlign: "center" }}>
-                <AccuracyIcon sx={{ fontSize: 40, color: "#ed6c02", mb: 1 }} />
+                <PercentIcon sx={{ fontSize: 40, color: "#ed6c02", mb: 1 }} />
                 <Typography variant="h3" color="warning.main" sx={{ fontWeight: "bold" }}>
                   {student?.averageAccuracy != null ? `${student.averageAccuracy.toFixed(1)}%` : "—"}
                 </Typography>

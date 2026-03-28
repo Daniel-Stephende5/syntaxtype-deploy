@@ -107,6 +107,7 @@ public List<LeaderboardEntry> getClassLeaderboard(@PathVariable Long teacherId) 
 
 ## Notes
 
+- **IMPORTANT: DO NOT PUSH TO ORIGIN** - Changes will break production
 - Extended lessons are face-to-face (IRL) - not in system
-- Student enrollments (invitations) were scrapped - using existing topic associations
-- All endpoints secured - teachers only see their assigned students
+- Student enrollments (topics) are DEPRECATED - not used for Phase 4
+- Using direct student list approach (not topic-based)
