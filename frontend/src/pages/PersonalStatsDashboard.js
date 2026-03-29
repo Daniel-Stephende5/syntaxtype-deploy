@@ -1,126 +1,173 @@
 import React, { useEffect, useState } from 'react';
 import '../css/TotalDashboard.css';
 import { API_BASE } from '../utils/api';
+import { getAuthToken, getUserId } from '../utils/JwtUtils';
 
-const PersonalDashboard = () => {
+const PersonalStatsDashboard = () => {
   const [scores, setScores] = useState([]);
-  const [fallingScores, setFallingScores] = useState([]);
-  const [avgTime, setAvgTime] = useState(0);
-  const [highestWPM, setHighestWPM] = useState(0);
-  const [lowestWPM, setLowestWPM] = useState(0);
-  const [scoreDistribution, setScoreDistribution] = useState({});
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/scores`)
-      .then(res => res.json())
+    const token = getAuthToken();
+    if (!token) {
+      setError('Please log in to view your stats.');
+      setLoading(false);
+      return;
+    }
+
+    const userId = getUserId(token);
+    if (!userId) {
+      setError('Unable to get user information.');
+      setLoading(false);
+      return;
+    }
+
+    fetch(`${API_BASE}/api/scores/user/${userId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+      .then(res => {
+        if (!res.ok) {
+          throw new Error('Failed to fetch scores');
+        }
+        return res.json();
+      })
       .then(data => {
-        // Separate scores
-        const normalScores = data.filter(score => score.challengeType === 'normal');
-        const fallingScores = data.filter(score => score.challengeType === 'falling');
-
-        setScores(normalScores);
-        setFallingScores(fallingScores);
-
-        // === NORMAL TYPING TEST STATS ===
-        const totalTime = normalScores.reduce((sum, s) => sum + s.timeInSeconds, 0);
-        const avg = normalScores.length > 0 ? (totalTime / normalScores.length).toFixed(2) : 0;
-        setAvgTime(avg);
-
-        const distribution = {
-          '90-100': 0,
-          '80-89': 0,
-          '70-79': 0,
-          '60-69': 0,
-          '0-59': 0,
-        };
-
-        normalScores.forEach((s) => {
-          if (s.score >= 90) distribution['90-100']++;
-          else if (s.score >= 80) distribution['80-89']++;
-          else if (s.score >= 70) distribution['70-79']++;
-          else if (s.score >= 60) distribution['60-69']++;
-          else distribution['0-59']++;
-        });
-
-        setScoreDistribution(distribution);
-
-        const wpmList = normalScores.map(s =>
-          s.wpm != null ? s.wpm : (s.timeInSeconds > 0 ? (s.score / s.timeInSeconds) * 60 : 0)
-        );
-
-        setHighestWPM(wpmList.length > 0 ? Math.max(...wpmList).toFixed(2) : 0);
-        setLowestWPM(wpmList.length > 0 ? Math.min(...wpmList).toFixed(2) : 0);
+        setScores(data);
+        setLoading(false);
       })
       .catch(err => {
         console.error('Error fetching scores:', err);
-        setError("Error loading scores: " + err.message);
+        setError('Error loading scores: ' + err.message);
+        setLoading(false);
       });
   }, []);
 
-  // === NORMAL STATS SUMMARY ===
-  const totalScore = scores.reduce((sum, s) => sum + s.score, 0);
-  const highestScore = scores.length > 0 ? Math.max(...scores.map(s => s.score)) : 0;
-  const lowestScore = scores.length > 0 ? Math.min(...scores.map(s => s.score)) : 0;
-  const averageScore = scores.length > 0 ? (totalScore / scores.length).toFixed(2) : 0;
+  // Group scores by game type
+  const scoresByGame = scores.reduce((acc, score) => {
+    const gameType = score.challengeType || 'Unknown';
+    if (!acc[gameType]) {
+      acc[gameType] = [];
+    }
+    acc[gameType].push(score);
+    return acc;
+  }, {});
 
-  // === FALLING STATS SUMMARY ===
-  const totalFalling = fallingScores.length;
-  const highestFallingScore = totalFalling > 0 ? Math.max(...fallingScores.map(s => s.score)) : 0;
-  const averageFallingScore = totalFalling > 0
-    ? Math.round(fallingScores.reduce((sum, s) => sum + s.score, 0) / totalFalling)
-    : 0;
-  const lastFallingScore = totalFalling > 0
-    ? fallingScores[fallingScores.length - 1].score
-    : 0;
+  // Calculate personal bests per game
+  const personalBests = Object.entries(scoresByGame).map(([gameType, gameScores]) => {
+    const bestScore = Math.max(...gameScores.map(s => s.score || 0));
+    const bestWpm = Math.max(...gameScores.map(s => s.wpm || 0));
+    const avgAccuracy = gameScores.length > 0
+      ? Math.round(gameScores.reduce((sum, s) => sum + (s.accuracy || 0), 0) / gameScores.length)
+      : 0;
+    return {
+      gameType,
+      bestScore,
+      bestWpm,
+      avgAccuracy,
+      totalGames: gameScores.length
+    };
+  });
+
+  // Get recent activity (last 10)
+  const recentActivity = [...scores]
+    .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
+    .slice(0, 10);
+
+  // Format date
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  if (loading) {
+    return (
+      <div className="dashboard-container">
+        <h2>📊 My Stats</h2>
+        <p>Loading your stats...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="dashboard-container">
+        <h2>📊 My Stats</h2>
+        <p style={{ color: 'red' }}>{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-container">
-      <h2>📊 Personal Dashboard</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <h2>📊 My Stats</h2>
 
-      {/* === NORMAL TEST STATS === */}
-      <h3>📝 Paragraph Typing Test Summary</h3>
+      {/* Personal Bests Summary */}
+      <h3>🏆 Personal Bests</h3>
+      {personalBests.length === 0 ? (
+        <p>No games played yet. Start playing to see your stats!</p>
+      ) : (
+        <div className="stats-grid">
+          {personalBests.map((pb, index) => (
+            <div key={index} className="stat-card">
+              <h4>{pb.gameType}</h4>
+              <p><strong>Best Score:</strong> {pb.bestScore}</p>
+              <p><strong>Best WPM:</strong> {pb.bestWpm}</p>
+              <p><strong>Avg Accuracy:</strong> {pb.avgAccuracy}%</p>
+              <p><strong>Games Played:</strong> {pb.totalGames}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Recent Activity */}
+      <h3 style={{ marginTop: '40px' }}>📈 Recent Activity</h3>
+      {recentActivity.length === 0 ? (
+        <p>No recent activity.</p>
+      ) : (
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
+          <thead>
+            <tr style={{ backgroundColor: '#f0f0f0' }}>
+              <th style={{ padding: '10px', textAlign: 'left' }}>Game</th>
+              <th style={{ padding: '10px', textAlign: 'right' }}>Score</th>
+              <th style={{ padding: '10px', textAlign: 'right' }}>WPM</th>
+              <th style={{ padding: '10px', textAlign: 'right' }}>Accuracy</th>
+              <th style={{ padding: '10px', textAlign: 'right' }}>Time (s)</th>
+              <th style={{ padding: '10px', textAlign: 'right' }}>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {recentActivity.map((entry, index) => (
+              <tr key={index} style={{ borderBottom: '1px solid #eee' }}>
+                <td style={{ padding: '10px' }}>{entry.challengeType || 'Unknown'}</td>
+                <td style={{ padding: '10px', textAlign: 'right' }}>{entry.score || 0}</td>
+                <td style={{ padding: '10px', textAlign: 'right' }}>{entry.wpm || 0}</td>
+                <td style={{ padding: '10px', textAlign: 'right' }}>{entry.accuracy || 0}%</td>
+                <td style={{ padding: '10px', textAlign: 'right' }}>{entry.timeInSeconds || 0}</td>
+                <td style={{ padding: '10px', textAlign: 'right' }}>{formatDate(entry.submittedAt)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      {/* Total Stats Summary */}
+      <h3 style={{ marginTop: '40px' }}>📝 Overall Summary</h3>
       <div className="stats-grid">
-        <div className="stat-card"><h3>Total Score</h3><p>{totalScore}</p></div>
-        <div className="stat-card"><h3>Highest Score</h3><p>{highestScore}</p></div>
-        <div className="stat-card"><h3>Lowest Score</h3><p>{lowestScore}</p></div>
-        <div className="stat-card"><h3>Average Score</h3><p>{averageScore}</p></div>
-        <div className="stat-card"><h3>Avg Time/Challenge (sec)</h3><p>{avgTime}</p></div>
-        <div className="stat-card"><h3>Highest WPM</h3><p>{highestWPM}</p></div>
-        <div className="stat-card"><h3>Lowest WPM</h3><p>{lowestWPM}</p></div>
-      </div>
-
-      <h3 style={{ marginTop: '40px' }}>📌 Score Distribution (Normal)</h3>
-      <div className="distribution-grid">
-        {Object.entries(scoreDistribution).map(([range, count]) => (
-          <div key={range} className="distribution-card">
-            <h4>{range}</h4>
-            <p>{count} student{count !== 1 ? 's' : ''}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* === FALLING TEST STATS === */}
-      <h3 style={{ marginTop: '60px' }}>🎯 Falling Typing Test Summary</h3>
-      <div className="stats-grid">
-        <div className="stat-card"><h3>Total Games</h3><p>{totalFalling}</p></div>
-        <div className="stat-card"><h3>Highest Score</h3><p>{highestFallingScore}</p></div>
-        <div className="stat-card"><h3>Average Score</h3><p>{averageFallingScore}</p></div>
-        <div className="stat-card"><h3>Last Score</h3><p>{lastFallingScore}</p></div>
-      </div>
-
-      <h3 style={{ marginTop: '60px', textAlign: 'center' }}>🎮 Falling Test Score History</h3>
-      <div className="distribution-grid">
-        {fallingScores.map((entry, index) => (
-          <div key={index} className="distribution-card">
-            <h4>#{index + 1}</h4>
-            <p>{entry.score}</p>
-          </div>
-        ))}
+        <div className="stat-card">
+          <h4>Total Games</h4>
+          <p>{scores.length}</p>
+        </div>
+        <div className="stat-card">
+          <h4>Games Played</h4>
+          <p>{personalBests.length}</p>
+        </div>
       </div>
     </div>
   );
 };
 
-export default PersonalDashboard;
+export default PersonalStatsDashboard;
