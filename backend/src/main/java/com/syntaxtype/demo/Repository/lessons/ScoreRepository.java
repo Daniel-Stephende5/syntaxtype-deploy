@@ -10,5 +10,8 @@ import java.util.List;
 public interface ScoreRepository extends JpaRepository<Score, Long> {
     List<Score> findByChallengeTypeOrderBySubmittedAtDesc(String challengeType);
 
+    // Get all scores for a specific user, ordered by submitted date (newest first)
+    List<Score> findByUserUserIdOrderBySubmittedAtDesc(Long userId);
+
     // Optional: Top N scores for falling test
 }
