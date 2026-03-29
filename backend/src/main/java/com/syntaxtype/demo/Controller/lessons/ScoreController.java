@@ -116,5 +116,12 @@ public class ScoreController {
         return ResponseEntity.ok(result);
     }
 
+    // Get all scores for a specific user
+    @GetMapping("/user/{userId}")
+    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','USER')")
+    public ResponseEntity<List<Score>> getUserScores(@PathVariable Long userId) {
+        return ResponseEntity.ok(scoreService.getScoresByUserId(userId));
+    }
+
 
 }
