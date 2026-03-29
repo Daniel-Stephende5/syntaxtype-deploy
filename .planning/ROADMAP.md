@@ -19,7 +19,7 @@
 - [x] **Phase 3e: GridGame Scoring Cleanup** - Constants, star awards, React optimization ✅
 - [x] **Phase 3f: Galaxy Challenge Loading Fix** - Load challenges by ID from URL ✅
 - [x] **Phase 4: Teacher Dashboard & Student Progress** - Teachers view student scores and progress ✅
-- [ ] **Phase 4a: Teacher Dashboard Bugfixes** - Fix issues from Phase 4 testing
+- [x] **Phase 04A: Teacher Dashboard Bugfixes** - Fix issues from Phase 4 testing ✅
 - [ ] **Phase 5: Security & Error Handling** - Enable JWT auth, externalize secrets, configure exception handlers
 - [ ] **Phase 6: Backend Quality & Testing** - Fix data layer issues, add security tests
 - [ ] **Phase 7: Backend Modularization** - Restructure codebase into domain-based modules
@@ -210,7 +210,10 @@ Plans:
 1. All reported bugs from Phase 4 testing are resolved
 2. No regressions in existing functionality
 
-**Plans:** TBD
+**Plans:** 1 plan
+
+Plans:
+- [x] 04A-01-PLAN.md — Student personal stats dashboard
 
 ---
 
@@ -324,7 +327,7 @@ Plans:
 | 3e - GridGame Scoring Cleanup | Constants, stars | (multiple) | ✅ Complete |
 | 3f - Galaxy Challenge Loading | URL param loading | (1 issue) | ✅ Complete |
 | 4 - Teacher Dashboard | Student progress | TCHR-01 to TCHR-03 | ✅ Complete |
-| 4a - Teacher Dashboard Bugfixes | Fix Phase 4 issues | TBD | Pending |
+| 04A - Teacher Dashboard Bugfixes | Fix Phase 4 issues | Student stats feature | ✅ Complete |
 | 5 - Security & Error Handling | JWT auth | SEC-01 to SEC-06, ERR-01 to ERR-05 | Pending |
 | 5 - Backend Quality & Testing | Quality | BQ-01 to BQ-05, TEST-01 to TEST-03 | Pending |
 | 6 - Backend Modularization | Structure | (restructuring) | Pending |
@@ -348,7 +351,7 @@ Plans:
 | 3e. GridGame Scoring Cleanup | ✅ Complete | 2026-03-26 |
 | 3f. Galaxy Challenge Loading | ✅ Complete | 2026-03-26 |
 | 4. Teacher Dashboard & Student Progress | ✅ Complete | 2026-03-29 |
-| 4a. Teacher Dashboard Bugfixes | Not started | - |
+| 04A. Teacher Dashboard Bugfixes | ✅ Complete | 2026-03-29 |
 | 3f. Galaxy Challenge Loading | ✅ Complete | 2026-03-26 |
 | 4. Teacher Dashboard & Student Progress | Plan 01 complete | 2026-03-29 |
 | 5. Security & Error Handling | Not started | - |
