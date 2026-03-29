@@ -118,11 +118,15 @@ export default function CodeWormBattle({ onNext }) {
     const hitTime = 800;
     const flashDuration = 400;
     const totalDuration = 1200;
+let nextEnemyHP;
 
-    setTimeout(() => {
-      setEnemyHit(true);
-      setEnemyHP((hp) => Math.max(0, hp - dmg));
-    }, hitTime);
+setTimeout(() => {
+  setEnemyHit(true);
+  setEnemyHP((hp) => {
+    nextEnemyHP = Math.max(0, hp - dmg);
+    return nextEnemyHP;
+  });
+}, hitTime);
 
     setTimeout(() => {
       setEnemyHit(false);
@@ -135,7 +139,7 @@ export default function CodeWormBattle({ onNext }) {
     await sleep(totalDuration);
     setPlayerSprite("/images/idleedit2.png");
 
-    if (enemyHP - dmg <= 0) {
+ if (nextEnemyHP <= 0) {
       setFeedback(`💥 Enemy defeated! Damage dealt: ${dmg}`);
       setGameOver(true);
       if (onNext) onNext(dmg);
@@ -149,7 +153,12 @@ export default function CodeWormBattle({ onNext }) {
     await sleep(900);
 
     setPlayerHit(true);
-    setPlayerHP((hp) => Math.max(0, hp - enemyDmg));
+    let nextPlayerHP;
+
+setPlayerHP((hp) => {
+  nextPlayerHP = Math.max(0, hp - enemyDmg);
+  return nextPlayerHP;
+});
 
     await sleep(400);
     setPlayerHit(false);
@@ -157,7 +166,7 @@ export default function CodeWormBattle({ onNext }) {
     await sleep(700);
     setEnemySprite("/images/enemy_idle(1).png");
 
-    if (playerHP - enemyDmg <= 0) {
+   if (nextPlayerHP <= 0) {
       setFeedback("💀 You were defeated!");
       setGameOver(true);
       return;
