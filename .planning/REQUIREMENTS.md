@@ -17,10 +17,10 @@
 - [x] **LB-07**: Highlight current user's row in leaderboard when logged in
 
 #### Phase 1b: Game Mode Expansion
-- [ ] **LB-08**: Update Category enum to include all game types (FOUR_PICS, CODE_CHALLENGES, MAP, SYNTAX_SAVER)
-- [ ] **LB-09**: Update LeaderboardPage.js game filter dropdown to include all game modes
-- [ ] **LB-10**: Update LeaderboardController to support all game categories
-- [ ] **LB-11**: Update OVERALL calculation to include all game types
+- [x] **LB-08**: Update Category enum to include all game types (FOUR_PICS, CODE_CHALLENGES, MAP, SYNTAX_SAVER)
+- [x] **LB-09**: Update LeaderboardPage.js game filter dropdown to include all game modes
+- [x] **LB-10**: Update LeaderboardController to support all game categories
+- [x] **LB-11**: Update OVERALL calculation to include all game types
 
 ### Phase 3: Game Score Integration (NEW)
 
