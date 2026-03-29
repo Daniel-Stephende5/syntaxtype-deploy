@@ -4,7 +4,6 @@ import { lessons as quizLessons, quizTitle } from "./QuizData";
 import CodeWormBattle from "./CodeWormBattle";
 
 export default function SyntaxSaverLesson({ onBack }) {
-  // --- force remount key ---
   const [resetKey, setResetKey] = useState(0);
   const [step, setStep] = useState(0);
   const [score, setScore] = useState(0);
@@ -32,51 +31,54 @@ export default function SyntaxSaverLesson({ onBack }) {
       "Are you sure you want to exit the lesson? Your progress will be lost."
     );
     if (confirmLeave) {
-      // Reset state before leaving
       setStep(0);
       setScore(0);
       setFeedback("");
-      setResetKey(prev => prev + 1); // force remount
+      setResetKey(prev => prev + 1);
       onBack();
     }
   };
 
   return (
-     <div className="lesson-container"> {/* NEW */}
-    <div className="lesson-card" key={resetKey}> {/* UPDATED */}
-      <h2>🧠 {quizTitle}</h2>
-      <p>Step {step + 1} of {lessons.length}</p>
+    <div className="lesson-container">
+      <div className="lesson-card" key={resetKey}>
+        <h2>🧠 {quizTitle}</h2>
+        <p>Step {step + 1} of {lessons.length}</p>
 
-      {current.type === "match" && (
-        <MatchQuestion data={current} onNext={handleNext} setFeedback={setFeedback} />
-      )}
-      {current.type === "reorder" && (
-        <ReorderQuestion data={current} onNext={handleNext} setFeedback={setFeedback} />
-      )}
-      {current.type === "battle" && (
-        <CodeWormBattle blocks={current.blocks} scrambled={current.scrambled} onNext={handleNext} />
-      )}
+        {current.type === "match" && (
+          <MatchQuestion data={current} onNext={handleNext} setFeedback={setFeedback} />
+        )}
+        {current.type === "reorder" && (
+          <ReorderQuestion data={current} onNext={handleNext} setFeedback={setFeedback} />
+        )}
+        {current.type === "battle" && (
+          <CodeWormBattle onNext={handleNext} />
+        )}
 
-      <p className="feedback">{feedback}</p>
-      <p className="score">⭐ Score: {score}</p>
+        <p className="feedback">{feedback}</p>
+        <p className="score">⭐ Score: {score}</p>
 
-      <div className="lesson-buttons">
-        {step > 0 && <button onClick={handleBackStep}>⬅️ Previous</button>}
-        <button onClick={handleBackToMenu}>🏠 Menu</button>
+        <div className="lesson-buttons">
+          {step > 0 && <button onClick={handleBackStep}>⬅️ Previous</button>}
+          <button onClick={handleBackToMenu}>🏠 Menu</button>
+        </div>
       </div>
     </div>
-  </div>
   );
 }
 
 // --- MatchQuestion ---
 function MatchQuestion({ data, onNext, setFeedback }) {
   const normalize = s => (s ?? "").toString().trim().toLowerCase();
+
   const handleClick = opt => {
     if (normalize(opt) === normalize(data.correct)) {
       setFeedback("✅ Correct!");
       onNext(10);
-    } else setFeedback("❌ Try again!");
+    } else {
+      setFeedback("❌ Incorrect! Moving on...");
+      onNext(0); // ✅ proceed even if wrong
+    }
   };
 
   return (
@@ -84,7 +86,9 @@ function MatchQuestion({ data, onNext, setFeedback }) {
       <h3>{data.question}</h3>
       <div className="options">
         {data.options.map((opt, i) => (
-          <button key={i} onClick={() => handleClick(opt)}>{opt}</button>
+          <button key={i} onClick={() => handleClick(opt)}>
+            {opt}
+          </button>
         ))}
       </div>
     </div>
@@ -103,6 +107,7 @@ const scramble = arr => {
 
 function ReorderQuestion({ data, onNext, setFeedback }) {
   const [order, setOrder] = useState([]);
+
   useEffect(() => setOrder(scramble(data.parts)), [data.parts]);
 
   const handleDragEnd = (result) => {
@@ -118,7 +123,8 @@ function ReorderQuestion({ data, onNext, setFeedback }) {
       setFeedback("✅ Correct!");
       onNext(15);
     } else {
-      setFeedback("❌ Not correct. Try again.");
+      setFeedback("❌ Not correct. Moving on...");
+      onNext(0); // ✅ proceed even if wrong
     }
   };
 
@@ -131,7 +137,12 @@ function ReorderQuestion({ data, onNext, setFeedback }) {
             <div
               ref={provided.innerRef}
               {...provided.droppableProps}
-              style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 8,
+                marginBottom: 16
+              }}
             >
               {order.map((part, index) => (
                 <Draggable key={index} draggableId={`part-${index}`} index={index}>
