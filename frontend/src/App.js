@@ -38,6 +38,7 @@ import CrosswordGame from './pages/CrosswordGame';
 import LeaderboardPage from './pages/LeaderboardPage';
 import TeacherDashboard from './pages/TeacherDashboard';
 import TeacherStudentDetail from './pages/TeacherStudentDetail';
+import PersonalStatsDashboard from './pages/PersonalStatsDashboard';
 
 
 const App = () => {
@@ -220,6 +221,16 @@ const App = () => {
         <Route
           path="/leaderboard"
           element={<LeaderboardPage />}
+        />
+
+        {/* Personal Stats */}
+        <Route
+          path="/my-stats"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT', 'TEACHER', 'ADMIN']}>
+              <PersonalStatsDashboard />
+            </ProtectedRoute>
+          }
         />
 
         <Route
