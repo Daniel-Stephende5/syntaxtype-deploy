@@ -6,15 +6,14 @@ export default function CodeWormBattle({ onNext }) {
   const [assembled, setAssembled] = useState([]);
   const [feedback, setFeedback] = useState("");
   const [flash, setFlash] = useState(false);
-  const [playerSprite, setPlayerSprite] = useState("/images/idleedit2.png");
-  const [enemySprite, setEnemySprite] = useState("/images/enemy_idle(1).png");
+  const [playerAnimation, setPlayerAnimation] = useState("idle"); // 'idle' | 'attack'
+  const [enemyAnimation, setEnemyAnimation] = useState("idle"); // 'idle' | 'attack'
   const [playerHit, setPlayerHit] = useState(false);
   const [enemyHit, setEnemyHit] = useState(false);
   const [gameOver, setGameOver] = useState(false);
 
   const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
-  // ✅ SHUFFLE FUNCTION (ADDED)
   const shuffleArray = (array) => {
     const shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -24,7 +23,6 @@ export default function CodeWormBattle({ onNext }) {
     return shuffled;
   };
 
-  // --- Multiple valid functions ---
   const validFunctions = [
     [
       ["void special attack", "(", "Player player", ",", "Enemy enemy", ")"],
@@ -60,7 +58,6 @@ export default function CodeWormBattle({ onNext }) {
   const [currentFunction, setCurrentFunction] = useState([]);
   const [bank, setBank] = useState([]);
 
-  // ✅ NEW FUNCTION GENERATOR (ADDED)
   const generateNewFunction = () => {
     const func = validFunctions[Math.floor(Math.random() * validFunctions.length)];
     setCurrentFunction(func);
@@ -71,7 +68,6 @@ export default function CodeWormBattle({ onNext }) {
     setAssembled([]);
   };
 
-  // ✅ UPDATED useEffect (CHANGED)
   useEffect(() => {
     generateNewFunction();
   }, []);
@@ -100,7 +96,6 @@ export default function CodeWormBattle({ onNext }) {
     }
 
     const valid = isValidAssembly(assembled);
-
     if (!valid) {
       setFeedback("❌ Incorrect function! No attack!");
       setAssembled([]);
@@ -108,77 +103,63 @@ export default function CodeWormBattle({ onNext }) {
     }
 
     const dmg = assembled.length * 2;
-
     setFeedback(`⚔️ Function correct! Damage: ${dmg}`);
     setFlash(true);
     setTimeout(() => setFlash(false), 500);
 
-    setPlayerSprite("/images/spriteedit.gif");
+    // ✅ PLAYER ATTACK ANIMATION
+    setPlayerAnimation("attack");
+    await sleep(1200);
+    setPlayerAnimation("idle");
 
-    const hitTime = 800;
-    const flashDuration = 400;
-    const totalDuration = 1200;
-let nextEnemyHP;
+    // ✅ ENEMY TAKES DAMAGE
+    setEnemyHit(true);
+    let nextEnemyHP;
+    setEnemyHP((hp) => {
+      nextEnemyHP = Math.max(0, hp - dmg);
+      return nextEnemyHP;
+    });
+    await sleep(400);
+    setEnemyHit(false);
 
-setTimeout(() => {
-  setEnemyHit(true);
-  setEnemyHP((hp) => {
-    nextEnemyHP = Math.max(0, hp - dmg);
-    return nextEnemyHP;
-  });
-}, hitTime);
-
-    setTimeout(() => {
-      setEnemyHit(false);
-    }, hitTime + flashDuration);
-
-    setTimeout(() => {
-      setPlayerSprite("/images/idleedit2.png");
-    }, totalDuration);
-
-    await sleep(totalDuration);
-    setPlayerSprite("/images/idleedit2.png");
-
- if (nextEnemyHP <= 0) {
+    if (nextEnemyHP <= 0) {
       setFeedback(`💥 Enemy defeated! Damage dealt: ${dmg}`);
       setGameOver(true);
       if (onNext) onNext(dmg);
       return;
     }
 
+    // ✅ ENEMY ATTACKS BACK
     const enemyDmg = Math.floor(Math.random() * 6) + 3;
     setFeedback("🐛 Enemy counterattacks!");
-    setEnemySprite("/images/enemyattack.gif");
-
+    setEnemyAnimation("attack");
     await sleep(900);
+    setEnemyAnimation("idle");
 
+    // PLAYER TAKES DAMAGE
     setPlayerHit(true);
     let nextPlayerHP;
-
-setPlayerHP((hp) => {
-  nextPlayerHP = Math.max(0, hp - enemyDmg);
-  return nextPlayerHP;
-});
-
+    setPlayerHP((hp) => {
+      nextPlayerHP = Math.max(0, hp - enemyDmg);
+      return nextPlayerHP;
+    });
     await sleep(400);
     setPlayerHit(false);
 
-    await sleep(700);
-    setEnemySprite("/images/enemy_idle(1).png");
-
-   if (nextPlayerHP <= 0) {
+    if (nextPlayerHP <= 0) {
       setFeedback("💀 You were defeated!");
       setGameOver(true);
       return;
     }
 
     setFeedback(`⚔️ Turn complete! You dealt ${dmg}, enemy dealt ${enemyDmg}.`);
-
-    // ✅ GENERATE NEW FUNCTION INSTEAD OF JUST RESET (CHANGED)
-    if (!gameOver) {
-      generateNewFunction();
-    }
+    if (!gameOver) generateNewFunction();
   };
+
+  const getPlayerSprite = () =>
+    playerAnimation === "idle" ? "/images/idleedit2.png" : "/images/spriteedit.webm";
+  const getEnemySprite = () =>
+    enemyAnimation === "idle" ? "/images/enemy_idle(1).png" : "/images/enemyattack.webm";
 
   return (
     <div style={{ padding: 20 }}>
@@ -197,9 +178,14 @@ setPlayerHP((hp) => {
           overflow: "hidden",
         }}
       >
+        {/* PLAYER */}
         <div style={{ position: "absolute", bottom: 10, left: "30%", textAlign: "left" }}>
           <div style={{ position: "relative", width: 250, height: 250 }}>
-            <img src={playerSprite} alt="player" width={250} height={250} />
+            {playerAnimation === "idle" ? (
+              <img src={getPlayerSprite()} alt="player" width={250} height={250} />
+            ) : (
+              <video src={getPlayerSprite()} width={250} height={250} autoPlay muted playsInline />
+            )}
             {playerHit && (
               <img
                 src="/images/idledamage.png"
@@ -211,9 +197,14 @@ setPlayerHP((hp) => {
           <p style={{ color: "white" }}>HP: {playerHP}</p>
         </div>
 
+        {/* ENEMY */}
         <div style={{ position: "absolute", bottom: 10, right: "25%", textAlign: "right" }}>
           <div style={{ position: "relative", width: 250, height: 250 }}>
-            <img src={enemySprite} alt="enemy" width={250} height={250} />
+            {enemyAnimation === "idle" ? (
+              <img src={getEnemySprite()} alt="enemy" width={250} height={250} />
+            ) : (
+              <video src={getEnemySprite()} width={250} height={250} autoPlay muted playsInline />
+            )}
             {enemyHit && (
               <img
                 src="/images/enemy_idle(damage).png"
@@ -226,6 +217,7 @@ setPlayerHP((hp) => {
         </div>
       </div>
 
+      {/* ASSEMBLED BLOCKS */}
       <div
         style={{
           minHeight: 50,
@@ -257,6 +249,7 @@ setPlayerHP((hp) => {
         ))}
       </div>
 
+      {/* BLOCK BANK */}
       <div
         style={{
           display: "flex",
