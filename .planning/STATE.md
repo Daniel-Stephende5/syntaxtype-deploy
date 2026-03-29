@@ -17,7 +17,7 @@
 | Item | Value |
 |------|-------|
 | **Current Phase** | 04A - Teacher Dashboard Bugfixes |
-| **Current Plan** | 04A-01 executed |
+| **Current Plan** | 04A-02 executed |
 | **Status** | ✅ Complete |
 | **Progress** | [=============================] 8/8 phases |
 
@@ -37,7 +37,7 @@
 | 3e | GridGame Scoring Cleanup | ✅ Complete |
 | 3f | Galaxy Challenge Loading Fix | ✅ Complete |
 | 4 | Teacher Dashboard & Student Progress | ✅ Complete |
-| 04A | Teacher Dashboard Bugfixes | Pending |
+| 04A | Teacher Dashboard Bugfixes | ✅ Complete |
 | 5 | Security & Error Handling | Pending |
 | 6 | Backend Quality & Testing | Pending |
 | 7 | Backend Modularization | Pending |
@@ -194,7 +194,7 @@
 
 ## Phase 04A Summary
 
-**Plans:** 1 plan
+**Plans:** 2 plans
 
 ### Plans Created & Executed
 - **04A-01:** Student Personal Stats ✅ Complete
@@ -204,6 +204,10 @@
   - PersonalStatsDashboard.js: Complete rewrite to display user scores
   - App.js: Added /my-stats route protected for STUDENT, TEACHER, ADMIN
   - Navbar.js: Added "My Stats" link for logged-in users
+- **04A-02:** Security Gap Fix ✅ Complete
+  - ScoreController: Replaced /api/scores/user/{userId} with /api/scores/user/me (JWT-extracted userId)
+  - PersonalStatsDashboard.js: Updated to call /api/scores/user/me
+  - Security fix: Users can now only fetch their own scores
 
 ---
 
@@ -221,6 +225,7 @@
 - [x] Executed Phase 3a-3f (Bug Fixes)
 - [x] Executed Phase 4 Plans 01-02 (Teacher Dashboard)
 - [x] Executed Phase 04A Plan 01 (Student Personal Stats)
+- [x] Executed Phase 04A Plan 02 (Security Gap Fix)
 
 ### What's Next
 

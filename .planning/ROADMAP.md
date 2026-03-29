@@ -210,10 +210,11 @@ Plans:
 1. All reported bugs from Phase 4 testing are resolved
 2. No regressions in existing functionality
 
-**Plans:** 1 plan
+**Plans:** 2 plans
 
 Plans:
 - [x] 04A-01-PLAN.md — Student personal stats dashboard
+- [x] 04A-02-PLAN.md — Security gap fix (JWT user extraction)
 
 ---
 
