@@ -34,4 +34,9 @@ public class ScoreService {
 
     // Get top N scores for a type (e.g., top 10 falling test scores)
 
+    // Get all scores for a specific user
+    public List<Score> getScoresByUserId(Long userId) {
+        return scoreRepository.findByUserUserIdOrderBySubmittedAtDesc(userId);
+    }
+
 }
