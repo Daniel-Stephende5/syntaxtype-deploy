@@ -29,62 +29,45 @@ export const lessons = [
     correctOrder: [0, 1, 2]
   },
   
-  
+  {
+  id: 3,
+  type: "match",
+  question: "Which keyword is used to define a constant variable in C?",
+  options: ["static", "const", "define", "volatile"],
+  correct: "const"
+},
+{
+  id: 4,
+  type: "reorder",
+  question: "Reorder the code blocks to create a valid C main function:",
+  parts: [
+    "#include <stdio.h>",
+    "int main()",
+    "{",
+    "printf(\"Hello World\");",
+    "return 0;",
+    "}"
+  ],
+  correctOrder: [0, 1, 2, 3, 4, 5]
+},
+{
+  id: 5,
+  type: "match",
+  question: "Which function is used to print output in C?",
+  options: ["scanf()", "print()", "printf()", "output()"],
+  correct: "printf()"
+},
   
  {
-    id: 3,
+    id: 6,
 type: "battle",
 question: "Defeat the CodeWorm by assembling the attack function correctly!",
 
 // Correct blocks (longer but still structured)
-blocks: [
-  "function attack(player, enemy) {",
-  "int dmg = random(5,10);",
-  "if (player.weapon) {",
-  "dmg += player.weapon.power * 2;",
-  "}",
-  "if (Math.random() < 0.2) {",
-  "dmg *= 1.5; // critical hit",
-  "}",
-  "dmg += player.level * 1.5;",
-  "enemy.hp -= dmg;",
-  "return dmg;",
-  "}"
-],
 
-// Partial / alternate phrases (still useful for scoring)
-alternateBlocks: [
-  "function attack(player, enemy) {",
-  "int dmg = random(5,10);",
-  "if (player.weapon) { dmg += player.weapon.power * 2; }",
-  "if (Math.random() < 0.2) { dmg *= 1.5; }",
-  "enemy.hp -= dmg;",
-  "return dmg;"
-],
-
-// Scrambled bank (atomic + junk blocks)
-scrambled: [
-  "function attack(player, enemy) {",
-  "int dmg = random(5,10);",
-  "if (player.weapon) {",
-  "dmg += player.weapon.power * 2;",
-  "}",
-  "if (Math.random() < 0.2) {",
-  "dmg *= 1.5; // critical hit",
-  "}",
-  "dmg += player.level * 1.5;",
-  "enemy.hp -= dmg;",
-  "return dmg;",
-  "}",
-  "for (int i=0; i<10; i++) {}",
-  "console.log('Attack!');",
-  "int x = 0;",
-  "dmg += 1;"
-    ]
   }
   
 ];
-
 export const fourPicsOneWordData = [
   
   {
