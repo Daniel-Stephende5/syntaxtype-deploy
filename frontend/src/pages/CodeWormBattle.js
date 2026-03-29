@@ -7,13 +7,17 @@ export default function CodeWormBattle({ onNext }) {
   const [feedback, setFeedback] = useState("");
   const [flash, setFlash] = useState(false);
   const [shuffledBank, setShuffledBank] = useState([]);
-  const [isPlayerAttacking, setIsPlayerAttacking] = useState(false);
-  const [isEnemyAttacking, setIsEnemyAttacking] = useState(false);
 
-  const playerIdle = "/images/idle.png";
-  const playerAttack = "/images/sprite.gif";
-  const enemyIdle = "/images/enemy_idle.png";
-  const enemyAttack = "/images/enemy2.gif";
+  const [enemyHit, setEnemyHit] = useState(false);
+  const [playerHit, setPlayerHit] = useState(false);
+
+  const playerIdle = "/images/idleedit2.png";
+  const playerAttack = "/images/spriteedit.gif";
+  const enemyIdle = "/images/enemy_idle(1).png";
+  const enemyAttack = "/images/enemyattack.gif";
+
+  const playerDamageImg = "/images/idledamage.png";
+  const enemyDamageImg = "/images/enemy_idle(damage).png";
 
   const [playerSprite, setPlayerSprite] = useState(playerIdle);
   const [enemySprite, setEnemySprite] = useState(enemyIdle);
@@ -40,10 +44,18 @@ export default function CodeWormBattle({ onNext }) {
     "enemy = dmg;",
   ];
 
-  useEffect(() => setShuffledBank([...bank].sort(() => Math.random() - 0.5)), []);
+  useEffect(() => {
+    setShuffledBank([...bank].sort(() => Math.random() - 0.5));
+  }, []);
 
-  const handleAddBlock = (block) => setAssembled((prev) => [...prev, block]);
-  const handleRemoveBlock = (index) => setAssembled((prev) => prev.filter((_, i) => i !== index));
+  const handleAddBlock = (block) => {
+    if (isGameOver()) return;
+    setAssembled((prev) => [...prev, block]);
+  };
+  const handleRemoveBlock = (index) => {
+    if (isGameOver()) return;
+    setAssembled((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const isValidAssembly = (blocks) => {
     let i = 0;
@@ -51,7 +63,10 @@ export default function CodeWormBattle({ onNext }) {
       let matched = false;
       for (let sentence of validSentences) {
         const slice = blocks.slice(i, i + sentence.length);
-        if (slice.length === sentence.length && slice.every((b, idx) => b === sentence[idx])) {
+        if (
+          slice.length === sentence.length &&
+          slice.every((b, idx) => b === sentence[idx])
+        ) {
           matched = true;
           i += sentence.length;
           break;
@@ -62,7 +77,11 @@ export default function CodeWormBattle({ onNext }) {
     return true;
   };
 
+  const isGameOver = () => playerHP <= 0 || enemyHP <= 0;
+
   const handleAttack = async () => {
+    if (isGameOver()) return; // no more actions
+
     if (!assembled.length) {
       setFeedback("❌ No code assembled!");
       return;
@@ -70,17 +89,27 @@ export default function CodeWormBattle({ onNext }) {
 
     const valid = isValidAssembly(assembled);
     let dmg = valid ? assembled.length * 5 : Math.floor(Math.random() * 3) + 1;
-    setFlash(valid);
-    setFeedback(valid ? `⚔️ Valid code! Damage: ${dmg}` : `❌ Code error! Minimal damage: ${dmg}`);
 
-    // --- Player attacks ---
-    setIsPlayerAttacking(true);
+    if (valid) {
+      setFlash(true);
+      setTimeout(() => setFlash(false), 500);
+      setFeedback(`⚔️ Valid code! Damage: ${dmg}`);
+    } else {
+      setFeedback(`❌ Code error! Minimal damage: ${dmg}`);
+    }
+
     setPlayerSprite(playerAttack);
-    await sleep(800);
-    setPlayerSprite(playerIdle);
-    setIsPlayerAttacking(false);
 
-    setEnemyHP((hp) => Math.max(0, hp - dmg));
+    setTimeout(() => {
+      setEnemyHit(true);
+      setEnemyHP((hp) => Math.max(0, hp - dmg));
+      setTimeout(() => setEnemyHit(false), 600);
+    }, 700);
+
+    await sleep(1000);
+    setPlayerSprite(playerIdle);
+
+    // Check enemy defeat
     if (enemyHP - dmg <= 0) {
       setFeedback(`💥 Enemy defeated! Damage dealt: ${dmg}`);
       if (onNext) onNext(dmg);
@@ -89,22 +118,26 @@ export default function CodeWormBattle({ onNext }) {
 
     await sleep(400);
 
-    // --- Enemy retaliates ---
     const enemyDmg =
       assembled.length < 3
         ? Math.floor(Math.random() * 10) + 5
         : Math.floor(Math.random() * 6) + 3;
 
     setFeedback("🐛 Enemy counterattacks!");
-    setIsEnemyAttacking(true);
     setEnemySprite(enemyAttack);
-    await sleep(900);
-    setEnemySprite(enemyIdle);
-    setIsEnemyAttacking(false);
 
-    setPlayerHP((hp) => Math.max(0, hp - enemyDmg));
+    setTimeout(() => {
+      setPlayerHit(true);
+      setPlayerHP((hp) => Math.max(0, hp - enemyDmg));
+      setTimeout(() => setPlayerHit(false), 600);
+    }, 800);
+
+    await sleep(2000);
+    setEnemySprite(enemyIdle);
+
+    // Check player defeat
     if (playerHP - enemyDmg <= 0) {
-      setFeedback("💀 You were defeated!");
+      setFeedback("💀 You were defeated! Game Over.");
       return;
     }
 
@@ -117,7 +150,7 @@ export default function CodeWormBattle({ onNext }) {
       <h2>🐛 CodeWorm Battle</h2>
       <h4>{feedback || "Assemble blocks to attack!"}</h4>
 
-      {/* Battlefield */}
+      {/* BATTLEFIELD */}
       <div
         style={{
           position: "relative",
@@ -130,34 +163,48 @@ export default function CodeWormBattle({ onNext }) {
           overflow: "hidden",
         }}
       >
-        {/* Player */}
-        <div style={{ position: "absolute", left: 50, bottom: 0, textAlign: "center" }}>
-          <img
-            src={playerSprite}
-            alt="player"
-            width={250}
-            height={250}
-            style={{
-              transform: `translateX(${isPlayerAttacking ? 60 : 0}px)`,
-              transition: "transform 0.3s ease",
-            }}
-          />
+        {/* PLAYER */}
+        <div style={{ position: "absolute", bottom: 10, left: "30%", textAlign: "left" }}>
+          <div style={{ position: "relative", width: 250, height: 250 }}>
+            <img src={playerSprite} alt="player" width={250} height={250} />
+            {playerHit && (
+              <img
+                src={playerDamageImg}
+                alt="player damage"
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                  pointerEvents: "none",
+                }}
+              />
+            )}
+          </div>
           <p style={{ color: "white" }}>HP: {playerHP}</p>
         </div>
 
-        {/* Enemy */}
-        <div style={{ position: "absolute", right: 50, bottom: 0, textAlign: "center" }}>
-          <img
-            src={enemySprite}
-            alt="enemy"
-            width={250}
-            height={250}
-            style={{
-              transform: `translateX(${isEnemyAttacking ? -60 : 0}px) scaleX(-1)`,
-              transition: "transform 0.3s ease",
-            }}
-          />
-          <p style={{ color: "white" }}>HP: {enemyHP}</p>
+        {/* ENEMY */}
+        <div style={{ position: "absolute", bottom: 10, right: "25%", textAlign: "right" }}>
+          <div style={{ position: "relative", width: 250, height: 250 }}>
+            <img src={enemySprite} alt="enemy" width={250} height={250} />
+            {enemyHit && (
+              <img
+                src={enemyDamageImg}
+                alt="enemy damage"
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                  pointerEvents: "none",
+                }}
+              />
+            )}
+          </div>
+          <p style={{ color: "white" }}>HP: {Math.round(enemyHP)}</p>
         </div>
       </div>
 
@@ -173,6 +220,8 @@ export default function CodeWormBattle({ onNext }) {
           gap: 6,
           boxShadow: flash ? "0 0 20px 5px #4caf50" : "none",
           transition: "0.2s",
+          opacity: isGameOver() ? 0.6 : 1, // grey out when game over
+          pointerEvents: isGameOver() ? "none" : "auto",
         }}
       >
         {assembled.map((block, i) => (
@@ -186,7 +235,6 @@ export default function CodeWormBattle({ onNext }) {
               fontFamily: "monospace",
               background: "#0c5b0bff",
               color: "white",
-              transition: "0.3s",
             }}
           >
             {block}
@@ -203,6 +251,8 @@ export default function CodeWormBattle({ onNext }) {
           padding: 10,
           background: "#eee",
           borderRadius: 8,
+          opacity: isGameOver() ? 0.6 : 1,
+          pointerEvents: isGameOver() ? "none" : "auto",
         }}
       >
         {shuffledBank.map((block, i) => (
@@ -226,6 +276,7 @@ export default function CodeWormBattle({ onNext }) {
 
       <button
         onClick={handleAttack}
+        disabled={isGameOver()} // disable attack if game over
         style={{
           marginTop: 16,
           padding: "8px 16px",
@@ -233,7 +284,8 @@ export default function CodeWormBattle({ onNext }) {
           color: "#fff",
           borderRadius: 6,
           border: "none",
-          cursor: "pointer",
+          cursor: isGameOver() ? "not-allowed" : "pointer",
+          opacity: isGameOver() ? 0.5 : 1,
         }}
       >
         ⚔️ Attack!
