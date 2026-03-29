@@ -6,151 +6,176 @@ export default function CodeWormBattle({ onNext }) {
   const [assembled, setAssembled] = useState([]);
   const [feedback, setFeedback] = useState("");
   const [flash, setFlash] = useState(false);
-  const [shuffledBank, setShuffledBank] = useState([]);
-
-  const [enemyHit, setEnemyHit] = useState(false);
+  const [playerSprite, setPlayerSprite] = useState("/images/idleedit2.png");
+  const [enemySprite, setEnemySprite] = useState("/images/enemy_idle(1).png");
   const [playerHit, setPlayerHit] = useState(false);
-
-  const playerIdle = "/images/idleedit2.png";
-  const playerAttack = "/images/spriteedit.gif";
-  const enemyIdle = "/images/enemy_idle(1).png";
-  const enemyAttack = "/images/enemyattack.gif";
-
-  const playerDamageImg = "/images/idledamage.png";
-  const enemyDamageImg = "/images/enemy_idle(damage).png";
-
-  const [playerSprite, setPlayerSprite] = useState(playerIdle);
-  const [enemySprite, setEnemySprite] = useState(enemyIdle);
+  const [enemyHit, setEnemyHit] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
 
   const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
-  const validSentences = [
-    ["void attack", "(", "Player player", ",", "Enemy enemy", ")"],
-    ["{", "int dmg = rand() % 6 + 5;"],
-    ["if (player.weapon) {", "dmg += player.weapon.power * 2;", "}"],
-    ["enemy.hp -= dmg;"],
-    ["return dmg;", "}"],
+  // ✅ SHUFFLE FUNCTION (ADDED)
+  const shuffleArray = (array) => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
+  // --- Multiple valid functions ---
+  const validFunctions = [
+    [
+      ["void special attack", "(", "Player player", ",", "Enemy enemy", ")"],
+      ["{"],
+      ["int dmg = rand() % 6 + 5;"],
+      ["if (player.weapon) {", "dmg += player.weapon.power * 2;", "}"],
+      ["enemy.hp -= dmg;"],
+      ["if (enemy.hp <= 0) {", "printf(\"Enemy defeated!\\n\");", "}"],
+      ["return dmg;"],
+      ["}"],
+    ],
+    [
+      ["void doubleStrike", "(", "Player player", ",", "Enemy enemy", ")"],
+      ["{"],
+      ["int dmg1 = rand() % 4 + 3;"],
+      ["int dmg2 = rand() % 4 + 3;"],
+      ["enemy.hp -= (dmg1 + dmg2);"],
+      ["printf(\"Double strike dealt %d damage!\\n\", dmg1 + dmg2);"],
+      ["return;"],
+      ["}"],
+    ],
+    [
+      ["void attack", "(", "Player player", ")"],
+      ["{"],
+      ["int dmgAmount = rand() % 10 + 5;"],
+      ["player.hp += dmgAmount;"],
+      ["printf(\"Player attacks for %d damage\\n\", dmgAmount);"],
+      ["return;"],
+      ["}"],
+    ],
   ];
 
-  const bank = [
-    ...validSentences.flat(),
-    "console.log('Hello')",
-    "int x = 0;",
-    "while(true){}",
-    "player.hp += dmg;",
-    "return;",
-    "if player.weapon",
-    "rand(5,10)",
-    "enemy = dmg;",
-  ];
+  const [currentFunction, setCurrentFunction] = useState([]);
+  const [bank, setBank] = useState([]);
 
+  // ✅ NEW FUNCTION GENERATOR (ADDED)
+  const generateNewFunction = () => {
+    const func = validFunctions[Math.floor(Math.random() * validFunctions.length)];
+    setCurrentFunction(func);
+
+    const shuffledBlocks = shuffleArray(func.flat());
+    setBank(shuffledBlocks);
+
+    setAssembled([]);
+  };
+
+  // ✅ UPDATED useEffect (CHANGED)
   useEffect(() => {
-    setShuffledBank([...bank].sort(() => Math.random() - 0.5));
+    generateNewFunction();
   }, []);
 
   const handleAddBlock = (block) => {
-    if (isGameOver()) return;
+    if (gameOver) return;
     setAssembled((prev) => [...prev, block]);
   };
+
   const handleRemoveBlock = (index) => {
-    if (isGameOver()) return;
+    if (gameOver) return;
     setAssembled((prev) => prev.filter((_, i) => i !== index));
   };
 
   const isValidAssembly = (blocks) => {
-    let i = 0;
-    while (i < blocks.length) {
-      let matched = false;
-      for (let sentence of validSentences) {
-        const slice = blocks.slice(i, i + sentence.length);
-        if (
-          slice.length === sentence.length &&
-          slice.every((b, idx) => b === sentence[idx])
-        ) {
-          matched = true;
-          i += sentence.length;
-          break;
-        }
-      }
-      if (!matched) return false;
-    }
-    return true;
+    const flatFunc = currentFunction.flat();
+    if (blocks.length !== flatFunc.length) return false;
+    return blocks.every((b, i) => b === flatFunc[i]);
   };
 
-  const isGameOver = () => playerHP <= 0 || enemyHP <= 0;
-
   const handleAttack = async () => {
-    if (isGameOver()) return; // no more actions
-
+    if (gameOver) return;
     if (!assembled.length) {
       setFeedback("❌ No code assembled!");
       return;
     }
 
     const valid = isValidAssembly(assembled);
-    let dmg = valid ? assembled.length * 5 : Math.floor(Math.random() * 3) + 1;
 
-    if (valid) {
-      setFlash(true);
-      setTimeout(() => setFlash(false), 500);
-      setFeedback(`⚔️ Valid code! Damage: ${dmg}`);
-    } else {
-      setFeedback(`❌ Code error! Minimal damage: ${dmg}`);
+    if (!valid) {
+      setFeedback("❌ Incorrect function! No attack!");
+      setAssembled([]);
+      return;
     }
 
-    setPlayerSprite(playerAttack);
+    const dmg = assembled.length * 2;
+
+    setFeedback(`⚔️ Function correct! Damage: ${dmg}`);
+    setFlash(true);
+    setTimeout(() => setFlash(false), 500);
+
+    setPlayerSprite("/images/spriteedit.gif");
+
+    const hitTime = 800;
+    const flashDuration = 400;
+    const totalDuration = 1200;
 
     setTimeout(() => {
       setEnemyHit(true);
       setEnemyHP((hp) => Math.max(0, hp - dmg));
-      setTimeout(() => setEnemyHit(false), 600);
-    }, 700);
+    }, hitTime);
 
-    await sleep(1000);
-    setPlayerSprite(playerIdle);
+    setTimeout(() => {
+      setEnemyHit(false);
+    }, hitTime + flashDuration);
 
-    // Check enemy defeat
+    setTimeout(() => {
+      setPlayerSprite("/images/idleedit2.png");
+    }, totalDuration);
+
+    await sleep(totalDuration);
+    setPlayerSprite("/images/idleedit2.png");
+
     if (enemyHP - dmg <= 0) {
       setFeedback(`💥 Enemy defeated! Damage dealt: ${dmg}`);
+      setGameOver(true);
       if (onNext) onNext(dmg);
       return;
     }
 
-    await sleep(400);
-
-    const enemyDmg =
-      assembled.length < 3
-        ? Math.floor(Math.random() * 10) + 5
-        : Math.floor(Math.random() * 6) + 3;
-
+    const enemyDmg = Math.floor(Math.random() * 6) + 3;
     setFeedback("🐛 Enemy counterattacks!");
-    setEnemySprite(enemyAttack);
+    setEnemySprite("/images/enemyattack.gif");
 
-    setTimeout(() => {
-      setPlayerHit(true);
-      setPlayerHP((hp) => Math.max(0, hp - enemyDmg));
-      setTimeout(() => setPlayerHit(false), 600);
-    }, 800);
+    await sleep(900);
 
-    await sleep(2000);
-    setEnemySprite(enemyIdle);
+    setPlayerHit(true);
+    setPlayerHP((hp) => Math.max(0, hp - enemyDmg));
 
-    // Check player defeat
+    await sleep(400);
+    setPlayerHit(false);
+
+    await sleep(700);
+    setEnemySprite("/images/enemy_idle(1).png");
+
     if (playerHP - enemyDmg <= 0) {
-      setFeedback("💀 You were defeated! Game Over.");
+      setFeedback("💀 You were defeated!");
+      setGameOver(true);
       return;
     }
 
     setFeedback(`⚔️ Turn complete! You dealt ${dmg}, enemy dealt ${enemyDmg}.`);
-    setAssembled([]);
+
+    // ✅ GENERATE NEW FUNCTION INSTEAD OF JUST RESET (CHANGED)
+    if (!gameOver) {
+      generateNewFunction();
+    }
   };
 
   return (
     <div style={{ padding: 20 }}>
       <h2>🐛 CodeWorm Battle</h2>
-      <h4>{feedback || "Assemble blocks to attack!"}</h4>
+      <h4>{feedback || "Assemble the function blocks correctly to attack!"}</h4>
 
-      {/* BATTLEFIELD */}
       <div
         style={{
           position: "relative",
@@ -163,52 +188,35 @@ export default function CodeWormBattle({ onNext }) {
           overflow: "hidden",
         }}
       >
-        {/* PLAYER */}
         <div style={{ position: "absolute", bottom: 10, left: "30%", textAlign: "left" }}>
           <div style={{ position: "relative", width: 250, height: 250 }}>
             <img src={playerSprite} alt="player" width={250} height={250} />
             {playerHit && (
               <img
-                src={playerDamageImg}
+                src="/images/idledamage.png"
                 alt="player damage"
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: "100%",
-                  pointerEvents: "none",
-                }}
+                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none" }}
               />
             )}
           </div>
           <p style={{ color: "white" }}>HP: {playerHP}</p>
         </div>
 
-        {/* ENEMY */}
         <div style={{ position: "absolute", bottom: 10, right: "25%", textAlign: "right" }}>
           <div style={{ position: "relative", width: 250, height: 250 }}>
             <img src={enemySprite} alt="enemy" width={250} height={250} />
             {enemyHit && (
               <img
-                src={enemyDamageImg}
+                src="/images/enemy_idle(damage).png"
                 alt="enemy damage"
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: "100%",
-                  pointerEvents: "none",
-                }}
+                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none" }}
               />
             )}
           </div>
-          <p style={{ color: "white" }}>HP: {Math.round(enemyHP)}</p>
+          <p style={{ color: "white" }}>HP: {enemyHP}</p>
         </div>
       </div>
 
-      {/* Assembled code */}
       <div
         style={{
           minHeight: 50,
@@ -220,8 +228,6 @@ export default function CodeWormBattle({ onNext }) {
           gap: 6,
           boxShadow: flash ? "0 0 20px 5px #4caf50" : "none",
           transition: "0.2s",
-          opacity: isGameOver() ? 0.6 : 1, // grey out when game over
-          pointerEvents: isGameOver() ? "none" : "auto",
         }}
       >
         {assembled.map((block, i) => (
@@ -231,7 +237,7 @@ export default function CodeWormBattle({ onNext }) {
             style={{
               padding: "6px 12px",
               borderRadius: 4,
-              cursor: "pointer",
+              cursor: gameOver ? "not-allowed" : "pointer",
               fontFamily: "monospace",
               background: "#0c5b0bff",
               color: "white",
@@ -242,7 +248,6 @@ export default function CodeWormBattle({ onNext }) {
         ))}
       </div>
 
-      {/* Bank */}
       <div
         style={{
           display: "flex",
@@ -251,11 +256,9 @@ export default function CodeWormBattle({ onNext }) {
           padding: 10,
           background: "#eee",
           borderRadius: 8,
-          opacity: isGameOver() ? 0.6 : 1,
-          pointerEvents: isGameOver() ? "none" : "auto",
         }}
       >
-        {shuffledBank.map((block, i) => (
+        {bank.map((block, i) => (
           <div
             key={i}
             onClick={() => handleAddBlock(block)}
@@ -266,7 +269,7 @@ export default function CodeWormBattle({ onNext }) {
               background: "#0c5b0bff",
               color: "white",
               fontFamily: "monospace",
-              cursor: "pointer",
+              cursor: gameOver ? "not-allowed" : "pointer",
             }}
           >
             {block}
@@ -276,7 +279,7 @@ export default function CodeWormBattle({ onNext }) {
 
       <button
         onClick={handleAttack}
-        disabled={isGameOver()} // disable attack if game over
+        disabled={gameOver}
         style={{
           marginTop: 16,
           padding: "8px 16px",
@@ -284,8 +287,7 @@ export default function CodeWormBattle({ onNext }) {
           color: "#fff",
           borderRadius: 6,
           border: "none",
-          cursor: isGameOver() ? "not-allowed" : "pointer",
-          opacity: isGameOver() ? 0.5 : 1,
+          cursor: gameOver ? "not-allowed" : "pointer",
         }}
       >
         ⚔️ Attack!
