@@ -116,10 +116,11 @@ public class ScoreController {
         return ResponseEntity.ok(result);
     }
 
-    // Get all scores for a specific user
-    @GetMapping("/user/{userId}")
+    // Get all scores for the authenticated user (extracted from JWT)
+    @GetMapping("/user/me")
     @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','USER')")
-    public ResponseEntity<List<Score>> getUserScores(@PathVariable Long userId) {
+    public ResponseEntity<List<Score>> getMyScores(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long userId = userDetails.getUser().getId();
         return ResponseEntity.ok(scoreService.getScoresByUserId(userId));
     }
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import '../css/TotalDashboard.css';
 import { API_BASE } from '../utils/api';
-import { getAuthToken, getUserId } from '../utils/JwtUtils';
+import { getAuthToken } from '../utils/JwtUtils';
 
 const PersonalStatsDashboard = () => {
   const [scores, setScores] = useState([]);
@@ -16,14 +16,7 @@ const PersonalStatsDashboard = () => {
       return;
     }
 
-    const userId = getUserId(token);
-    if (!userId) {
-      setError('Unable to get user information.');
-      setLoading(false);
-      return;
-    }
-
-    fetch(`${API_BASE}/api/scores/user/${userId}`, {
+    fetch(`${API_BASE}/api/scores/user/me`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
