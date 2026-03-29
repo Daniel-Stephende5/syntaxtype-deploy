@@ -328,7 +328,7 @@ Plans:
 | 3e - GridGame Scoring Cleanup | Constants, stars | (multiple) | ✅ Complete |
 | 3f - Galaxy Challenge Loading | URL param loading | (1 issue) | ✅ Complete |
 | 4 - Teacher Dashboard | Student progress | TCHR-01 to TCHR-03 | ✅ Complete |
-| 04A - Teacher Dashboard Bugfixes | Fix Phase 4 issues | Student stats feature | ✅ Complete |
+| 04A - Teacher Dashboard Bugfixes | Fix Phase 4 issues | Complete    | 2026-03-29 |
 | 5 - Security & Error Handling | JWT auth | SEC-01 to SEC-06, ERR-01 to ERR-05 | Pending |
 | 5 - Backend Quality & Testing | Quality | BQ-01 to BQ-05, TEST-01 to TEST-03 | Pending |
 | 6 - Backend Modularization | Structure | (restructuring) | Pending |
