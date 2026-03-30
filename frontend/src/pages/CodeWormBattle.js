@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 
 export default function CodeWormBattle({ onNext }) {
   const PLAYER_SIZE = 250;
-  const ENEMY_SIZE = 250;
+  const ENEMY_SIZE = 250
 
   const [enemyHP, setEnemyHP] = useState(50);
   const [playerHP, setPlayerHP] = useState(40);
@@ -46,9 +46,7 @@ export default function CodeWormBattle({ onNext }) {
     const func =
       validFunctions[Math.floor(Math.random() * validFunctions.length)];
     setCurrentFunction(func);
-    setBank(shuffleArray(func.flat()));
-    setAssembled([]);
-  };
+setBank(shuffleArray(func));    setAssembled([]);};
 
   // 🔥 Preload GIF/images
   useEffect(() => {
@@ -90,13 +88,14 @@ export default function CodeWormBattle({ onNext }) {
       setAssembled((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const isValidAssembly = (blocks) => {
-    const flat = currentFunction.flat();
-    return (
-      blocks.length === flat.length &&
-      blocks.every((b, i) => b === flat[i])
-    );
-  };
+const isValidAssembly = (blocks) => {
+  if (blocks.length !== currentFunction.length) return false;
+
+  return blocks.every(
+    (line, i) =>
+      JSON.stringify(line) === JSON.stringify(currentFunction[i])
+  );
+};
 
   const handleAttack = async () => {
     if (gameOver) return;
@@ -220,24 +219,20 @@ export default function CodeWormBattle({ onNext }) {
           marginTop: 10,
         }}
       >
-        {assembled.map((b, i) => (
-          <span
-            key={i}
-            onClick={() => handleRemoveBlock(i)}
-            style={{ marginRight: 6, cursor: "pointer" }}
-          >
-            {b}
-          </span>
-        ))}
+ {bank.map((b, i) => (
+  <button key={i} onClick={() => handleAddBlock(b)}>
+    {b.join(" ")}
+  </button>
+))}
       </div>
 
       {/* Bank */}
       <div style={{ marginTop: 10 }}>
         {bank.map((b, i) => (
-          <button key={i} onClick={() => handleAddBlock(b)}>
-            {b}
-          </button>
-        ))}
+  <button key={i} onClick={() => handleAddBlock(b)}>
+    {b.join(" ")}
+  </button>
+))}
       </div>
 
       <button onClick={handleAttack} disabled={gameOver}>
