@@ -234,9 +234,7 @@ export default function CodeWormBattle({ onNext }) {
           <div style={{ position: "relative", width: 250, height: 250 }}>
             {playerAnimation === "idle" ? (
               <img src={getPlayerSprite()} width={250} height={250} alt="player" />
-            ) : (
-              <video src={getPlayerSprite()} width={250} height={250} autoPlay muted playsInline />
-            )}
+            ) }
             {playerHit && (
               <img
                 src="/images/idledamage.png"
@@ -253,9 +251,7 @@ export default function CodeWormBattle({ onNext }) {
           <div style={{ position: "relative", width: 250, height: 250 }}>
             {enemyAnimation === "idle" ? (
               <img src={getEnemySprite()} width={250} height={250} alt="enemy" />
-            ) : (
-              <video src={getEnemySprite()} width={250} height={250} autoPlay muted playsInline />
-            )}
+            ) }
             {enemyHit && (
               <img
                 src="/images/enemy_idle(damage).png"
