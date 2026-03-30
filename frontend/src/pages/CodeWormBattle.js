@@ -56,13 +56,12 @@ export default function CodeWormBattle({ onNext }) {
   };
 
   const validFunctions = [
-    [
-      ["void special attack", "(", "Player player", ",", "Enemy enemy", ")"],
-      ["{"],
+   [
+      ["void special attack", "(", "Player player", ",", "Enemy enemy", ")", "{"],
       ["int dmg = rand() % 6 + 5;"],
       ["if (player.weapon) {", "dmg += player.weapon.power * 2;", "}"],
       ["enemy.hp -= dmg;"],
-      ["if (enemy.hp <= 0) {", "printf(\"Enemy defeated!\\n\");", "}"],
+      ["if (enemy.hp <= 0) {", "printf(\"Enemy defeated!\\n\"); }"],
       ["return dmg;"],
       ["}"],
     ],
