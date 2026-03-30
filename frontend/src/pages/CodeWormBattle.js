@@ -227,51 +227,129 @@ export default function CodeWormBattle({ onNext }) {
     );
   }
 
-  return (
+    return (
     <div style={{ padding: 20 }}>
       <h2>🐛 CodeWorm Battle</h2>
       <h4>{feedback || "Assemble the function blocks correctly to attack!"}</h4>
 
-      <div style={{
-        position: "relative",
-        width: 650,
-        height: 350,
-        margin: "0 auto 20px",
-        border: "2px solid #333",
-        borderRadius: 12,
-        background: "#414041"
-      }}>
+      <div
+        style={{
+          position: "relative",
+          width: 650,
+          height: 350,
+          margin: "0 auto 20px",
+          border: "2px solid #333",
+          borderRadius: 12,
+          background: "#414041",
+          overflow: "hidden",
+        }}
+      >
         {/* Player */}
-        <div style={{ position: "absolute", bottom: 10, left: "30%" }}>
-          {renderSprite(playerSprite, PLAYER_SIZE)}
+        <div style={{ position: "absolute", bottom: 10, left: "30%", textAlign: "left" }}>
+          <div style={{ position: "relative", width: PLAYER_SIZE, height: PLAYER_SIZE }}>
+            {renderSprite(playerSprite, playerHit, PLAYER_SIZE)}
+            {playerHit && (
+              <img
+                src="/images/idledamage.png"
+                alt="player damage"
+                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none" }}
+              />
+            )}
+          </div>
           <p style={{ color: "white" }}>HP: {playerHP}</p>
         </div>
 
         {/* Enemy */}
-        <div style={{ position: "absolute", bottom: 10, right: "25%" }}>
-          {renderSprite(enemySprite, ENEMY_SIZE)}
+        <div style={{ position: "absolute", bottom: 10, right: "25%", textAlign: "right" }}>
+          <div style={{ position: "relative", width: ENEMY_SIZE, height: ENEMY_SIZE }}>
+            {renderSprite(enemySprite, enemyHit, ENEMY_SIZE)}
+            {enemyHit && (
+              <img
+                src="/images/enemy_idle(damage).png"
+                alt="enemy damage"
+                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none" }}
+              />
+            )}
+          </div>
           <p style={{ color: "white" }}>HP: {enemyHP}</p>
         </div>
       </div>
 
-      {/* Blocks */}
-      <div style={{ minHeight: 50, marginBottom: 16 }}>
-        {assembled.map((b, i) => (
-          <span key={i} onClick={() => handleRemoveBlock(i)}>
-            {b}{" "}
-          </span>
+      {/* Assembled Blocks */}
+      <div
+        style={{
+          minHeight: 50,
+          border: "2px dashed #ccc",
+          padding: 10,
+          marginBottom: 16,
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 6,
+          boxShadow: flash ? "0 0 20px 5px #4caf50" : "none",
+          transition: "0.2s",
+        }}
+      >
+        {assembled.map((block, i) => (
+          <div
+            key={i}
+            onClick={() => handleRemoveBlock(i)}
+            style={{
+              padding: "6px 12px",
+              borderRadius: 4,
+              cursor: gameOver ? "not-allowed" : "pointer",
+              fontFamily: "monospace",
+              background: "#0c5b0bff",
+              color: "white",
+            }}
+          >
+            {block}
+          </div>
         ))}
       </div>
 
-      <div>
-        {bank.map((b, i) => (
-          <button key={i} onClick={() => handleAddBlock(b)}>
-            {b}
-          </button>
+      {/* Bank */}
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 8,
+          padding: 10,
+          background: "#eee",
+          borderRadius: 8,
+        }}
+      >
+        {bank.map((block, i) => (
+          <div
+            key={i}
+            onClick={() => handleAddBlock(block)}
+            style={{
+              padding: "6px 12px",
+              borderRadius: 6,
+              border: "1px solid #333",
+              background: "#0c5b0bff",
+              color: "white",
+              fontFamily: "monospace",
+              cursor: gameOver ? "not-allowed" : "pointer",
+            }}
+          >
+            {block}
+          </div>
         ))}
       </div>
 
-      <button onClick={handleAttack} disabled={gameOver}>
+      <button
+        onClick={handleAttack}
+        disabled={gameOver}
+        style={{
+          marginTop: 16,
+          padding: "8px 16px",
+          background: "#4caf50",
+          color: "#fff",
+          borderRadius: 6,
+          border: "none",
+          cursor: gameOver ? "not-allowed" : "pointer",
+        }}
+      >
         ⚔️ Attack!
       </button>
     </div>
