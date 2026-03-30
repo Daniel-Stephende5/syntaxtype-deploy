@@ -170,7 +170,7 @@ export default function CodeWormBattle({ onNext }) {
     const enemyDmg = Math.floor(Math.random() * 6) + 3;
     setFeedback("🐛 Enemy counterattacks!");
     setEnemyAnimation("attack");
-    await sleep(900);
+    await sleep(1200);
     setEnemyAnimation("idle");
 
     setPlayerHit(true);
