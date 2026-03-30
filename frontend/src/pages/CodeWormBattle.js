@@ -20,11 +20,11 @@ export default function CodeWormBattle({ onNext }) {
   const preloadAssets = async () => {
     const assets = [
       "/images/idleedit2.png",
-      "/images/spriteedit.webm",
+      "/images/spriteedit.gif",
       "/images/idledamage.png",
       "/images/enemy_idle(1).png",
       "/images/enemy_idle(damage).png",
-      "/images/enemyattack.webm",
+      "/images/enemyattack.gif",
     ];
 
     const promises = assets.map((src) => {
