@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 
 export default function CodeWormBattle({ onNext }) {
+  const PLAYER_SIZE = 250; // ✅ consistent size for both PNG and WebM
+  const ENEMY_SIZE = 250;
+
   const [enemyHP, setEnemyHP] = useState(50);
   const [playerHP, setPlayerHP] = useState(40);
   const [assembled, setAssembled] = useState([]);
@@ -14,7 +17,6 @@ export default function CodeWormBattle({ onNext }) {
 
   const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
-  // --- Shuffle function ---
   const shuffleArray = (array) => {
     const shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -24,7 +26,6 @@ export default function CodeWormBattle({ onNext }) {
     return shuffled;
   };
 
-  // --- Valid functions ---
   const validFunctions = [
     [
       ["void special attack", "(", "Player player", ",", "Enemy enemy", ")"],
@@ -60,14 +61,11 @@ export default function CodeWormBattle({ onNext }) {
   const [currentFunction, setCurrentFunction] = useState([]);
   const [bank, setBank] = useState([]);
 
-  // --- Generate a new function ---
   const generateNewFunction = () => {
     const func = validFunctions[Math.floor(Math.random() * validFunctions.length)];
     setCurrentFunction(func);
-
     const shuffledBlocks = shuffleArray(func.flat());
     setBank(shuffledBlocks);
-
     setAssembled([]);
   };
 
@@ -99,6 +97,7 @@ export default function CodeWormBattle({ onNext }) {
     }
 
     const valid = isValidAssembly(assembled);
+
     if (!valid) {
       setFeedback("❌ Incorrect function! No attack!");
       setAssembled([]);
@@ -106,30 +105,31 @@ export default function CodeWormBattle({ onNext }) {
     }
 
     const dmg = assembled.length * 2;
-
-    // --- Player attack sequence ---
     setFeedback(`⚔️ Function correct! Damage: ${dmg}`);
     setFlash(true);
     setTimeout(() => setFlash(false), 500);
 
-    // Force reload GIF for reliable timing
-    setPlayerSprite(`/images/spriteedit.gif?${Date.now()}`);
+    // ✅ Use WebM attack animation
+    setPlayerSprite("/images/spriteedit.gif");
 
+    const hitTime = 800;
+    const flashDuration = 400;
+    const totalDuration = 1200;
     let nextEnemyHP;
 
-    // Enemy takes damage after attack animation
     setTimeout(() => {
       setEnemyHit(true);
       setEnemyHP((hp) => {
         nextEnemyHP = Math.max(0, hp - dmg);
         return nextEnemyHP;
       });
-    }, 800); // Attack hit timing
+    }, hitTime);
 
-    setTimeout(() => setEnemyHit(false), 1200); // Flash duration
-    setTimeout(() => setPlayerSprite("/images/idleedit2.png"), 1200);
+    setTimeout(() => setEnemyHit(false), hitTime + flashDuration);
+    setTimeout(() => setPlayerSprite("/images/idleedit2.png"), totalDuration);
 
-    await sleep(1200);
+    await sleep(totalDuration);
+    setPlayerSprite("/images/idleedit2.png");
 
     if (nextEnemyHP <= 0) {
       setFeedback(`💥 Enemy defeated! Damage dealt: ${dmg}`);
@@ -138,10 +138,10 @@ export default function CodeWormBattle({ onNext }) {
       return;
     }
 
-    // --- Enemy counterattack ---
+    // Enemy turn
     const enemyDmg = Math.floor(Math.random() * 6) + 3;
     setFeedback("🐛 Enemy counterattacks!");
-    setEnemySprite(`/images/enemyattack.gif?${Date.now()}`);
+    setEnemySprite("/images/enemyattack.webm");
 
     await sleep(900);
 
@@ -152,9 +152,8 @@ export default function CodeWormBattle({ onNext }) {
       return nextPlayerHP;
     });
 
-    await sleep(400); // Player damage flash duration
+    await sleep(400);
     setPlayerHit(false);
-
     await sleep(700);
     setEnemySprite("/images/enemy_idle(1).png");
 
@@ -166,8 +165,29 @@ export default function CodeWormBattle({ onNext }) {
 
     setFeedback(`⚔️ Turn complete! You dealt ${dmg}, enemy dealt ${enemyDmg}.`);
 
-    // --- Next function ---
-    if (!gameOver) generateNewFunction();
+    if (!gameOver) {
+      generateNewFunction();
+    }
+  };
+
+  // ✅ Unified video renderer function
+  const renderSprite = (src, hit, size) => {
+    const ext = src.split(".").pop();
+    if (ext === "webm") {
+      return (
+        <video
+          src={src}
+          width={size}
+          height={size}
+          autoPlay
+          muted
+          playsInline
+          style={{ display: "block" }}
+        />
+      );
+    } else {
+      return <img src={src} width={size} height={size} alt="sprite" />;
+    }
   };
 
   return (
@@ -189,8 +209,8 @@ export default function CodeWormBattle({ onNext }) {
       >
         {/* Player */}
         <div style={{ position: "absolute", bottom: 10, left: "30%", textAlign: "left" }}>
-          <div style={{ position: "relative", width: 250, height: 250 }}>
-            <img src={playerSprite} alt="player" width={250} height={250} />
+          <div style={{ position: "relative", width: PLAYER_SIZE, height: PLAYER_SIZE }}>
+            {renderSprite(playerSprite, playerHit, PLAYER_SIZE)}
             {playerHit && (
               <img
                 src="/images/idledamage.png"
@@ -204,8 +224,8 @@ export default function CodeWormBattle({ onNext }) {
 
         {/* Enemy */}
         <div style={{ position: "absolute", bottom: 10, right: "25%", textAlign: "right" }}>
-          <div style={{ position: "relative", width: 250, height: 250 }}>
-            <img src={enemySprite} alt="enemy" width={250} height={250} />
+          <div style={{ position: "relative", width: ENEMY_SIZE, height: ENEMY_SIZE }}>
+            {renderSprite(enemySprite, enemyHit, ENEMY_SIZE)}
             {enemyHit && (
               <img
                 src="/images/enemy_idle(damage).png"
@@ -218,7 +238,7 @@ export default function CodeWormBattle({ onNext }) {
         </div>
       </div>
 
-      {/* Assembled blocks */}
+      {/* Assembled Blocks */}
       <div
         style={{
           minHeight: 50,
@@ -250,7 +270,7 @@ export default function CodeWormBattle({ onNext }) {
         ))}
       </div>
 
-      {/* Bank of blocks */}
+      {/* Bank */}
       <div
         style={{
           display: "flex",
