@@ -2,13 +2,12 @@ import React, { useState, useEffect } from "react";
 
 export default function CodeWormBattle({ onNext }) {
   const PLAYER_SIZE = 250;
-  const ENEMY_SIZE = 250
+  const ENEMY_SIZE = 250;
 
   const [enemyHP, setEnemyHP] = useState(50);
   const [playerHP, setPlayerHP] = useState(40);
   const [assembled, setAssembled] = useState([]);
   const [feedback, setFeedback] = useState("");
-  const [flash, setFlash] = useState(false);
   const [playerSprite, setPlayerSprite] = useState("/images/idleedit2.png");
   const [enemySprite, setEnemySprite] = useState("/images/enemy_idle(1).png");
   const [playerHit, setPlayerHit] = useState(false);
@@ -18,6 +17,7 @@ export default function CodeWormBattle({ onNext }) {
 
   const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
+  // ✅ shuffle lines (NOT tokens)
   const shuffleArray = (array) => {
     const arr = [...array];
     for (let i = arr.length - 1; i > 0; i--) {
@@ -45,17 +45,20 @@ export default function CodeWormBattle({ onNext }) {
   const generateNewFunction = () => {
     const func =
       validFunctions[Math.floor(Math.random() * validFunctions.length)];
-    setCurrentFunction(func);
-setBank(shuffleArray(func));    setAssembled([]);};
 
-  // 🔥 Preload GIF/images
+    setCurrentFunction(func);
+    setBank(shuffleArray(func)); // ✅ shuffle LINES
+    setAssembled([]);
+  };
+
+  // ✅ preload
   useEffect(() => {
     const preload = async () => {
       const assets = [
-        "/images/spriteedit.gif",        // player attack
-        "/images/idleedit2.png",         // player idle
-        "/images/enemy_idle(1).png",     // enemy idle
-        "/images/enemy_attack.gif",      // enemy attack GIF (make sure exists)
+        "/images/spriteedit.gif",
+        "/images/idleedit2.png",
+        "/images/enemy_idle(1).png",
+        "/images/enemy_attack.gif",
         "/images/idledamage.png",
         "/images/enemy_idle(damage).png",
       ];
@@ -80,22 +83,26 @@ setBank(shuffleArray(func));    setAssembled([]);};
   }, []);
 
   const handleAddBlock = (block) => {
-    if (!gameOver) setAssembled((prev) => [...prev, block]);
+    if (!gameOver) {
+      setAssembled((prev) => [...prev, block]);
+    }
   };
 
   const handleRemoveBlock = (index) => {
-    if (!gameOver)
+    if (!gameOver) {
       setAssembled((prev) => prev.filter((_, i) => i !== index));
+    }
   };
 
-const isValidAssembly = (blocks) => {
-  if (blocks.length !== currentFunction.length) return false;
+  // ✅ correct validation (line by line)
+  const isValidAssembly = (blocks) => {
+    if (blocks.length !== currentFunction.length) return false;
 
-  return blocks.every(
-    (line, i) =>
-      JSON.stringify(line) === JSON.stringify(currentFunction[i])
-  );
-};
+    return blocks.every(
+      (line, i) =>
+        JSON.stringify(line) === JSON.stringify(currentFunction[i])
+    );
+  };
 
   const handleAttack = async () => {
     if (gameOver) return;
@@ -113,12 +120,9 @@ const isValidAssembly = (blocks) => {
 
     const dmg = assembled.length * 2;
     setFeedback(`⚔️ Correct! Damage: ${dmg}`);
-    setFlash(true);
-    setTimeout(() => setFlash(false), 400);
 
-    // 🟢 PLAYER ATTACK (GIF)
+    // 🟢 Player attack
     setPlayerSprite("/images/spriteedit.gif");
-
     await sleep(700);
 
     setEnemyHit(true);
@@ -136,7 +140,7 @@ const isValidAssembly = (blocks) => {
       return;
     }
 
-    // 🔴 ENEMY ATTACK (GIF)
+    // 🔴 Enemy attack
     const enemyDmg = Math.floor(Math.random() * 6) + 3;
     setEnemySprite("/images/enemy_attack.gif");
     setFeedback("🐛 Enemy attacks!");
@@ -210,29 +214,44 @@ const isValidAssembly = (blocks) => {
         </div>
       </div>
 
-      {/* Assembled */}
+      {/* ✅ Assembled */}
       <div
         style={{
-          minHeight: 50,
+          minHeight: 60,
           border: "2px dashed #ccc",
           padding: 10,
           marginTop: 10,
         }}
       >
- {bank.map((b, i) => (
-  <button key={i} onClick={() => handleAddBlock(b)}>
-    {b.join(" ")}
-  </button>
-))}
+        {assembled.map((line, i) => (
+          <div
+            key={i}
+            onClick={() => handleRemoveBlock(i)}
+            style={{
+              marginBottom: 4,
+              cursor: "pointer",
+              background: "#0c5b0b",
+              color: "#fff",
+              padding: 6,
+              borderRadius: 4,
+            }}
+          >
+            {line.join(" ")}
+          </div>
+        ))}
       </div>
 
-      {/* Bank */}
+      {/* ✅ Bank */}
       <div style={{ marginTop: 10 }}>
-        {bank.map((b, i) => (
-  <button key={i} onClick={() => handleAddBlock(b)}>
-    {b.join(" ")}
-  </button>
-))}
+        {bank.map((line, i) => (
+          <button
+            key={i}
+            onClick={() => handleAddBlock(line)}
+            style={{ display: "block", marginBottom: 5 }}
+          >
+            {line.join(" ")}
+          </button>
+        ))}
       </div>
 
       <button onClick={handleAttack} disabled={gameOver}>
