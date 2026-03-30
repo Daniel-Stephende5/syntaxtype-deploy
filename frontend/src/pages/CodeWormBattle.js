@@ -195,12 +195,12 @@ export default function CodeWormBattle({ onNext }) {
   const getPlayerSprite = () =>
     playerAnimation === "idle"
       ? "/images/idleedit2.png"
-      : "/images/spriteedit.webm";
+      : "/images/spriteedit.gif";
 
   const getEnemySprite = () =>
     enemyAnimation === "idle"
       ? "/images/enemy_idle(1).png"
-      : "/images/enemyattack.webm";
+      : "/images/enemyattack.gif";
 
   // ✅ LOADING SCREEN
   if (loading) {
