@@ -1,11 +1,6 @@
 import React, { useState, useEffect } from "react";
 
 export default function CodeWormBattle({ onNext }) {
-  const PLAYER_SIZE = 250;
-  const ENEMY_SIZE = 250;
-
-  const [loading, setLoading] = useState(true); // ✅ NEW
-
   const [enemyHP, setEnemyHP] = useState(50);
   const [playerHP, setPlayerHP] = useState(40);
   const [assembled, setAssembled] = useState([]);
@@ -19,36 +14,7 @@ export default function CodeWormBattle({ onNext }) {
 
   const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
-  // ✅ PRELOAD ASSETS
-  const preloadAssets = async () => {
-    const assets = [
-      "/images/idleedit2.png",
-      "/images/spriteedit.gif",
-      "/images/idledamage.png",
-      "/images/enemy_idle(1).png",
-      "/images/enemy_idle(damage).png",
-      "/images/enemyattack.gif",
-    ];
-
-    const promises = assets.map((src) => {
-      return new Promise((resolve) => {
-        const ext = src.split(".").pop();
-
-        if (ext === "webm") {
-          const video = document.createElement("video");
-          video.src = src;
-          video.onloadeddata = resolve;
-        } else {
-          const img = new Image();
-          img.src = src;
-          img.onload = resolve;
-        }
-      });
-    });
-
-    await Promise.all(promises);
-  };
-
+  // --- Shuffle function ---
   const shuffleArray = (array) => {
     const shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -58,6 +24,7 @@ export default function CodeWormBattle({ onNext }) {
     return shuffled;
   };
 
+  // --- Valid functions ---
   const validFunctions = [
     [
       ["void special attack", "(", "Player player", ",", "Enemy enemy", ")"],
@@ -93,105 +60,99 @@ export default function CodeWormBattle({ onNext }) {
   const [currentFunction, setCurrentFunction] = useState([]);
   const [bank, setBank] = useState([]);
 
+  // --- Generate a new function ---
   const generateNewFunction = () => {
     const func = validFunctions[Math.floor(Math.random() * validFunctions.length)];
     setCurrentFunction(func);
-    setBank(shuffleArray(func.flat()));
+
+    const shuffledBlocks = shuffleArray(func.flat());
+    setBank(shuffledBlocks);
+
     setAssembled([]);
   };
 
-  // ✅ INIT WITH LOADING
   useEffect(() => {
-    const init = async () => {
-      await Promise.all([
-        preloadAssets(),
-        new Promise((res) => setTimeout(res, 500)), // smooth loading feel
-      ]);
-
-      generateNewFunction();
-      setLoading(false);
-    };
-
-    init();
+    generateNewFunction();
   }, []);
 
   const handleAddBlock = (block) => {
-    if (!gameOver) setAssembled((prev) => [...prev, block]);
+    if (gameOver) return;
+    setAssembled((prev) => [...prev, block]);
   };
 
   const handleRemoveBlock = (index) => {
-    if (!gameOver) {
-      setAssembled((prev) => prev.filter((_, i) => i !== index));
-    }
+    if (gameOver) return;
+    setAssembled((prev) => prev.filter((_, i) => i !== index));
   };
 
   const isValidAssembly = (blocks) => {
     const flatFunc = currentFunction.flat();
-    return blocks.length === flatFunc.length &&
-           blocks.every((b, i) => b === flatFunc[i]);
+    if (blocks.length !== flatFunc.length) return false;
+    return blocks.every((b, i) => b === flatFunc[i]);
   };
 
   const handleAttack = async () => {
     if (gameOver) return;
-
     if (!assembled.length) {
       setFeedback("❌ No code assembled!");
       return;
     }
 
-    if (!isValidAssembly(assembled)) {
+    const valid = isValidAssembly(assembled);
+    if (!valid) {
       setFeedback("❌ Incorrect function! No attack!");
       setAssembled([]);
       return;
     }
 
     const dmg = assembled.length * 2;
+
+    // --- Player attack sequence ---
     setFeedback(`⚔️ Function correct! Damage: ${dmg}`);
     setFlash(true);
     setTimeout(() => setFlash(false), 500);
 
-    setPlayerSprite("/images/spriteedit.gif");
+    // Force reload GIF for reliable timing
+    setPlayerSprite(`/images/spriteedit.gif?${Date.now()}`);
 
-    const hitTime = 800;
-    const totalDuration = 1200;
     let nextEnemyHP;
 
+    // Enemy takes damage after attack animation
     setTimeout(() => {
       setEnemyHit(true);
       setEnemyHP((hp) => {
         nextEnemyHP = Math.max(0, hp - dmg);
         return nextEnemyHP;
       });
-    }, hitTime);
+    }, 800); // Attack hit timing
 
-    setTimeout(() => setEnemyHit(false), hitTime + 400);
-    setTimeout(() => setPlayerSprite("/images/idleedit2.png"), totalDuration);
+    setTimeout(() => setEnemyHit(false), 1200); // Flash duration
+    setTimeout(() => setPlayerSprite("/images/idleedit2.png"), 1200);
 
-    await sleep(totalDuration);
+    await sleep(1200);
 
     if (nextEnemyHP <= 0) {
-      setFeedback(`💥 Enemy defeated!`);
+      setFeedback(`💥 Enemy defeated! Damage dealt: ${dmg}`);
       setGameOver(true);
-      onNext?.(dmg);
+      if (onNext) onNext(dmg);
       return;
     }
 
-    // Enemy turn
+    // --- Enemy counterattack ---
     const enemyDmg = Math.floor(Math.random() * 6) + 3;
     setFeedback("🐛 Enemy counterattacks!");
-    setEnemySprite("/images/enemyattack.gif");
+    setEnemySprite(`/images/enemyattack.gif?${Date.now()}`);
 
     await sleep(900);
 
     setPlayerHit(true);
     let nextPlayerHP;
-
     setPlayerHP((hp) => {
       nextPlayerHP = Math.max(0, hp - enemyDmg);
       return nextPlayerHP;
     });
 
-    await sleep(400);
+    await sleep(400); // Player damage flash duration
     setPlayerHit(false);
 
     await sleep(700);
@@ -203,31 +164,13 @@ export default function CodeWormBattle({ onNext }) {
       return;
     }
 
-    setFeedback(`⚔️ Turn complete!`);
-    generateNewFunction();
+    setFeedback(`⚔️ Turn complete! You dealt ${dmg}, enemy dealt ${enemyDmg}.`);
+
+    // --- Next function ---
+    if (!gameOver) generateNewFunction();
   };
 
-  const renderSprite = (src, size) => {
-    const ext = src.split(".").pop();
-
-    return ext === "webm" ? (
-      <video src={src} width={size} height={size} autoPlay muted playsInline />
-    ) : (
-      <img src={src} width={size} height={size} alt="sprite" />
-    );
-  };
-
-  // ✅ LOADING SCREEN
-  if (loading) {
-    return (
-      <div style={{ textAlign: "center", padding: 50 }}>
-        <h2>🐛 Loading Battle...</h2>
-        <p>Preparing assets...</p>
-      </div>
-    );
-  }
-
-    return (
+  return (
     <div style={{ padding: 20 }}>
       <h2>🐛 CodeWorm Battle</h2>
       <h4>{feedback || "Assemble the function blocks correctly to attack!"}</h4>
@@ -246,8 +189,8 @@ export default function CodeWormBattle({ onNext }) {
       >
         {/* Player */}
         <div style={{ position: "absolute", bottom: 10, left: "30%", textAlign: "left" }}>
-          <div style={{ position: "relative", width: PLAYER_SIZE, height: PLAYER_SIZE }}>
-            {renderSprite(playerSprite, playerHit, PLAYER_SIZE)}
+          <div style={{ position: "relative", width: 250, height: 250 }}>
+            <img src={playerSprite} alt="player" width={250} height={250} />
             {playerHit && (
               <img
                 src="/images/idledamage.png"
@@ -261,8 +204,8 @@ export default function CodeWormBattle({ onNext }) {
 
         {/* Enemy */}
         <div style={{ position: "absolute", bottom: 10, right: "25%", textAlign: "right" }}>
-          <div style={{ position: "relative", width: ENEMY_SIZE, height: ENEMY_SIZE }}>
-            {renderSprite(enemySprite, enemyHit, ENEMY_SIZE)}
+          <div style={{ position: "relative", width: 250, height: 250 }}>
+            <img src={enemySprite} alt="enemy" width={250} height={250} />
             {enemyHit && (
               <img
                 src="/images/enemy_idle(damage).png"
@@ -275,7 +218,7 @@ export default function CodeWormBattle({ onNext }) {
         </div>
       </div>
 
-      {/* Assembled Blocks */}
+      {/* Assembled blocks */}
       <div
         style={{
           minHeight: 50,
@@ -307,7 +250,7 @@ export default function CodeWormBattle({ onNext }) {
         ))}
       </div>
 
-      {/* Bank */}
+      {/* Bank of blocks */}
       <div
         style={{
           display: "flex",
