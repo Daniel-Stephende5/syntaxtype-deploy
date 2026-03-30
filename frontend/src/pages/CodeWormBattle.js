@@ -270,7 +270,82 @@ export default function CodeWormBattle({ onNext }) {
 
       {/* (Your block UI unchanged) */}
 
-      {/* ... keep everything else exactly the same ... */}
+ <div
+        style={{
+          minHeight: 50,
+          border: "2px dashed #ccc",
+          padding: 10,
+          marginBottom: 16,
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 6,
+          boxShadow: flash ? "0 0 20px 5px #4caf50" : "none",
+          transition: "0.2s",
+        }}
+      >
+        {assembled.map((block, i) => (
+          <div
+            key={i}
+            onClick={() => handleRemoveBlock(i)}
+            style={{
+              padding: "6px 12px",
+              borderRadius: 4,
+              cursor: gameOver ? "not-allowed" : "pointer",
+              fontFamily: "monospace",
+              background: "#0c5b0bff",
+              color: "white",
+            }}
+          >
+            {block}
+          </div>
+        ))}
+      </div>
+
+      {/* Bank */}
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 8,
+          padding: 10,
+          background: "#eee",
+          borderRadius: 8,
+        }}
+      >
+        {bank.map((block, i) => (
+          <div
+            key={i}
+            onClick={() => handleAddBlock(block)}
+            style={{
+              padding: "6px 12px",
+              borderRadius: 6,
+              border: "1px solid #333",
+              background: "#0c5b0bff",
+              color: "white",
+              fontFamily: "monospace",
+              cursor: gameOver ? "not-allowed" : "pointer",
+            }}
+          >
+            {block}
+          </div>
+        ))}
+      </div>
+
+      <button
+        onClick={handleAttack}
+        disabled={gameOver}
+        style={{
+          marginTop: 16,
+          padding: "8px 16px",
+          background: "#4caf50",
+          color: "#fff",
+          borderRadius: 6,
+          border: "none",
+          cursor: gameOver ? "not-allowed" : "pointer",
+        }}
+      >
+        ⚔️ Attack!
+      </button>
     </div>
   );
 }
