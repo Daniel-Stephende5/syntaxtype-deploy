@@ -120,7 +120,7 @@ public class ScoreController {
     @GetMapping("/user/me")
     @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','USER')")
     public ResponseEntity<List<Score>> getMyScores(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        Long userId = userDetails.getUser().getId();
+        Long userId = userDetails.getUser().getUserId();
         return ResponseEntity.ok(scoreService.getScoresByUserId(userId));
     }
 

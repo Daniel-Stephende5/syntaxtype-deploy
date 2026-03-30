@@ -9,6 +9,7 @@ import java.util.List;
 
 public interface ScoringRepository extends JpaRepository<Scoring, Long> {
     Optional<Scoring> findByUser(User user);
+    List<Scoring> findScoresByUser(User user);
     List<Scoring> findByTotalScore(Integer totalScore);
     List<Scoring> findByCorrectAnswers(Integer correctAnswers);
     List<Scoring> findByWrongAnswers(Integer wrongAnswers);

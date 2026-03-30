@@ -261,7 +261,7 @@ public class TeacherService {
         }
         
         // Get recent activity from Scoring table (last 10)
-        List<com.syntaxtype.demo.Entity.Statistics.Scoring> recentScoring = scoringRepository.findByUser(student);
+        List<com.syntaxtype.demo.Entity.Statistics.Scoring> recentScoring = scoringRepository.findScoresByUser(student);
         List<StudentProgressDTO.RecentActivity> recentActivity = recentScoring.stream()
                 .limit(10)
                 .map(s -> StudentProgressDTO.RecentActivity.builder()
