@@ -27,7 +27,7 @@ export default function CodeWormBattle({ onNext }) {
       "/images/idledamage.png",
       "/images/enemy_idle(1).png",
       "/images/enemy_idle(damage).png",
-      "/images/enemyattack.webm",
+      "/images/enemyattack.gif",
     ];
 
     const promises = assets.map((src) => {
