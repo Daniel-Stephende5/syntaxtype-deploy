@@ -179,7 +179,7 @@ export default function CodeWormBattle({ onNext }) {
     // Enemy turn
     const enemyDmg = Math.floor(Math.random() * 6) + 3;
     setFeedback("🐛 Enemy counterattacks!");
-    setEnemySprite("/images/enemyattack.webm");
+    setEnemySprite("/images/enemyattack.gif");
 
     await sleep(900);
 
