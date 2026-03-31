@@ -132,15 +132,16 @@ export default function CodeWormBattle({ onNext }) {
       <h4>{feedback || "Assemble blocks to attack!"}</h4>
 
       {/* Player / Enemy display */}
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
-        <div style={{ textAlign: "left" }}>
-          <img src={playerSprite} alt="player" width={250} height={250} />
-          <p>Player HP: {playerHP}</p>
-        </div>
-        <div style={{ textAlign: "center" }}>
-          <img src={enemySprite} alt="enemy" width={250} height={250} />
-          <p>Enemy HP: {Math.round(enemyHP)}</p>
-        </div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+    <img src={playerSprite} alt="player" width={250} height={250} />
+    <p style={{ marginTop: 8 }}>Player HP: {playerHP}</p>
+  </div>
+
+  {/* ENEMY */}
+  <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+    <img src={enemySprite} alt="enemy" width={250} height={250} />
+    <p style={{ marginTop: 8 }}>Enemy HP: {Math.round(enemyHP)}</p>
+  </div>
       </div>
 
       {/* Assembled code */}
