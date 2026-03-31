@@ -134,13 +134,13 @@ export default function CodeWormBattle({ onNext }) {
       {/* Player / Enemy display */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
     <img src={playerSprite} alt="player" width={250} height={250} />
-    <p style={{ marginTop: 8 }}>Player HP: {playerHP}</p>
+    <p style={{ marginTop: 8 , textAlign: "left"}}>Player HP: {playerHP}</p>
   </div>
 
   {/* ENEMY */}
   <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
     <img src={enemySprite} alt="enemy" width={250} height={250} />
-    <p style={{ marginTop: 8 }}>Enemy HP: {Math.round(enemyHP)}</p>
+    <p style={{ marginTop: 8, textAlign: "right" }}>Enemy HP: {Math.round(enemyHP)}</p>
   </div>
       </div>
 
