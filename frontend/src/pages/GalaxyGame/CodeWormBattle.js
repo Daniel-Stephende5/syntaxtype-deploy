@@ -125,7 +125,43 @@ export default function CodeWormBattle({ onNext }) {
     );
     setAssembled([]);
   };
+  const HPBar = ({ hp, maxHp, label }) => {
+  const percent = Math.max(0, (hp / maxHp) * 100);
+const HPBar = ({ hp, maxHp, label }) => {
+  const percent = Math.max(0, (hp / maxHp) * 100);
 
+  return (
+    <div style={{ width: 220 }}>
+      <div style={{ fontSize: 14, marginBottom: 4 }}>
+        {label}: {Math.round(hp)}
+      </div>
+
+      <div
+        style={{
+          width: "100%",
+          height: 14,
+          background: "#444",
+          borderRadius: 6,
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            width: `${percent}%`,
+            height: "100%",
+            background:
+              percent > 60
+                ? "#4caf50"
+                : percent > 30
+                ? "#ff9800"
+                : "#f44336",
+            transition: "width 0.3s ease",
+          }}
+        />
+      </div>
+    </div>
+  );
+};
   return (
   <div style={{ padding: 20 }}>
     <h2>🐛 CodeWorm Battle</h2>
@@ -142,19 +178,45 @@ export default function CodeWormBattle({ onNext }) {
       }}
     >
       {/* PLAYER */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-        <img src={playerSprite} alt="player" width={250} height={250} />
-        <p style={{ marginTop: 10, marginBottom: 0 }}>Player HP: {playerHP}</p>
+    <div
+        style={{
+          width: 260,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 10,
+        }}
+      >
+        <HPBar hp={playerHP} maxHp={40} label="Player" />
+
+        <img
+          src={playerSprite}
+          alt="player"
+          width={250}
+          height={250}
+        />
       </div>
 
       {/* ENEMY */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-        <img src={enemySprite} alt="enemy" width={250} height={250} />
-        <p style={{ marginTop: 10, marginBottom: 0 }}>
-          Enemy HP: {Math.round(enemyHP)}
-        </p>
+      <div
+        style={{
+          width: 260,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 10,
+        }}
+      >
+        <HPBar hp={enemyHP} maxHp={50} label="Enemy" />
+
+        <img
+          src={enemySprite}
+          alt="enemy"
+          width={250}
+          height={250}
+        />
       </div>
-    </div>
+            </div>
 
     {/* Assembled code */}
     <div
