@@ -133,7 +133,7 @@ export default function CodeWormBattle({ onNext }) {
 
       {/* Player / Enemy display */}
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
-        <div style={{ textAlign: "center" }}>
+        <div style={{ textAlign: "left" }}>
           <img src={playerSprite} alt="player" width={250} height={250} />
           <p>Player HP: {playerHP}</p>
         </div>
