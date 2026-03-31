@@ -127,8 +127,7 @@ export default function CodeWormBattle({ onNext }) {
   };
   const HPBar = ({ hp, maxHp, label }) => {
   const percent = Math.max(0, (hp / maxHp) * 100);
-const HPBar = ({ hp, maxHp, label }) => {
-  const percent = Math.max(0, (hp / maxHp) * 100);
+
 
   return (
     <div style={{ width: 220 }}>
