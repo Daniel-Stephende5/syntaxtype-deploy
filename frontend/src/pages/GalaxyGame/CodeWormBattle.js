@@ -130,20 +130,28 @@ export default function CodeWormBattle({ onNext }) {
     <div style={{ padding: 20 }}>
       <h2>🐛 CodeWorm Battle</h2>
       <h4>{feedback || "Assemble blocks to attack!"}</h4>
-
+<div
+  style={{
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "flex-end",
+    gap: 80, // ✅ space between player & enemy
+    marginBottom: 20,
+  }}
+>
       {/* Player / Enemy display */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
     <img src={playerSprite} alt="player" width={250} height={250} />
-    <p style={{ marginTop: 8 , textAlign: "left"}}>Player HP: {playerHP}</p>
+    <p style={{ marginTop: 8 }}>Player HP: {playerHP}</p>
   </div>
 
   {/* ENEMY */}
   <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
     <img src={enemySprite} alt="enemy" width={250} height={250} />
-    <p style={{ marginTop: 8, textAlign: "right" }}>Enemy HP: {Math.round(enemyHP)}</p>
+    <p style={{ marginTop: 8}}>Enemy HP: {Math.round(enemyHP)}</p>
   </div>
       </div>
-
+    </div>
       {/* Assembled code */}
       <div
         style={{
