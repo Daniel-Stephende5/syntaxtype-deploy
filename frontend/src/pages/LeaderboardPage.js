@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { apiUrl } from "../utils/api";
 import { getAuthToken, setAuthToken } from "../utils/AuthUtils";
+import { useLeaderboardRefresh } from "../hooks/useLeaderboardRefresh";
 import {
   Box,
   Typography,
@@ -29,7 +30,9 @@ import {
   Container,
   AppBar,
   Toolbar,
+  IconButton,
 } from "@mui/material";
+import RefreshIcon from "@mui/icons-material/Refresh";
 
 const GAME_OPTIONS = [
   { value: "", label: "All Games" },
@@ -66,22 +69,6 @@ const LeaderboardPage = () => {
   const metricTimeoutRef = React.useRef(null);
   const recentTimeoutRef = React.useRef(null);
 
-  // Decode JWT to get current username
-  const decodeCurrentUser = useCallback(() => {
-    const token = getAuthToken();
-    if (token) {
-      try {
-        const decoded = jwtDecode(token);
-        setCurrentUser(decoded.sub || decoded.username || null);
-      } catch (err) {
-        console.error("Failed to decode JWT:", err);
-        setCurrentUser(null);
-      }
-    } else {
-      setCurrentUser(null);
-    }
-  }, []);
-
   // Fetch leaderboard data
   const fetchLeaderboard = useCallback(async () => {
     setLoading(true);
@@ -111,6 +98,19 @@ const LeaderboardPage = () => {
       setLoading(false);
     }
   }, [selectedGame, selectedMetric, bestRecent]);
+
+  // Use the shared refresh hook
+  const { 
+    lastUpdated, 
+    autoRefresh, 
+    isRefreshing, 
+    handleRefresh, 
+    toggleAutoRefresh,
+    formatLastUpdated 
+  } = useLeaderboardRefresh(fetchLeaderboard, {
+    intervalMs: 30000,
+    autoRefreshEnabled: true
+  });
 
   // Initial load and auth setup
   useEffect(() => {
@@ -166,11 +166,6 @@ const LeaderboardPage = () => {
   // Handle game filter change
   const handleGameChange = (event) => {
     setSelectedGame(event.target.value);
-  };
-
-  // Manual refresh
-  const handleRefresh = () => {
-    fetchLeaderboard();
   };
 
   // Format date to readable string
@@ -322,15 +317,42 @@ const LeaderboardPage = () => {
             </Typography>
           </Box>
 
-          {/* Refresh Button */}
-          <Button
-            variant="outlined"
-            onClick={handleRefresh}
-            disabled={loading}
-            size="small"
-          >
-            Refresh
-          </Button>
+          {/* Auto-refresh Toggle */}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={autoRefresh}
+                onChange={toggleAutoRefresh}
+                color="primary"
+                size="small"
+              />
+            }
+            label={
+              <Typography variant="body2" color="text.secondary">
+                Auto-refresh
+              </Typography>
+            }
+          />
+
+          {/* Refresh Button with Icon */}
+          <Tooltip title="Refresh leaderboard">
+            <span>
+              <IconButton
+                onClick={handleRefresh}
+                disabled={loading || isRefreshing}
+                color="primary"
+              >
+                <RefreshIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
+
+          {/* Last Updated Timestamp */}
+          {lastUpdated && (
+            <Typography variant="caption" color="text.secondary">
+              Updated: {formatLastUpdated()}
+            </Typography>
+          )}
         </Box>
 
         {/* Loading State */}
@@ -427,6 +449,31 @@ const LeaderboardPage = () => {
               </TableBody>
             </Table>
           </TableContainer>
+        )}
+
+        {/* Bottom Refresh Button */}
+        {!loading && !error && entries.length > 0 && (
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 2, gap: 2, alignItems: "center" }}>
+            <Tooltip title="Refresh leaderboard">
+              <span>
+                <IconButton
+                  onClick={handleRefresh}
+                  disabled={loading || isRefreshing}
+                  color="primary"
+                >
+                  <RefreshIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Typography variant="caption" color="text.secondary">
+              Refresh
+            </Typography>
+            {lastUpdated && (
+              <Typography variant="caption" color="text.secondary">
+                Last updated: {formatLastUpdated()}
+              </Typography>
+            )}
+          </Box>
         )}
       </Container>
     </Box>

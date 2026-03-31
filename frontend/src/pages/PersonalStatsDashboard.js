@@ -1,14 +1,33 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import '../css/TotalDashboard.css';
 import { API_BASE } from '../utils/api';
 import { getAuthToken } from '../utils/AuthUtils';
+import { 
+  Box, 
+  Typography, 
+  IconButton, 
+  Tooltip, 
+  Switch, 
+  FormControlLabel,
+  CircularProgress,
+  Button
+} from '@mui/material';
+import RefreshIcon from '@mui/icons-material/Refresh';
 
 const PersonalStatsDashboard = () => {
   const [scores, setScores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Refresh state
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const refreshIntervalRef = useRef(null);
+  const isVisibleRef = useRef(true);
 
-  useEffect(() => {
+  // Fetch scores
+  const fetchScores = useCallback(async () => {
     const token = getAuthToken();
     if (!token) {
       setError('Please log in to view your stats.');
@@ -16,27 +35,94 @@ const PersonalStatsDashboard = () => {
       return;
     }
 
-    fetch(`${API_BASE}/api/scores/user/me`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-      .then(res => {
-        if (!res.ok) {
-          throw new Error('Failed to fetch scores');
+    try {
+      const response = await fetch(`${API_BASE}/api/scores/user/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
-        return res.json();
-      })
-      .then(data => {
-        setScores(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error fetching scores:', err);
-        setError('Error loading scores: ' + err.message);
-        setLoading(false);
       });
+      if (!response.ok) {
+        throw new Error('Failed to fetch scores');
+      }
+      const data = await response.json();
+      setScores(data);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching scores:', err);
+      setError('Error loading scores: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  // Initial load
+  useEffect(() => {
+    fetchScores();
+  }, [fetchScores]);
+
+  // Manual refresh
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    setLastUpdated(new Date());
+    try {
+      await fetchScores();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Toggle auto-refresh
+  const toggleAutoRefresh = () => {
+    setAutoRefresh(prev => !prev);
+  };
+
+  // Format last updated
+  const formatLastUpdated = () => {
+    if (!lastUpdated) return null;
+    return lastUpdated.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  };
+
+  // Auto-refresh interval
+  useEffect(() => {
+    if (autoRefresh && isVisibleRef.current) {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
+      refreshIntervalRef.current = setInterval(() => {
+        fetchScores();
+        setLastUpdated(new Date());
+      }, 30000);
+    } else {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+        refreshIntervalRef.current = null;
+      }
+    }
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
+    };
+  }, [autoRefresh, fetchScores]);
+
+  // Visibility API - pause when tab inactive
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      isVisibleRef.current = !document.hidden;
+      if (!document.hidden && autoRefresh) {
+        fetchScores();
+        setLastUpdated(new Date());
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [autoRefresh, fetchScores]);
 
   // Group scores by game type
   const scoresByGame = scores.reduce((acc, score) => {
@@ -96,7 +182,47 @@ const PersonalStatsDashboard = () => {
 
   return (
     <div className="dashboard-container">
-      <h2>📊 My Stats</h2>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <h2 style={{ margin: 0 }}>📊 My Stats</h2>
+        
+        {/* Refresh Controls */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={autoRefresh}
+                onChange={toggleAutoRefresh}
+                color="primary"
+                size="small"
+              />
+            }
+            label={
+              <Typography variant="body2" color="text.secondary">
+                Auto-refresh
+              </Typography>
+            }
+          />
+          
+          <Tooltip title="Refresh stats">
+            <span>
+              <IconButton
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                color="primary"
+                size="small"
+              >
+                <RefreshIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
+          
+          {lastUpdated && (
+            <Typography variant="caption" color="text.secondary">
+              Updated: {formatLastUpdated()}
+            </Typography>
+          )}
+        </Box>
+      </Box>
 
       {/* Personal Bests Summary */}
       <h3>🏆 Personal Bests</h3>
@@ -159,6 +285,29 @@ const PersonalStatsDashboard = () => {
           <p>{personalBests.length}</p>
         </div>
       </div>
+
+      {/* Bottom Refresh Button */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, gap: 2, alignItems: 'center' }}>
+        <Tooltip title="Refresh stats">
+          <span>
+            <IconButton
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              color="primary"
+            >
+              <RefreshIcon />
+            </IconButton>
+          </span>
+        </Tooltip>
+        <Typography variant="caption" color="text.secondary">
+          Refresh
+        </Typography>
+        {lastUpdated && (
+          <Typography variant="caption" color="text.secondary">
+            Last updated: {formatLastUpdated()}
+          </Typography>
+        )}
+      </Box>
     </div>
   );
 };

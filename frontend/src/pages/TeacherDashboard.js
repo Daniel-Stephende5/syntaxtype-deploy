@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { apiUrl } from "../utils/api";
 import { getAuthToken, setAuthToken } from "../utils/AuthUtils";
+import { useLeaderboardRefresh } from "../hooks/useLeaderboardRefresh";
 import {
   Box,
   Typography,
@@ -23,7 +24,12 @@ import {
   Alert,
   Button,
   Container,
+  IconButton,
+  Tooltip,
+  Switch,
+  FormControlLabel,
 } from "@mui/material";
+import RefreshIcon from "@mui/icons-material/Refresh";
 
 const TeacherDashboard = () => {
   const navigate = useNavigate();
@@ -35,6 +41,13 @@ const TeacherDashboard = () => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("students");
   
+  // Refresh state for leaderboard tab
+  const [leaderboardLastUpdated, setLeaderboardLastUpdated] = useState(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const refreshIntervalRef = React.useRef(null);
+  const isVisibleRef = React.useRef(true);
+
   // Fetch students data
   const fetchStudents = useCallback(async () => {
     try {
@@ -62,30 +75,66 @@ const TeacherDashboard = () => {
     }
   }, [error]);
 
-  // Initial data fetch
-  useEffect(() => {
+  // Combined fetch for initial load
+  const fetchAllData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
-    Promise.all([fetchStudents(), fetchLeaderboard()])
-      .catch(err => {
-        console.error("Error fetching data:", err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, []);
+    try {
+      await Promise.all([fetchStudents(), fetchLeaderboard()]);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchStudents, fetchLeaderboard]);
 
   // Auto-retry on error after 5 seconds
   useEffect(() => {
     if (error) {
       const timer = setTimeout(() => {
-        fetchStudents();
-        fetchLeaderboard();
+        fetchAllData();
       }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [error, fetchStudents, fetchLeaderboard]);
+  }, [error, fetchAllData]);
+
+  // Auto-refresh for leaderboard tab
+  useEffect(() => {
+    if (autoRefresh && isVisibleRef.current) {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
+      refreshIntervalRef.current = setInterval(() => {
+        fetchLeaderboard();
+        setLeaderboardLastUpdated(new Date());
+      }, 30000);
+    } else {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+        refreshIntervalRef.current = null;
+      }
+    }
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
+    };
+  }, [autoRefresh, fetchLeaderboard]);
+
+  // Handle visibility change - pause when tab inactive
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      isVisibleRef.current = !document.hidden;
+      if (!document.hidden && autoRefresh) {
+        fetchLeaderboard();
+        setLeaderboardLastUpdated(new Date());
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [autoRefresh, fetchLeaderboard]);
 
   // Handle tab change
   const handleTabChange = (event, newTab) => {
@@ -94,14 +143,30 @@ const TeacherDashboard = () => {
     }
   };
 
-  // Manual refresh
-  const handleRefresh = () => {
-    setLoading(true);
-    setError(null);
-    Promise.all([fetchStudents(), fetchLeaderboard()])
-      .finally(() => {
-        setLoading(false);
-      });
+  // Manual refresh for leaderboard
+  const handleLeaderboardRefresh = async () => {
+    setIsRefreshing(true);
+    setLeaderboardLastUpdated(new Date());
+    try {
+      await fetchLeaderboard();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Toggle auto-refresh
+  const toggleAutoRefresh = () => {
+    setAutoRefresh(prev => !prev);
+  };
+
+  // Format last updated
+  const formatLastUpdated = () => {
+    if (!leaderboardLastUpdated) return null;
+    return leaderboardLastUpdated.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
   };
 
   // Handle student card click
@@ -160,6 +225,48 @@ const TeacherDashboard = () => {
           </ToggleButtonGroup>
         </Box>
 
+        {/* Leaderboard Tab Controls */}
+        {activeTab === "leaderboard" && (
+          <Box sx={{ display: "flex", gap: 2, mb: 3, alignItems: "center", flexWrap: "wrap" }}>
+            {/* Auto-refresh Toggle */}
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={autoRefresh}
+                  onChange={toggleAutoRefresh}
+                  color="primary"
+                  size="small"
+                />
+              }
+              label={
+                <Typography variant="body2" color="text.secondary">
+                  Auto-refresh
+                </Typography>
+              }
+            />
+
+            {/* Refresh Button */}
+            <Tooltip title="Refresh leaderboard">
+              <span>
+                <IconButton
+                  onClick={handleLeaderboardRefresh}
+                  disabled={isRefreshing}
+                  color="primary"
+                >
+                  <RefreshIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+
+            {/* Last Updated Timestamp */}
+            {leaderboardLastUpdated && (
+              <Typography variant="caption" color="text.secondary">
+                Updated: {formatLastUpdated()}
+              </Typography>
+            )}
+          </Box>
+        )}
+
         {/* Loading State */}
         {loading && (
           <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
@@ -172,7 +279,7 @@ const TeacherDashboard = () => {
           <Alert
             severity="error"
             action={
-              <Button color="inherit" size="small" onClick={handleRefresh}>
+              <Button color="inherit" size="small" onClick={fetchAllData}>
                 Retry
               </Button>
             }
@@ -316,6 +423,31 @@ const TeacherDashboard = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
+            )}
+
+            {/* Bottom Refresh Button */}
+            {leaderboard.length > 0 && (
+              <Box sx={{ display: "flex", justifyContent: "center", mt: 2, gap: 2, alignItems: "center" }}>
+                <Tooltip title="Refresh leaderboard">
+                  <span>
+                    <IconButton
+                      onClick={handleLeaderboardRefresh}
+                      disabled={isRefreshing}
+                      color="primary"
+                    >
+                      <RefreshIcon />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+                <Typography variant="caption" color="text.secondary">
+                  Refresh
+                </Typography>
+                {leaderboardLastUpdated && (
+                  <Typography variant="caption" color="text.secondary">
+                    Last updated: {formatLastUpdated()}
+                  </Typography>
+                )}
+              </Box>
             )}
           </>
         )}
