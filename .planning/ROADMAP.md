@@ -210,11 +210,12 @@ Plans:
 1. All reported bugs from Phase 4 testing are resolved
 2. No regressions in existing functionality
 
-**Plans:** 2 plans
+**Plans:** 3 plans
 
 Plans:
 - [x] 04A-01-PLAN.md — Student personal stats dashboard
 - [x] 04A-02-PLAN.md — Security gap fix (JWT user extraction)
+- [x] 04A-03-PLAN.md — Leaderboard refresh functionality
 
 ---
 
@@ -328,7 +329,7 @@ Plans:
 | 3e - GridGame Scoring Cleanup | Constants, stars | (multiple) | ✅ Complete |
 | 3f - Galaxy Challenge Loading | URL param loading | (1 issue) | ✅ Complete |
 | 4 - Teacher Dashboard | Student progress | TCHR-01 to TCHR-03 | ✅ Complete |
-| 04A - Teacher Dashboard Bugfixes | Fix Phase 4 issues | Complete    | 2026-03-29 |
+| 04A - Teacher Dashboard Bugfixes | Fix Phase 4 issues | Complete    | 2026-03-31 |
 | 5 - Security & Error Handling | JWT auth | SEC-01 to SEC-06, ERR-01 to ERR-05 | Pending |
 | 5 - Backend Quality & Testing | Quality | BQ-01 to BQ-05, TEST-01 to TEST-03 | Pending |
 | 6 - Backend Modularization | Structure | (restructuring) | Pending |
@@ -352,7 +353,7 @@ Plans:
 | 3e. GridGame Scoring Cleanup | ✅ Complete | 2026-03-26 |
 | 3f. Galaxy Challenge Loading | ✅ Complete | 2026-03-26 |
 | 4. Teacher Dashboard & Student Progress | ✅ Complete | 2026-03-29 |
-| 04A. Teacher Dashboard Bugfixes | ✅ Complete | 2026-03-29 |
+| 04A. Teacher Dashboard Bugfixes | ✅ Complete | 2026-03-31 |
 | 3f. Galaxy Challenge Loading | ✅ Complete | 2026-03-26 |
 | 4. Teacher Dashboard & Student Progress | Plan 01 complete | 2026-03-29 |
 | 5. Security & Error Handling | Not started | - |
