@@ -127,110 +127,110 @@ export default function CodeWormBattle({ onNext }) {
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>🐛 CodeWorm Battle</h2>
-      <h4>{feedback || "Assemble blocks to attack!"}</h4>
-<div
-  style={{
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "flex-end",
-    gap: 80, // ✅ space between player & enemy
-    marginBottom: 20,
-  }}
->
-      {/* Player / Enemy display */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-    <img src={playerSprite} alt="player" width={250} height={250} />
-    <p style={{ marginTop: 8 }}>Player HP: {playerHP}</p>
-  </div>
+  <div style={{ padding: 20 }}>
+    <h2>🐛 CodeWorm Battle</h2>
+    <h4>{feedback || "Assemble blocks to attack!"}</h4>
 
-  {/* ENEMY */}
-  <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-    <img src={enemySprite} alt="enemy" width={250} height={250} />
-    <p style={{ marginTop: 8}}>Enemy HP: {Math.round(enemyHP)}</p>
-  </div>
+    {/* Player / Enemy display */}
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "flex-end",
+        gap: 80,
+        marginBottom: 20,
+      }}
+    >
+      {/* PLAYER */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+        <img src={playerSprite} alt="player" width={250} height={250} />
+        <p style={{ marginTop: 10, marginBottom: 0 }}>Player HP: {playerHP}</p>
+      </div>
+
+      {/* ENEMY */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+        <img src={enemySprite} alt="enemy" width={250} height={250} />
+        <p style={{ marginTop: 10, marginBottom: 0 }}>
+          Enemy HP: {Math.round(enemyHP)}
+        </p>
       </div>
     </div>
-      {/* Assembled code */}
-      <div
-        style={{
-          minHeight: 50,
-          border: "2px dashed #ccc",
-          padding: 10,
-          marginBottom: 16,
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 6,
-          boxShadow: flash ? "0 0 20px 5px #4caf50" : "none",
-          transition: "0.2s",
-        }}
-      >
-        {assembled.map((block, i) => (
-          <div
-            key={i}
-            onClick={() => handleRemoveBlock(i)}
-            style={{
-              padding: "6px 12px",
-              borderRadius: 4,
-              cursor: "pointer",
-              fontFamily: "monospace",
-              background: "#0c5b0bff",
-              color: "white",
-              transition: "0.3s",
-            }}
-          >
-            {block}
-          </div>
-        ))}
-      </div>
 
-      {/* Bank */}
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 8,
-          padding: 10,
-          background: "#eee",
-          borderRadius: 8,
-        }}
-      >
-        {shuffledBank.map((block, i) => (
-          <div
-            key={i}
-            onClick={() => handleAddBlock(block)}
-            style={{
-              padding: "6px 12px",
-              borderRadius: 6,
-              border: "1px solid #333",
-              background: validSentences.flat().includes(block)
-                ? "#0c5b0bff"
-                : "#0c5b0bff", // junk in red
-              color: "white",
-              fontFamily: "monospace",
-              cursor: "pointer",
-            }}
-          >
-            {block}
-          </div>
-        ))}
-      </div>
-
-      <button
-        onClick={handleAttack}
-        style={{
-          marginTop: 16,
-          padding: "8px 16px",
-          background: "#4caf50",
-          color: "#fff",
-          borderRadius: 6,
-          border: "none",
-          cursor: "pointer",
-        }}
-      >
-        ⚔️ Attack!
-      </button>
+    {/* Assembled code */}
+    <div
+      style={{
+        minHeight: 50,
+        border: "2px dashed #ccc",
+        padding: 10,
+        marginBottom: 16,
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 6,
+        boxShadow: flash ? "0 0 20px 5px #4caf50" : "none",
+      }}
+    >
+      {assembled.map((block, i) => (
+        <div
+          key={i}
+          onClick={() => handleRemoveBlock(i)}
+          style={{
+            padding: "6px 12px",
+            borderRadius: 4,
+            cursor: "pointer",
+            fontFamily: "monospace",
+            background: "#0c5b0bff",
+            color: "white",
+          }}
+        >
+          {block}
+        </div>
+      ))}
     </div>
-  );
+
+    {/* Bank */}
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 8,
+        padding: 10,
+        background: "#eee",
+        borderRadius: 8,
+      }}
+    >
+      {shuffledBank.map((block, i) => (
+        <div
+          key={i}
+          onClick={() => handleAddBlock(block)}
+          style={{
+            padding: "6px 12px",
+            borderRadius: 6,
+            border: "1px solid #333",
+            background: "#0c5b0bff",
+            color: "white",
+            fontFamily: "monospace",
+            cursor: "pointer",
+          }}
+        >
+          {block}
+        </div>
+      ))}
+    </div>
+
+    <button
+      onClick={handleAttack}
+      style={{
+        marginTop: 16,
+        padding: "8px 16px",
+        background: "#4caf50",
+        color: "#fff",
+        borderRadius: 6,
+        border: "none",
+        cursor: "pointer",
+      }}
+    >
+      ⚔️ Attack!
+    </button>
+  </div>
+);
 }
