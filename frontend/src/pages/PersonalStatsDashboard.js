@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import '../css/TotalDashboard.css';
 import { API_BASE } from '../utils/api';
-import { getAuthToken } from '../utils/JwtUtils';
+import { getAuthToken } from '../utils/AuthUtils';
 
 const PersonalStatsDashboard = () => {
   const [scores, setScores] = useState([]);
