@@ -271,7 +271,13 @@ const HPBar = ({ hp, maxHp }) => {
               />
             )}
           </div>
-          <HPBar hp={playerHP} maxHp={40} />
+          <div  style={{
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start", // 👈 pushes HP bar LEFT
+  }}>
+  <HPBar hp={playerHP} maxHp={40} />
+</div>
         </div>
 
         {/* ENEMY */}
@@ -287,7 +293,11 @@ const HPBar = ({ hp, maxHp }) => {
               />
             )}
           </div>
-          <HPBar hp={enemyHP} maxHp={50} />
+         style={{
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-end", // 👈 pushes HP bar RIGHT
+  }}
         </div>
       </div>
 
