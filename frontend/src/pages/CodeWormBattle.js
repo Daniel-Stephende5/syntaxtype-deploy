@@ -55,45 +55,68 @@ export default function CodeWormBattle({ onNext }) {
   };
 
   const validFunctions = [
-    [
-      ["void special attack", "(", "Player player", ",", "Enemy enemy", ")", "{"],
-      ["int dmg = rand() % 6 + 5;"],
-      ["if (player.weapon) {", "dmg += player.weapon.power * 2;", "}"],
-      ["enemy.hp -= dmg;"],
-      ["if (enemy.hp <= 0) {", 'printf("Enemy defeated!\\n"); }'],
-      ["return dmg;"],
-      ["}"],
-    ],
-    [
-      ["void doubleStrike", "(", "Player player", ",", "Enemy enemy", ")"],
-      ["{"],
-      ["int dmg1 = rand() % 4 + 3;"],
-      ["int dmg2 = rand() % 4 + 3;"],
-      ["enemy.hp -= (dmg1 + dmg2);"],
-      ['printf("Double strike dealt %d damage!\\n", dmg1 + dmg2);'],
-      ["return;"],
-      ["}"],
-    ],
-    [
-      ["void attack", "(", "Player player", ")"],
-      ["{"],
-      ["int dmgAmount = rand() % 10 + 5;"],
-      ["player.hp += dmgAmount;"],
-      ['printf("Player attacks for %d damage\\n", dmgAmount);'],
-      ["return;"],
-      ["}"],
-    ],
-  ];
-
-  const [currentFunction, setCurrentFunction] = useState([]);
+  [
+    ["void special attack", "(", "Player player", ",", "Enemy enemy", ")", "{"],
+    ["int dmg = rand() % 6 + 5;"],
+    ["if (player.weapon) {", "dmg += player.weapon.power * 2;}"],
+    ["enemy.hp -= dmg;"],
+    ["if (enemy.hp <= 0) {"],
+    ['printf("Enemy defeated!\\n"); }'],
+  
+    ["return dmg;"],
+    ["}"],
+    {
+      hint: "Start with a function declaration, calculate damage, check weapon, subtract from enemy, return damage."
+    }
+  ],
+  [
+    ["void doubleStrike", "(", "Player player", ",", "Enemy enemy", ")"],
+    ["{"],
+    ["int dmg1 = rand() % 4 + 3;"],
+    ["int dmg2 = rand() % 4 + 3;"],
+    ["enemy.hp -= (dmg1 + dmg2);"],
+    ['printf("Double strike dealt %d damage!\\n", dmg1 + dmg2);'],
+    ["return;"],
+    ["}"],
+    {
+      hint: "Declare function, compute two damage values, combine them, apply to enemy, return."
+    }
+  ],
+  [
+    ["void attack", "(", "Player player", ")"],
+    ["{"],
+    ["int dmgAmount = rand() % 10 + 5;"],
+    ["player.hp += dmgAmount;"],
+    ['printf("Player attacks for %d damage\\n", dmgAmount);'],
+    ["return;"],
+    ["}"],
+    {
+      hint: "Start function, compute value, apply to player, optionally print result, return."
+    }
+  ],
+];
+const [currentFunction, setCurrentFunction] = useState({
+  blocks: [],
+  hint: ""
+});
   const [bank, setBank] = useState([]);
 
-  const generateNewFunction = () => {
-    const func = validFunctions[Math.floor(Math.random() * validFunctions.length)];
-    setCurrentFunction(func);
-    setBank(shuffleArray(func.flat()));
-    setAssembled([]);
-  };
+const generateNewFunction = () => {
+  const func = validFunctions[Math.floor(Math.random() * validFunctions.length)];
+
+  // ✅ Separate hint from code blocks
+  const hintObj = func.find(item => !Array.isArray(item));
+  const codeBlocks = func.filter(item => Array.isArray(item));
+
+  setCurrentFunction({
+    blocks: codeBlocks,
+    hint: hintObj?.hint || ""
+  });
+
+  // ✅ Flatten ONLY arrays (no objects)
+  setBank(shuffleArray(codeBlocks.flat()));
+  setAssembled([]);
+};
 
   // ✅ INIT WITH LOADING
   useEffect(() => {
@@ -120,11 +143,12 @@ export default function CodeWormBattle({ onNext }) {
     setAssembled((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const isValidAssembly = (blocks) => {
-    const flatFunc = currentFunction.flat();
-    if (blocks.length !== flatFunc.length) return false;
-    return blocks.every((b, i) => b === flatFunc[i]);
-  };
+const isValidAssembly = (blocks) => {
+  const flatFunc = currentFunction.blocks.flat(); // ✅ correct
+
+  if (blocks.length !== flatFunc.length) return false;
+  return blocks.every((b, i) => b === flatFunc[i]);
+};
 
   const handleAttack = async () => {
     if (gameOver) return;
@@ -157,7 +181,7 @@ export default function CodeWormBattle({ onNext }) {
       nextEnemyHP = Math.max(0, hp - dmg);
       return nextEnemyHP;
     });
-    await sleep(400);
+    await sleep(600);
     setEnemyHit(false);
 
     if (nextEnemyHP <= 0) {
@@ -264,23 +288,24 @@ export default function CodeWormBattle({ onNext }) {
         {/* PLAYER */}
         <div style={{ position: "absolute", bottom: 10, left: "30%" }}>
           <div style={{ position: "relative", width: 250, height: 250 }}>
-             <div style={{ display: "absolute",  left: 0,  }}>
+             <div style={{ position: "absolute",  left: 0,  }}>
             <HPBar hp={playerHP} maxHp={40} />
           </div>
-            <img src={getPlayerSprite()} width={250} height={250} alt="player" />
-            {playerHit && (
-              <img
-                src="/images/idledamage.png"
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: "100%",
-                }}
-                alt=""
-              />
-            )}
+                <img src={getPlayerSprite()} width={250} height={250} alt="player" />
+    {playerHit && (
+      <img
+        src="/images/idledamage.png"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+        }}
+        alt=""
+      />
+    )}
+            
           </div>
 
          
@@ -312,6 +337,20 @@ export default function CodeWormBattle({ onNext }) {
   
 </div>
 </div>
+{currentFunction.hint && (
+  <div style={{
+    marginBottom: 10,
+    padding: "6px 12px",
+    background: "#ffe082",
+    borderRadius: 6,
+    color: "#333",
+    fontWeight: "bold",
+    fontFamily: "monospace",
+    fontSize: 14
+  }}>
+    💡 Hint: {currentFunction.hint}
+  </div>
+)}
 
 
       {/* Assembled */}
