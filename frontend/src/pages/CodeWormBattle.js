@@ -287,9 +287,9 @@ export default function CodeWormBattle({ onNext }) {
         </div>
 
        {/* ENEMY */}
-<div style={{ position: "absolute", bottom: 5, right: "25%" }}>
+<div style={{ position: "absolute", bottom: 2, right: "25%" }}>
   <div style={{ position: "relative", width: 250, height: 250 }}>
-    <div style={{ position: "absolute", top: 1,  right: 0 }}>
+    <div style={{ position: "absolute", top: -7,  right: 0 }}>
     <HPBar hp={enemyHP} maxHp={50} />
   </div>
     <img src={getEnemySprite()} width={250} height={250} alt="enemy" />
