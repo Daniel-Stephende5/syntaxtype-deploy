@@ -280,7 +280,7 @@ export default function CodeWormBattle({ onNext }) {
             )}
           </div>
 
-          <div style={{ display: "flex", alignItems: "flex-start" }}>
+          <div style={{ display: "flex", alignItems: "flex-start",  left: 0,  }}>
             <HPBar hp={playerHP} maxHp={40} />
           </div>
         </div>
@@ -304,7 +304,7 @@ export default function CodeWormBattle({ onNext }) {
             )}
           </div>
 
-          <div style={{ display: "flex", alignItems: "flex-end" }}>
+          <div style={{ display: "flex", alignItems: "flex-end", right: 0, }}>
             <HPBar hp={enemyHP} maxHp={50} />
           </div>
         </div>
