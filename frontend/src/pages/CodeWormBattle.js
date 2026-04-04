@@ -210,7 +210,37 @@ export default function CodeWormBattle({ onNext }) {
       </div>
     );
   }
+const HPBar = ({ hp, maxHp }) => {
+  const percent = Math.max(0, (hp / maxHp) * 100);
 
+  return (
+    <div style={{ width: 120 }}>
+      <div
+        style={{
+          width: "100%",
+          height: 10,
+          background: "#444",
+          borderRadius: 5,
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            width: `${percent}%`,
+            height: "100%",
+            background:
+              percent > 60
+                ? "#4caf50"
+                : percent > 30
+                ? "#ff9800"
+                : "#f44336",
+            transition: "width 0.3s ease",
+          }}
+        />
+      </div>
+    </div>
+  );
+};
   return (
     <div style={{ padding: 20 }}>
       <h2>🐛 CodeWorm Battle</h2>
@@ -241,7 +271,7 @@ export default function CodeWormBattle({ onNext }) {
               />
             )}
           </div>
-          <p style={{ color: "white" }}>HP: {playerHP}</p>
+          <HPBar hp={playerHP} maxHp={40} />
         </div>
 
         {/* ENEMY */}
@@ -257,7 +287,7 @@ export default function CodeWormBattle({ onNext }) {
               />
             )}
           </div>
-          <p style={{ color: "white" }}>HP: {enemyHP}</p>
+          <HPBar hp={enemyHP} maxHp={50} />
         </div>
       </div>
 
