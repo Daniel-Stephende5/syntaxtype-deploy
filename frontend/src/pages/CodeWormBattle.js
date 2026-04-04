@@ -292,14 +292,15 @@ const HPBar = ({ hp, maxHp }) => {
                 alt=""
               />
             )}
-          </div>
-         style={{
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-end", // 👈 pushes HP bar RIGHT
-  }}
-> <HPBar hp={enemyHP} maxHp={50} />
-        </div>
+          <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "flex-end", // pushes RIGHT
+    }}
+  >
+    <HPBar hp={enemyHP} maxHp={50} />
+  </div>
       </div>
 
       {/* (Your block UI unchanged) */}
