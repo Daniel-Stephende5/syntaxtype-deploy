@@ -264,6 +264,9 @@ export default function CodeWormBattle({ onNext }) {
         {/* PLAYER */}
         <div style={{ position: "absolute", bottom: 10, left: "30%" }}>
           <div style={{ position: "relative", width: 250, height: 250 }}>
+             <div style={{ display: "absolute",  left: 0,  }}>
+            <HPBar hp={playerHP} maxHp={40} />
+          </div>
             <img src={getPlayerSprite()} width={250} height={250} alt="player" />
             {playerHit && (
               <img
@@ -280,35 +283,36 @@ export default function CodeWormBattle({ onNext }) {
             )}
           </div>
 
-          <div style={{ display: "flex", alignItems: "flex-start",  left: 0,  }}>
-            <HPBar hp={playerHP} maxHp={40} />
-          </div>
+         
         </div>
 
-        {/* ENEMY */}
-        <div style={{ position: "absolute", bottom: 10, right: "25%" }}>
-          <div style={{ position: "relative", width: 250, height: 250 }}>
-            <img src={getEnemySprite()} width={250} height={250} alt="enemy" />
-            {enemyHit && (
-              <img
-                src="/images/enemy_idle(damage).png"
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: "100%",
-                }}
-                alt=""
-              />
-            )}
-          </div>
+       {/* ENEMY */}
+<div style={{ position: "absolute", bottom: 5, right: "25%" }}>
+  <div style={{ position: "relative", width: 250, height: 250 }}>
+    <div style={{ position: "absolute",  right: 0 }}>
+    <HPBar hp={enemyHP} maxHp={50} />
+  </div>
+    <img src={getEnemySprite()} width={250} height={250} alt="enemy" />
+    {enemyHit && (
+      <img
+        src="/images/enemy_idle(damage).png"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+        }}
+        alt=""
+      />
+    )}
+  </div>
 
-          <div style={{ display: "flex", alignItems: "flex-end", right: 0, }}>
-            <HPBar hp={enemyHP} maxHp={50} />
-          </div>
-        </div>
-      </div>
+  {/* Move this HP bar to bottom-right */}
+  
+</div>
+</div>
+
 
       {/* Assembled */}
       <div
