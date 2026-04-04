@@ -125,42 +125,40 @@ export default function CodeWormBattle({ onNext }) {
     );
     setAssembled([]);
   };
-  const HPBar = ({ hp, maxHp, label }) => {
-  const percent = Math.max(0, (hp / maxHp) * 100);
+ 
 
 
-  return (
-    <div style={{ width: 220 }}>
-      <div style={{ fontSize: 14, marginBottom: 4 }}>
-        {label}: {Math.round(hp)}
-      </div>
+  const HPBar = ({ hp, maxHp }) => {
+    const percent = Math.max(0, (hp / maxHp) * 100);
 
-      <div
-        style={{
-          width: "100%",
-          height: 14,
-          background: "#444",
-          borderRadius: 6,
-          overflow: "hidden",
-        }}
-      >
+    return (
+      <div style={{ width: 180, marginTop: 8 }}>
         <div
           style={{
-            width: `${percent}%`,
-            height: "100%",
-            background:
-              percent > 60
-                ? "#4caf50"
-                : percent > 30
-                ? "#ff9800"
-                : "#f44336",
-            transition: "width 0.3s ease",
+            width: "100%",
+            height: 12,
+            background: "#333",
+            borderRadius: 6,
+            overflow: "hidden",
           }}
-        />
+        >
+          <div
+            style={{
+              width: `${percent}%`,
+              height: "100%",
+              background:
+                percent > 60
+                  ? "#4caf50"
+                  : percent > 30
+                  ? "#ff9800"
+                  : "#f44336",
+              transition: "width 0.3s ease",
+            }}
+          />
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
   return (
   <div style={{ padding: 20 }}>
     <h2>🐛 CodeWorm Battle</h2>
