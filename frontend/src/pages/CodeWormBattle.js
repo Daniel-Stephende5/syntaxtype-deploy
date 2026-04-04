@@ -298,6 +298,7 @@ const HPBar = ({ hp, maxHp }) => {
     flexDirection: "column",
     alignItems: "flex-end", // 👈 pushes HP bar RIGHT
   }}
+> <HPBar hp={enemyHP} maxHp={50} />
         </div>
       </div>
 
