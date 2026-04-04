@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 
 export default function CodeWormBattle({ onNext }) {
-  const [loading, setLoading] = useState(true); // ✅ added
-
+  const [loading, setLoading] = useState(true);
   const [enemyHP, setEnemyHP] = useState(50);
   const [playerHP, setPlayerHP] = useState(40);
   const [assembled, setAssembled] = useState([]);
@@ -56,12 +55,12 @@ export default function CodeWormBattle({ onNext }) {
   };
 
   const validFunctions = [
-   [
+    [
       ["void special attack", "(", "Player player", ",", "Enemy enemy", ")", "{"],
       ["int dmg = rand() % 6 + 5;"],
       ["if (player.weapon) {", "dmg += player.weapon.power * 2;", "}"],
       ["enemy.hp -= dmg;"],
-      ["if (enemy.hp <= 0) {", "printf(\"Enemy defeated!\\n\"); }"],
+      ["if (enemy.hp <= 0) {", 'printf("Enemy defeated!\\n"); }'],
       ["return dmg;"],
       ["}"],
     ],
@@ -71,7 +70,7 @@ export default function CodeWormBattle({ onNext }) {
       ["int dmg1 = rand() % 4 + 3;"],
       ["int dmg2 = rand() % 4 + 3;"],
       ["enemy.hp -= (dmg1 + dmg2);"],
-      ["printf(\"Double strike dealt %d damage!\\n\", dmg1 + dmg2);"],
+      ['printf("Double strike dealt %d damage!\\n", dmg1 + dmg2);'],
       ["return;"],
       ["}"],
     ],
@@ -80,7 +79,7 @@ export default function CodeWormBattle({ onNext }) {
       ["{"],
       ["int dmgAmount = rand() % 10 + 5;"],
       ["player.hp += dmgAmount;"],
-      ["printf(\"Player attacks for %d damage\\n\", dmgAmount);"],
+      ['printf("Player attacks for %d damage\\n", dmgAmount);'],
       ["return;"],
       ["}"],
     ],
@@ -101,7 +100,7 @@ export default function CodeWormBattle({ onNext }) {
     const init = async () => {
       await Promise.all([
         preloadAssets(),
-        new Promise((res) => setTimeout(res, 400)), // smooth feel
+        new Promise((res) => setTimeout(res, 400)),
       ]);
 
       generateNewFunction();
@@ -129,12 +128,14 @@ export default function CodeWormBattle({ onNext }) {
 
   const handleAttack = async () => {
     if (gameOver) return;
+
     if (!assembled.length) {
       setFeedback("❌ No code assembled!");
       return;
     }
 
     const valid = isValidAssembly(assembled);
+
     if (!valid) {
       setFeedback("❌ Incorrect function! No attack!");
       setAssembled([]);
@@ -168,6 +169,7 @@ export default function CodeWormBattle({ onNext }) {
 
     const enemyDmg = Math.floor(Math.random() * 6) + 3;
     setFeedback("🐛 Enemy counterattacks!");
+
     setEnemyAnimation("attack");
     await sleep(1200);
     setEnemyAnimation("idle");
@@ -188,7 +190,7 @@ export default function CodeWormBattle({ onNext }) {
     }
 
     setFeedback(`⚔️ Turn complete! You dealt ${dmg}, enemy dealt ${enemyDmg}.`);
-    if (!gameOver) generateNewFunction();
+    generateNewFunction();
   };
 
   const getPlayerSprite = () =>
@@ -201,7 +203,6 @@ export default function CodeWormBattle({ onNext }) {
       ? "/images/enemy_idle(1).png"
       : "/images/enemyattack.gif";
 
-  // ✅ LOADING SCREEN
   if (loading) {
     return (
       <div style={{ textAlign: "center", padding: 50 }}>
@@ -210,37 +211,39 @@ export default function CodeWormBattle({ onNext }) {
       </div>
     );
   }
-const HPBar = ({ hp, maxHp }) => {
-  const percent = Math.max(0, (hp / maxHp) * 100);
 
-  return (
-    <div style={{ width: 120 }}>
-      <div
-        style={{
-          width: "100%",
-          height: 10,
-          background: "#444",
-          borderRadius: 5,
-          overflow: "hidden",
-        }}
-      >
+  const HPBar = ({ hp, maxHp }) => {
+    const percent = Math.max(0, (hp / maxHp) * 100);
+
+    return (
+      <div style={{ width: 120 }}>
         <div
           style={{
-            width: `${percent}%`,
-            height: "100%",
-            background:
-              percent > 60
-                ? "#4caf50"
-                : percent > 30
-                ? "#ff9800"
-                : "#f44336",
-            transition: "width 0.3s ease",
+            width: "100%",
+            height: 10,
+            background: "#444",
+            borderRadius: 5,
+            overflow: "hidden",
           }}
-        />
+        >
+          <div
+            style={{
+              width: `${percent}%`,
+              height: "100%",
+              background:
+                percent > 60
+                  ? "#4caf50"
+                  : percent > 30
+                  ? "#ff9800"
+                  : "#f44336",
+              transition: "width 0.3s ease",
+            }}
+          />
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
+
   return (
     <div style={{ padding: 20 }}>
       <h2>🐛 CodeWorm Battle</h2>
@@ -261,67 +264,54 @@ const HPBar = ({ hp, maxHp }) => {
         {/* PLAYER */}
         <div style={{ position: "absolute", bottom: 10, left: "30%" }}>
           <div style={{ position: "relative", width: 250, height: 250 }}>
-              <img src={getPlayerSprite()} width={250} height={250} alt="player" />
-         
+            <img src={getPlayerSprite()} width={250} height={250} alt="player" />
             {playerHit && (
               <img
                 src="/images/idledamage.png"
-                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                }}
                 alt=""
               />
             )}
           </div>
-          <div  style={{
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-start", // 👈 pushes HP bar LEFT
-  }}>
-  <HPBar hp={playerHP} maxHp={40} />
-</div>
+
+          <div style={{ display: "flex", alignItems: "flex-start" }}>
+            <HPBar hp={playerHP} maxHp={40} />
+          </div>
         </div>
 
         {/* ENEMY */}
-<div style={{ position: "absolute", bottom: 10, right: "25%" }}>
-  <div style={{ position: "relative", width: 250, height: 250 }}>
-    <img src={getEnemySprite()} width={250} height={250} alt="enemy" />
-    {enemyHit && (
-      <img
-        src="/images/enemy_idle(damage).png"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-        }}
-        alt=""
-      />
-    )}
-  </div>
+        <div style={{ position: "absolute", bottom: 10, right: "25%" }}>
+          <div style={{ position: "relative", width: 250, height: 250 }}>
+            <img src={getEnemySprite()} width={250} height={250} alt="enemy" />
+            {enemyHit && (
+              <img
+                src="/images/enemy_idle(damage).png"
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                }}
+                alt=""
+              />
+            )}
+          </div>
 
-  {/* ✅ FIXED HP BAR WRAPPER */}
-  <div
-     style={{
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-end", // 👈 pushes HP bar RIGHT
-  }}
-  >
-    <HPBar hp={enemyHP} maxHp={50} />
-  </div>
-</div>
-
-        <img
-          src={enemySprite}
-          alt="enemy"
-          width={250}
-          height={250}
-        />
+          <div style={{ display: "flex", alignItems: "flex-end" }}>
+            <HPBar hp={enemyHP} maxHp={50} />
+          </div>
+        </div>
       </div>
-            </div>
-      {/* (Your block UI unchanged) */}
 
- <div
+      {/* Assembled */}
+      <div
         style={{
           minHeight: 50,
           border: "2px dashed #ccc",
