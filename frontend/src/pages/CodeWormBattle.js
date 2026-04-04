@@ -281,28 +281,44 @@ const HPBar = ({ hp, maxHp }) => {
         </div>
 
         {/* ENEMY */}
-        <div style={{ position: "absolute", bottom: 10, right: "25%" }}>
-          <div style={{ position: "relative", width: 250, height: 250 }}>
-           
-              <img src={getEnemySprite()} width={250} height={250} alt="enemy" />
-            {enemyHit && (
-              <img
-                src="/images/enemy_idle(damage).png"
-                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}
-                alt=""
-              />
-            )}
-          <div
-    style={{
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "flex-end", // pushes RIGHT
-    }}
+<div style={{ position: "absolute", bottom: 10, right: "25%" }}>
+  <div style={{ position: "relative", width: 250, height: 250 }}>
+    <img src={getEnemySprite()} width={250} height={250} alt="enemy" />
+    {enemyHit && (
+      <img
+        src="/images/enemy_idle(damage).png"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+        }}
+        alt=""
+      />
+    )}
+  </div>
+
+  {/* ✅ FIXED HP BAR WRAPPER */}
+  <div
+     style={{
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-end", // 👈 pushes HP bar RIGHT
+  }}
   >
     <HPBar hp={enemyHP} maxHp={50} />
   </div>
-      </div>
+</div>
 
+        <img
+          src={enemySprite}
+          alt="enemy"
+          width={250}
+          height={250}
+        />
+      </div>
+            </div>
       {/* (Your block UI unchanged) */}
 
  <div
