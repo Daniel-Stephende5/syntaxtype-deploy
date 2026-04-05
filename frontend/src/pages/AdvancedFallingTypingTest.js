@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import '../css/FallingTypingTest.css';
-
+import AdvancedFallingLocalSetup from "./pages/AdvancedFallingLocalSetup";
 
 
 const GAME_AREA_HEIGHT = 500;
