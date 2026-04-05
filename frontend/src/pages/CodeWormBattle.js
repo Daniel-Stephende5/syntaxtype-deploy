@@ -123,7 +123,7 @@ const generateNewFunction = () => {
     const init = async () => {
       await Promise.all([
         preloadAssets(),
-        new Promise((res) => setTimeout(res, 400)),
+        new Promise((res) => setTimeout(res, 500)),
       ]);
 
       generateNewFunction();
