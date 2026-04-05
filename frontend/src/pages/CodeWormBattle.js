@@ -312,7 +312,7 @@ const isValidAssembly = (blocks) => {
         </div>
 
        {/* ENEMY */}
-<div style={{ position: "absolute", bottom: 2, right: "25%" }}>
+<div style={{ position: "absolute", bottom: 1, right: "25%" }}>
   <div style={{ position: "relative", width: 250, height: 250 }}>
     <div style={{ position: "absolute", top: -7,  right: 0 }}>
     <HPBar hp={enemyHP} maxHp={50} />
