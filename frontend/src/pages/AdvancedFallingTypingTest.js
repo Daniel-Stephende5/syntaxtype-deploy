@@ -125,7 +125,7 @@ useEffect(() => {
     });
 
     // Schedule next spawn with randomized interval (2.5s – 4s, scaled by speed)
-    const nextInterval = (Math.random() * 4500 + 9000) / speed; // 2500–4000 ms
+    const nextInterval = (Math.random() * 9000 + 15000) / speed; // 2500–4000 ms
     timeoutId = setTimeout(spawnWordsRandomly, nextInterval);
   };
 
