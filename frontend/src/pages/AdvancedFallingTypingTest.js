@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import '../css/FallingTypingTest.css';
-import { API_BASE } from "../utils/api.js";
+
 
 
 const GAME_AREA_HEIGHT = 500;
@@ -23,36 +23,27 @@ const AdvancedFallingTypingTest = () => {
   const wordIdCounter = useRef(0);
   const fallingWordsRef = useRef([]);
 
-  const fetchChallengeById = async (id) => {
-    try {
-      const res = await fetch(`${API_BASE}/api/challenges/falling/advanced/${id}`);
-      const challenge = await res.json();
-      if (challenge && challenge.words?.length > 0) {
-        setAvailableWords(challenge.words.map(w => w.trim()));
-        setWrongWordsPool((challenge.wrongWords || []).map(w => w.trim()));
-        setGameDuration(challenge.testTimer || challenge.duration || 60);
-        setTimeLeft(challenge.testTimer || challenge.duration || 60);
-        setSpeed(challenge.speed || 1);
 
-        if (challenge.maxLives && challenge.maxLives > 0) {
-          setUseLives(true);
-          setLives(challenge.maxLives);
-        } else {
-          setUseLives(false);
-          setLives(null);
-        }
-      }
-    } catch (err) {
-      console.error("Failed to fetch advanced challenge:", err);
-    }
-  };
 
-  useEffect(() => {
-    const challenge = JSON.parse(sessionStorage.getItem("fallingChallenge"));
-    if (challenge) {
-      fetchChallengeById(challenge.challengeId);
-    }
-  }, []);
+useEffect(() => {
+  const config = JSON.parse(sessionStorage.getItem("fallingGameConfig"));
+
+  if (!config) return;
+
+  setAvailableWords(config.words || []);
+  setWrongWordsPool(config.wrongWords || []);
+  setGameDuration(config.duration || 60);
+  setTimeLeft(config.duration || 60);
+  setSpeed(config.speed || 1);
+
+  if (config.useLives) {
+    setUseLives(true);
+    setLives(config.maxLives);
+  } else {
+    setUseLives(false);
+    setLives(null);
+  }
+}, []);
 
   useEffect(() => {
     latestScoreRef.current = score;
@@ -199,27 +190,32 @@ const AdvancedFallingTypingTest = () => {
   };
 
   const handleRestart = () => {
-    const challenge = JSON.parse(sessionStorage.getItem("fallingChallenge"));
-    setFallingWords([]);
-    fallingWordsRef.current = [];
-    setCurrentInput("");
-    setActiveWordId(null);
-    setScore(0);
-    setIsGameOver(false);
-    wordIdCounter.current = 0;
+  const config = JSON.parse(sessionStorage.getItem("fallingGameConfig"));
 
-    if (challenge?.challengeId) {
-      fetchChallengeById(challenge.challengeId);
+  setFallingWords([]);
+  fallingWordsRef.current = [];
+  setCurrentInput("");
+  setActiveWordId(null);
+  setScore(0);
+  setIsGameOver(false);
+  wordIdCounter.current = 0;
+
+  if (config) {
+    setAvailableWords(config.words || []);
+    setWrongWordsPool(config.wrongWords || []);
+    setGameDuration(config.duration || 60);
+    setTimeLeft(config.duration || 60);
+    setSpeed(config.speed || 1);
+
+    if (config.useLives) {
+      setUseLives(true);
+      setLives(config.maxLives);
     } else {
-      setAvailableWords([]);
-      setWrongWordsPool([]);
-      setGameDuration(60);
-      setTimeLeft(60);
-      setSpeed(1);
       setUseLives(false);
       setLives(null);
     }
-  };
+  }
+};
 
   const renderWord = (word) => {
     if (word.id !== activeWordId) return word.text;
