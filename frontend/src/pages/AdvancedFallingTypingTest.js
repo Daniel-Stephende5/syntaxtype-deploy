@@ -123,7 +123,15 @@ useEffect(() => {
 
 }, 2500 / speed);
 
-    useEffect(() => {
+   
+
+
+    return () => {
+      clearInterval(spawnInterval);
+      clearInterval(fallInterval);
+    };
+  }, [availableWords, wrongWordsPool, isGameOver, speed, useLives]);
+ useEffect(() => {
   if (isGameOver) return;
 
   let animationFrameId;
@@ -164,14 +172,6 @@ useEffect(() => {
 
   return () => cancelAnimationFrame(animationFrameId);
 }, [isGameOver, speed, useLives]);
-
-
-    return () => {
-      clearInterval(spawnInterval);
-      clearInterval(fallInterval);
-    };
-  }, [availableWords, wrongWordsPool, isGameOver, speed, useLives]);
-
   const handleInputChange = (e) => {
     const value = e.target.value;
     setCurrentInput(value);
