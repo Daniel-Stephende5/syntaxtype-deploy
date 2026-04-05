@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-const AdancedFallingLocalSetup = [
+const AdvancedFallingLocalSetup = [
   {
     challengeId: 201,
     id: 201,
