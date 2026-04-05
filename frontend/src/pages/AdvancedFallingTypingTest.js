@@ -97,7 +97,7 @@ useEffect(() => {
   const spawnWordsRandomly = () => {
      if (isGameOver) return;
     // Random batch size between 5–8
-    const batchSize = Math.floor(Math.random() * 4) + 3;
+    const batchSize = Math.floor(Math.random() * 6) + 3;
 
     const newWords = [];
 
