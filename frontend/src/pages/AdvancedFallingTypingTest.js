@@ -3,7 +3,7 @@ import '../css/FallingTypingTest.css';
 import AdvancedFallingLocalSetup from "./AdvancedFallingLocalSetup";
 import { API_BASE } from "../utils/api";
 
-const GAME_AREA_HEIGHT = 500;
+const GAME_AREA_HEIGHT = 800;
 
 const AdvancedFallingTypingTest = () => {
   const [gameDuration, setGameDuration] = useState(60);
