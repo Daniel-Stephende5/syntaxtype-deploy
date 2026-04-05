@@ -1,4 +1,4 @@
-const localAdvancedChallenges = [
+const AdancedFallingLocalSetup = [
   {
     challengeId: 201,
     id: 201,
@@ -47,4 +47,4 @@ const localAdvancedChallenges = [
   }
 ];
 
-export default localAdvancedChallenges;
+export default AdvancedFallingLocalSetup;
