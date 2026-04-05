@@ -4,11 +4,13 @@ import com.syntaxtype.demo.DTO.statistics.LeaderboardEntry;
 import com.syntaxtype.demo.DTO.users.StudentProgressDTO;
 import com.syntaxtype.demo.DTO.users.UserDTO;
 import com.syntaxtype.demo.DTO.users.TeacherDTO;
+import com.syntaxtype.demo.Entity.Lessons.Score;
 import com.syntaxtype.demo.Entity.Enums.Role;
 import com.syntaxtype.demo.Entity.Statistics.Leaderboard;
 import com.syntaxtype.demo.Entity.Statistics.UserStatistics;
 import com.syntaxtype.demo.Entity.Users.Teacher;
 import com.syntaxtype.demo.Entity.Users.User;
+import com.syntaxtype.demo.Repository.lessons.ScoreRepository;
 import com.syntaxtype.demo.Repository.statistics.LeaderboardRepository;
 import com.syntaxtype.demo.Repository.statistics.ScoringRepository;
 import com.syntaxtype.demo.Repository.statistics.UserStatisticsRepository;
@@ -30,6 +32,7 @@ public class TeacherService {
     private final LeaderboardRepository leaderboardRepository;
     private final UserStatisticsRepository userStatisticsRepository;
     private final ScoringRepository scoringRepository;
+    private final ScoreRepository scoreRepository;
     private final UserService userService; // Inject UserService
 
     public List<TeacherDTO> findAll() {
@@ -227,7 +230,7 @@ public class TeacherService {
 
     /**
      * Build a StudentProgressDTO from a User entity.
-     * Aggregates data from Leaderboard, UserStatistics, and Scoring tables.
+     * Calculates all analytics from Score table (the authoritative source).
      *
      * @param student The student User entity
      * @return StudentProgressDTO with aggregated data
@@ -249,33 +252,31 @@ public class TeacherService {
             }
         }
         
-        // Get aggregate stats from UserStatistics
-        Optional<UserStatistics> statsOpt = userStatisticsRepository.findByUser(student);
-        Double averageWpm = 0.0;
-        Double averageAccuracy = 0.0;
+        // Get aggregate stats from Score table (authoritative source)
+        Double averageWpm = scoreRepository.findAverageWpmByUserId(studentId);
+        Double averageAccuracy = scoreRepository.findAverageAccuracyByUserId(studentId);
+        Long totalGames = scoreRepository.countByUserId(studentId);
         
-        if (statsOpt.isPresent()) {
-            UserStatistics stats = statsOpt.get();
-            averageWpm = stats.getWordsPerMinute() != null ? stats.getWordsPerMinute().doubleValue() : 0.0;
-            averageAccuracy = stats.getAccuracy() != null ? stats.getAccuracy().doubleValue() : 0.0;
-        }
+        // Handle null values (no scores yet)
+        averageWpm = averageWpm != null ? averageWpm : 0.0;
+        averageAccuracy = averageAccuracy != null ? averageAccuracy : 0.0;
         
-        // Get recent activity from Scoring table (last 10)
-        List<com.syntaxtype.demo.Entity.Statistics.Scoring> recentScoring = scoringRepository.findScoresByUser(student);
-        List<StudentProgressDTO.RecentActivity> recentActivity = recentScoring.stream()
+        // Get recent activity from Score table (last 10, newest first)
+        List<Score> recentScores = scoreRepository.findByUserUserIdOrderBySubmittedAtDesc(studentId);
+        List<StudentProgressDTO.RecentActivity> recentActivity = recentScores.stream()
                 .limit(10)
                 .map(s -> StudentProgressDTO.RecentActivity.builder()
-                        .activityId(s.getScoringId())
-                        .category(s.getCategory() != null ? s.getCategory().name() : null)
-                        .wpm(null) // Scoring doesn't have WPM, it's for challenge games
-                        .accuracy(null) // Scoring doesn't have accuracy
-                        .score(s.getTotalScore())
-                        .playedAt(null) // Scoring doesn't have timestamp, would need to add
+                        .activityId(s.getId())
+                        .category(s.getChallengeType())
+                        .wpm(s.getWpm())
+                        .accuracy(s.getAccuracy())
+                        .score(s.getScore())
+                        .playedAt(s.getSubmittedAt())
                         .build())
                 .collect(Collectors.toList());
         
-        // Count total games played (sum of leaderboard + scoring entries)
-        int totalGamesPlayed = leaderboardEntries.size() + recentScoring.size();
+        // Total games played from Score table
+        int totalGamesPlayed = totalGames != null ? totalGames.intValue() : 0;
         
         return StudentProgressDTO.builder()
                 .studentId(studentId)
