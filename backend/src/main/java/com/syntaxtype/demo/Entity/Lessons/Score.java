@@ -17,6 +17,7 @@ public class Score {
 
     private String challengeType;
     private double wpm;
+    private Double accuracy;
     private LocalDateTime submittedAt = LocalDateTime.now();
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -75,6 +76,14 @@ public class Score {
 
     public void setWpm(double wpm) {
         this.wpm = wpm;
+    }
+
+    public Double getAccuracy() {
+        return accuracy;
+    }
+
+    public void setAccuracy(Double accuracy) {
+        this.accuracy = accuracy;
     }
 
     public LocalDateTime getSubmittedAt() {
