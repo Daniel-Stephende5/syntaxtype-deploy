@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import '../css/FallingTypingTest.css';
 import AdvancedFallingLocalSetup from "./AdvancedFallingLocalSetup";
-
+import { API_BASE } from "../utils/api";
 
 const GAME_AREA_HEIGHT = 500;
 
@@ -93,31 +93,41 @@ useEffect(() => {
     if ((availableWords.length === 0 && wrongWordsPool.length === 0) || isGameOver) return;
 
     const spawnInterval = setInterval(() => {
-      const useWrong = Math.random() < 0.25 && wrongWordsPool.length > 0;
-      const word = useWrong
-        ? wrongWordsPool[Math.floor(Math.random() * wrongWordsPool.length)]
-        : availableWords[Math.floor(Math.random() * availableWords.length)];
+  const batchSize = Math.floor(Math.random() * 2) + 2; // 2–3 words
 
-      const newWord = {
-        id: wordIdCounter.current++,
-        text: word,
-        y: 0,
-        x: Math.random() * 80,
-        isWrong: useWrong,
-      };
+  const newWords = [];
 
-      setFallingWords(prev => {
-        const updated = [...prev, newWord];
-        fallingWordsRef.current = updated;
-        return updated;
-      });
-    }, 2000 / speed);
+  for (let i = 0; i < batchSize; i++) {
+    const useWrong = Math.random() < 0.25 && wrongWordsPool.length > 0;
+
+    const word = useWrong
+      ? wrongWordsPool[Math.floor(Math.random() * wrongWordsPool.length)]
+      : availableWords[Math.floor(Math.random() * availableWords.length)];
+
+    newWords.push({
+      id: wordIdCounter.current++,
+      text: word,
+      y: 0,
+      x: Math.random() * 80,
+      isWrong: useWrong,
+    });
+  }
+
+  setFallingWords(prev => {
+    const updated = [...prev, ...newWords];
+
+    const limited = updated.slice(-15); // prevent overflow
+    fallingWordsRef.current = limited;
+    return limited;
+  });
+
+}, 1500 / speed);
 
     const fallInterval = setInterval(() => {
       let lostWords = 0;
 
       const updated = fallingWordsRef.current.reduce((acc, word) => {
-        const newY = word.y + 5 * speed;
+        const newY = word.y + 2 * speed;
         if (newY > GAME_AREA_HEIGHT) {
           if (useLives && !word.isWrong) lostWords += 1;
           return acc; // remove
