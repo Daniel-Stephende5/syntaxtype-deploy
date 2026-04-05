@@ -100,6 +100,7 @@ public class ScoreController {
         score.setTimeInSeconds(Optional.ofNullable(request.getTimeSpent()).orElse(0));
         score.setChallengeType(categoryEnum.name());
         score.setWpm(Optional.ofNullable(request.getWpm()).orElse(0));
+        score.setAccuracy(Optional.ofNullable(request.getAccuracy()).orElse(100));
         score.setSubmittedAt(LocalDateTime.now());
         score.setUser(userDetails.getUser());
         scoreService.saveScore(score);
