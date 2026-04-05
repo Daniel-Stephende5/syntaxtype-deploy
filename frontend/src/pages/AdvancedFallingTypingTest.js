@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import '../css/FallingTypingTest.css';
 import { API_BASE } from "../utils/api";
-import AdvancedFallingLocalSetup from "./AdvancedFAllingLocalSetup.js"
+import AdvancedFallingLocalSetup from "./AdvancedFAllingLocalSetup"
 const GAME_AREA_HEIGHT = 500;
 const GAME_AREA_WIDTH = 100; // in percent
 const LANES = 8; // number of horizontal lanes
