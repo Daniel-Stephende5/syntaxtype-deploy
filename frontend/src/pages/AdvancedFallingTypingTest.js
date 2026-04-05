@@ -125,7 +125,7 @@ useEffect(() => {
     });
 
     // Schedule next spawn with randomized interval (2.5s – 4s, scaled by speed)
-    const nextInterval = (Math.random() * 2500 + 5000) / speed; // 2500–4000 ms
+    const nextInterval = (Math.random() * 4500 + 9000) / speed; // 2500–4000 ms
     timeoutId = setTimeout(spawnWordsRandomly, nextInterval);
   };
 
@@ -143,7 +143,7 @@ useEffect(() => {
     let lostWords = 0;
 
     const updated = fallingWordsRef.current.reduce((acc, word) => {
-      const newY = word.y + (0.3 * speed);
+      const newY = word.y + (0.2 * speed);
 
       if (newY > GAME_AREA_HEIGHT) {
         if (useLives && !word.isWrong) lostWords += 1;
