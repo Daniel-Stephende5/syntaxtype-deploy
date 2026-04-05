@@ -53,8 +53,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()      // public login/register
                         .requestMatchers("/api/**").permitAll()        // temporarily accessible to any logged-in user
                         .anyRequest().permitAll()                         // static files, root page, docs, etc.
-                );
-               // .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                )
+               .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
