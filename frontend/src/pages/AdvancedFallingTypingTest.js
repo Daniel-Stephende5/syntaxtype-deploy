@@ -92,8 +92,8 @@ useEffect(() => {
   useEffect(() => {
     if ((availableWords.length === 0 && wrongWordsPool.length === 0) || isGameOver) return;
 
-    const spawnInterval = setInterval(() => {
-  const batchSize = Math.floor(Math.random() * 2) + 2; // 2–3 words
+   const spawnInterval = setInterval(() => {
+  const batchSize = Math.floor(Math.random() * 2) + 5; // 5–6 words
 
   const newWords = [];
 
@@ -108,7 +108,7 @@ useEffect(() => {
       id: wordIdCounter.current++,
       text: word,
       y: 0,
-      x: Math.random() * 80,
+      x: (i * 12) + Math.random() * 10, // 👈 prevents overlap
       isWrong: useWrong,
     });
   }
@@ -116,40 +116,55 @@ useEffect(() => {
   setFallingWords(prev => {
     const updated = [...prev, ...newWords];
 
-    const limited = updated.slice(-15); // prevent overflow
+    const limited = updated.slice(-20); // slightly higher cap
     fallingWordsRef.current = limited;
     return limited;
   });
 
-}, 1500 / speed);
+}, 2500 / speed);
 
-    const fallInterval = setInterval(() => {
-      let lostWords = 0;
+    useEffect(() => {
+  if (isGameOver) return;
 
-      const updated = fallingWordsRef.current.reduce((acc, word) => {
-        const newY = word.y + 2 * speed;
-        if (newY > GAME_AREA_HEIGHT) {
-          if (useLives && !word.isWrong) lostWords += 1;
-          return acc; // remove
-        }
-        acc.push({ ...word, y: newY });
+  let animationFrameId;
+
+  const update = () => {
+    let lostWords = 0;
+
+    const updated = fallingWordsRef.current.reduce((acc, word) => {
+      const newY = word.y + (1.5 * speed);
+
+      if (newY > GAME_AREA_HEIGHT) {
+        if (useLives && !word.isWrong) lostWords += 1;
         return acc;
-      }, []);
-
-      setFallingWords(updated);
-      fallingWordsRef.current = updated;
-
-      if (lostWords > 0 && useLives) {
-        setLives(prev => {
-          const updatedLives = prev - lostWords;
-          if (updatedLives <= 0) {
-            setIsGameOver(true);
-            return 0;
-          }
-          return updatedLives;
-        });
       }
-    }, 200);
+
+      acc.push({ ...word, y: newY });
+      return acc;
+    }, []);
+
+    fallingWordsRef.current = updated;
+    setFallingWords(updated);
+
+    if (lostWords > 0 && useLives) {
+      setLives(prev => {
+        const updatedLives = prev - lostWords;
+        if (updatedLives <= 0) {
+          setIsGameOver(true);
+          return 0;
+        }
+        return updatedLives;
+      });
+    }
+
+    animationFrameId = requestAnimationFrame(update);
+  };
+
+  animationFrameId = requestAnimationFrame(update);
+
+  return () => cancelAnimationFrame(animationFrameId);
+}, [isGameOver, speed, useLives]);
+
 
     return () => {
       clearInterval(spawnInterval);
