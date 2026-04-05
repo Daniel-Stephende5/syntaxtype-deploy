@@ -26,25 +26,24 @@ const AdvancedFallingTypingTest = () => {
   const spawnTimer = useRef(0);
 
   // Load configuration
-  useEffect(() => {
-    const config = JSON.parse(sessionStorage.getItem("fallingGameConfig"));
-    if (!config) return;
+ useEffect(() => {
+  const config = AdvancedFallingLocalSetup[0].config;
+  if (!config) return;
 
-    setAvailableWords(config.words || []);
-    setWrongWordsPool(config.wrongWords || []);
-    setGameDuration(config.duration || 60);
-    setTimeLeft(config.duration || 60);
-    setSpeed(config.speed || 1);
+  setAvailableWords(config.words || []);
+  setWrongWordsPool(config.wrongWords || []);
+  setGameDuration(config.duration || 60);
+  setTimeLeft(config.duration || 60);
+  setSpeed(config.speed || 1);
 
-    if (config.useLives) {
-      setUseLives(true);
-      setLives(config.maxLives);
-    } else {
-      setUseLives(false);
-      setLives(null);
-    }
-  }, []);
-
+  if (config.useLives) {
+    setUseLives(true);
+    setLives(config.maxLives);
+  } else {
+    setUseLives(false);
+    setLives(null);
+  }
+}, []);
   // Score reference
   useEffect(() => {
     fallingWordsRef.current = fallingWords;
