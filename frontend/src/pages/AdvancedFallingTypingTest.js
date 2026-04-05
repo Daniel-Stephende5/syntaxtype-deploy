@@ -89,58 +89,61 @@ useEffect(() => {
     return () => clearInterval(timer);
   }, [timeLeft, isGameOver]);
 
-  useEffect(() => {
-    if ((availableWords.length === 0 && wrongWordsPool.length === 0) || isGameOver) return;
+ useEffect(() => {
+  if ((availableWords.length === 0 && wrongWordsPool.length === 0) || isGameOver) return;
 
-   const spawnInterval = setInterval(() => {
-  const batchSize = Math.floor(Math.random() * 4) + 5; 
+  let timeoutId;
 
-  const newWords = [];
+  const spawnWordsRandomly = () => {
+     if (isGameOver) return;
+    // Random batch size between 5–8
+    const batchSize = Math.floor(Math.random() * 4) + 5;
 
-  for (let i = 0; i < batchSize; i++) {
-    const useWrong = Math.random() < 0.25 && wrongWordsPool.length > 0;
+    const newWords = [];
 
-    const word = useWrong
-      ? wrongWordsPool[Math.floor(Math.random() * wrongWordsPool.length)]
-      : availableWords[Math.floor(Math.random() * availableWords.length)];
+    for (let i = 0; i < batchSize; i++) {
+      const useWrong = Math.random() < 0.25 && wrongWordsPool.length > 0;
 
-    newWords.push({
-      id: wordIdCounter.current++,
-      text: word,
-      y: 0,
-      x: (i * 12) + Math.random() * 10, // 👈 prevents overlap
-      isWrong: useWrong,
+      const word = useWrong
+        ? wrongWordsPool[Math.floor(Math.random() * wrongWordsPool.length)]
+        : availableWords[Math.floor(Math.random() * availableWords.length)];
+
+      newWords.push({
+        id: wordIdCounter.current++,
+        text: word,
+        y: 0,
+        x: (i * 12) + Math.random() * 10, // prevents overlap
+        isWrong: useWrong,
+      });
+    }
+
+    setFallingWords(prev => {
+      const updated = [...prev, ...newWords];
+      const limited = updated.slice(-20);
+      fallingWordsRef.current = limited;
+      return limited;
     });
-  }
 
-  setFallingWords(prev => {
-    const updated = [...prev, ...newWords];
+    // Schedule next spawn with randomized interval (2.5s – 4s, scaled by speed)
+    const nextInterval = (Math.random() * 1500 + 2500) / speed; // 2500–4000 ms
+    timeoutId = setTimeout(spawnWordsRandomly, nextInterval);
+  };
 
-    const limited = updated.slice(-20); // slightly higher cap
-    fallingWordsRef.current = limited;
-    return limited;
-  });
+  spawnWordsRandomly(); // initial spawn
 
-}, 2500 / speed);
-
-   
-
-
-    return () => {
-      clearInterval(spawnInterval);
-      clearInterval(fallInterval);
-    };
-  }, [availableWords, wrongWordsPool, isGameOver, speed, useLives]);
+  return () => clearTimeout(timeoutId); // cleanup on unmount or game over
+}, [availableWords, wrongWordsPool, isGameOver, speed, useLives]);
  useEffect(() => {
   if (isGameOver) return;
 
   let animationFrameId;
 
   const update = () => {
+      if (isGameOver) return;
     let lostWords = 0;
 
     const updated = fallingWordsRef.current.reduce((acc, word) => {
-      const newY = word.y + (0.7 * speed);
+      const newY = word.y + (0.5 * speed);
 
       if (newY > GAME_AREA_HEIGHT) {
         if (useLives && !word.isWrong) lostWords += 1;
