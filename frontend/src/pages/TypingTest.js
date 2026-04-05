@@ -37,6 +37,7 @@ const [blankInputs, setBlankInputs] = useState([]);
  
   // ✅ Fetch challenge list
 const fetchChallengeList = async (type) => {
+   setLoading(true);
   setError(null);
   try {
     if (type === "normal") {
@@ -156,8 +157,9 @@ useEffect(() => {
 }, [selectedChallenge, isTestComplete]);
   // Fetch challenges on type change
   useEffect(() => {
-    setLoading(true);
+   
     fetchChallengeList(challengeType);
+    
     setSelectedChallenge(null);
     setSampleParagraph("");
     setInput("");
