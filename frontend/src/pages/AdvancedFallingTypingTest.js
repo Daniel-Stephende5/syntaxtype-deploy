@@ -73,88 +73,92 @@ const AdvancedFallingTypingTest = () => {
 
   // --- Spawn words progressively ---
   const spawnWords = () => {
-    const baseBatch = 3;
-    const batchSize = Math.min(baseBatch + Math.floor(score / 5), 10); // increase batch as score grows
+  if (availableWords.length === 0) return; // ensure words are loaded
 
-    const laneWidth = GAME_AREA_WIDTH / LANES;
-    const newWords = [];
+  const baseBatch = 3;
+  const batchSize = Math.min(baseBatch + Math.floor(score / 5), 10);
 
-    for (let i = 0; i < batchSize; i++) {
-      const useWrong = Math.random() < 0.25 && wrongWordsPool.length > 0;
-      const word = useWrong
-        ? wrongWordsPool[Math.floor(Math.random() * wrongWordsPool.length)]
-        : availableWords[Math.floor(Math.random() * availableWords.length)];
+  const laneWidth = GAME_AREA_WIDTH_PX / LANES;
+  const wordMaxWidth = 100; // approximate max width of word in px
+  const newWords = [];
 
-      const laneIndex = i % LANES;
-      const x = laneIndex * laneWidth + Math.random() * (laneWidth - 5);
+  for (let i = 0; i < batchSize; i++) {
+    const useWrong = Math.random() < 0.25 && wrongWordsPool.length > 0;
+    const word = useWrong
+      ? wrongWordsPool[Math.floor(Math.random() * wrongWordsPool.length)]
+      : availableWords[Math.floor(Math.random() * availableWords.length)];
 
-      newWords.push({
-        id: wordIdCounter.current++,
-        text: word,
-        y: 0,
-        x,
-        isWrong: useWrong,
+    const laneIndex = i % LANES;
+    const x = laneIndex * laneWidth + Math.random() * (laneWidth - wordMaxWidth);
+
+    newWords.push({
+      id: wordIdCounter.current++,
+      text: word,
+      y: 0,
+      x,
+      isWrong: useWrong,
+    });
+  }
+
+  setFallingWords(prev => {
+    const updated = [...prev, ...newWords];
+    fallingWordsRef.current = updated.slice(-50); // keep last 50 words
+    return fallingWordsRef.current;
+  });
+};
+
+// --- main game loop ---
+useEffect(() => {
+  if (isGameOver || availableWords.length === 0) return; // wait until words loaded
+
+  const update = (time) => {
+    const delta = (time - lastFrameTime.current) / 16;
+    lastFrameTime.current = time;
+
+    spawnTimer.current += delta;
+
+    if (spawnTimer.current >= 2.5 / speed) {
+      spawnWords();
+      spawnTimer.current = 0;
+    }
+
+    let lostWords = 0;
+
+    const updated = fallingWordsRef.current.reduce((acc, word) => {
+      const newY = word.y + 1 * delta * speed * 2;
+
+      if (newY > GAME_AREA_HEIGHT) {
+        if (useLives && !word.isWrong) lostWords += 1;
+        return acc;
+      }
+
+      acc.push({ ...word, y: newY });
+      return acc;
+    }, []);
+
+    fallingWordsRef.current = updated;
+    setFallingWords(updated);
+
+    if (lostWords > 0 && useLives) {
+      setLives(prev => {
+        const updatedLives = prev - lostWords;
+        if (updatedLives <= 0) {
+          setIsGameOver(true);
+          return 0;
+        }
+        return updatedLives;
       });
     }
 
-    setFallingWords(prev => {
-      const updated = [...prev, ...newWords];
-      const limited = updated.slice(-50); // cap total words
-      fallingWordsRef.current = limited;
-      return limited;
-    });
+    requestAnimationFrame(update);
   };
 
+  lastFrameTime.current = performance.now();
+  requestAnimationFrame(update);
+}, [isGameOver, speed, useLives, availableWords]);
+
   // --- Main game loop ---
-  useEffect(() => {
-    if (isGameOver) return;
 
-    const update = (time) => {
-      const delta = (time - lastFrameTime.current) / 16;
-      lastFrameTime.current = time;
-
-      spawnTimer.current += delta;
-
-      // spawn every 2.5s / speed
-      if (spawnTimer.current >= 2.5 / speed) {
-        spawnWords();
-        spawnTimer.current = 0;
-      }
-
-      let lostWords = 0;
-
-      const updated = fallingWordsRef.current.reduce((acc, word) => {
-        const newY = word.y + 1 * delta * speed * 2;
-
-        if (newY > GAME_AREA_HEIGHT) {
-          if (useLives && !word.isWrong) lostWords += 1;
-          return acc;
-        }
-
-        acc.push({ ...word, y: newY });
-        return acc;
-      }, []);
-
-      fallingWordsRef.current = updated;
-      setFallingWords(updated);
-
-      if (lostWords > 0 && useLives) {
-        setLives(prev => {
-          const updatedLives = prev - lostWords;
-          if (updatedLives <= 0) {
-            setIsGameOver(true);
-            return 0;
-          }
-          return updatedLives;
-        });
-      }
-
-      requestAnimationFrame(update);
-    };
-
-    lastFrameTime.current = performance.now();
-    requestAnimationFrame(update);
-  }, [isGameOver, speed, useLives]);
 
   // --- Input handling ---
   const handleInputChange = (e) => {
