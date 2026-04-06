@@ -3,31 +3,28 @@ const generateSlots = (answer) => {
   return answer.split("").map(() => "");
 };
 export const lessons = [
+{
+  id: 1,
+  type: "match",
+  question: "Which keyword is used to return a value from a function in C?",
+  options: ["break", "return", "exit", "yield"],
+  correct: "return"
+},
   {
-    id: 1,
-    type: "match",
-    question: "Which keyword declares a constant value?",
-    options: ["var", "let", "const", "function"],
-    correct: "const"
-  },
-  {
-    id: 2,
-    type: "reorder",
-    question: "Reorder the code blocks to create a valid function:",
-    parts: [
-        "function",
-  "greet",
-  "(",
-  "name",
-  ")",
-  "{",
-  "return Hello + name",
-  ";",
-  "}"
-
-    ],
-    correctOrder: [0, 1, 2]
-  },
+  id: 2,
+  type: "reorder",
+  question: "Reorder the code blocks to create a valid C function:",
+  parts: [
+    "int",
+    "greet (",
+    "char name[] )",
+    "{",
+    "printf(\"Hello %s\", name);",
+    "return 0;",
+    "}"
+  ],
+  correctOrder: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+}
   
   {
   id: 3,
