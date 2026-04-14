@@ -21,14 +21,10 @@ const AdvancedFallingLocalSetup = [
       ],
 
       wrongWords: [
-        "pointr","pointre","deref",
-        "funtion","paramater","arguement","console.log","def","lambda","yield",                
-    "class","extends","implements",         
-    "public","private","protected",         
-    "try","catch","finally","throw",        
-    "println","systemout",                  
-    "select","where","join",                
-    "echo","$variable"                
+        "pointr","pointre","deref","funtion","paramater","arguement","console.log","def","lambda","yield", "class",
+        "extends","implements","public","private","protected",         
+    "try","catch","finally","throw","println","systemout","select","where","join",                
+    "echo","$variable",                
     "func","package","defer"    
       ],
 
