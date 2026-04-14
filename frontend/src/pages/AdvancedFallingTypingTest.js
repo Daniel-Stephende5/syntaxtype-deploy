@@ -257,11 +257,11 @@ useEffect(() => {
   return (
     <div style={{ padding: "2rem" }}>
       <h2>Advanced Falling Typing Test</h2>
-      <p>
+      <p style = {{ fontWeight: "bold" }}>
         Score: {score} | Time Left: {timeLeft}s {useLives && `| Lives: ${lives}`}
         
       </p>
-      <p style = {{ color: "green",}}> Type the correct C terminologies, Wrong word and out of bounds correct word reduces life.
+      <p style = {{ color: "green",fontWeight: "bold"}}> Type the correct C terminologies, Wrong word and out of bounds correct word reduces life.
         </p>
       <div
         className="game-area"
