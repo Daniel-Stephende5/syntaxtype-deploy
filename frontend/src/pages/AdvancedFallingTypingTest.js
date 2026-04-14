@@ -282,7 +282,7 @@ useEffect(() => {
               top: `${word.y}px`,
               left: `${word.x}%`,
               fontSize: '18px',
-              color: word.isWrong ? 'yellow' : 'yellow'
+              color: word.isWrong ? 'orange' : 'orange'
             }}
           >
             {renderWord(word)}
