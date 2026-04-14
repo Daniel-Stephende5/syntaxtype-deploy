@@ -567,7 +567,7 @@ return (
             {level === "hard" && "🔴 HARD"}
           </div>
 
-          <ul style={{ listStyle: "none", padding: 0, color: "#FFFFFF", }}>
+          <ul style={{ listStyle: "none", padding: 0, }}>
             {filtered.map((challenge) => (
               <li
                 key={challenge.id}
@@ -601,6 +601,7 @@ return (
                     backgroundColor: "#554c16",
                     cursor: "pointer",
                     textAlign: "left",
+                    color: "#FFFFFF"
                   }}
                 >
                   {challenge.question}
