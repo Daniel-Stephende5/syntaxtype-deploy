@@ -21,24 +21,15 @@ const AdvancedFallingLocalSetup = [
       ],
 
       wrongWords: [
-        "pointr","pointre","addresss","adress","deref","dereferense",
-        "funtion","fucntion","fucntionn","paramater","arguement","retrun","returnn",
-        "pritnf","scanff","sacnf","mainn","mian","includee","incldue","definee","defne",
-        "strcut","structt","unionn","enumm","swtich","switchh","cas","casee","brek","breakk",
-        "contine","continuee","defualt","defaultt","got","gotoo","constt","volatle","volatilee",
-        "statc","staticc","extren","externn","regster","registerr","inlne","inlinee","restirct","restrict",
-        "mallloc","mallocc","callloc","callocc","realoc","reallocc","fre","freee",
-        "arrary","arrayy","strng","stringg","bufer","buffer","inpoot","inputt","outpt","output",
-        "strem","streamm","fle","filee","fopen","clos","fclosee","frread","fread",
-        "fwritee","fwrit","writee","hedar","header","includ","includde","macroo","macros",
-        "preproccess","preprocesss","compilerr","compiller","linkerr","linkr","objct","objectt",
-        "binnary","binaryy","soruce","sourcee","loopp","loop","whille","whilee","foor","forr",
-        "doo","conditon","conditionn","iteraton","iteration","recurson","recursionn",
-        "expresion","expressionn","statment","statementt","bloock","block","scpoe","scopee",
-        "glboal","global","locall","local","lifetme","lifetime","storag","storagee",
-        "incremnt","increment","decrment","decrement","opertor","operatorr","operandd",
-        "arithmtic","arithmetic","logcal","logical","bitwse","bitwise","shifft","shift",
-        "comapre","compare","assignn","assign"
+        "pointr","pointre","deref",
+        "funtion","paramater","arguement","console.log","def","lambda","yield",                
+    "class","extends","implements",         
+    "public","private","protected",         
+    "try","catch","finally","throw",        
+    "println","systemout",                  
+    "select","where","join",                
+    "echo","$variable"                
+    "func","package","defer"    
       ],
 
       duration: 60,
