@@ -520,12 +520,7 @@ return (
           >
             Paragraph Typing Test
           </button>
-          <button
-            className={`tab-button ${challengeType === "falling" ? "active" : ""}`}
-            onClick={() => handleChallengeTypeChange("falling")}
-          >
-            Falling Typing Test
-          </button>
+         
           <button
             className={`tab-button ${challengeType === "advancedFalling" ? "active" : ""}`}
             onClick={() => handleChallengeTypeChange("advancedFalling")}
