@@ -259,6 +259,7 @@ useEffect(() => {
       <h2>Advanced Falling Typing Test</h2>
       <p>
         Score: {score} | Time Left: {timeLeft}s {useLives && `| Lives: ${lives}`}
+        type the correct C terminologies, Wrong word and out of bounds correct word reduces life.
       </p>
 
       <div
