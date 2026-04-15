@@ -277,7 +277,7 @@ const isValidAssembly = (blocks) => {
         style={{
           position: "relative",
            width: "100%",
-          maxWidth: 650,
+          maxWidth: 600,
           height: 350,
           margin: "0 auto 20px",
           border: "2px solid #333",
