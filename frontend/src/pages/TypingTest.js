@@ -381,7 +381,7 @@ const TypingTest = () => {
         <div className="tt-tabs">
           {[
             { id: "normal",          label: "📝 Paragraph" },
-            { id: "falling",         label: "🌧️ Falling" },
+            
             { id: "advancedFalling", label: "⚡ Advanced" },
           ].map(({ id, label }) => (
             <button
