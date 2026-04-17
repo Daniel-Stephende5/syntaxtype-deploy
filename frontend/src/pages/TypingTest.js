@@ -47,10 +47,7 @@ const TypingTest = () => {
         const data = await res.json();
         setChallenges(data);
       } else if (type === "advancedFalling") {
-        const res = await fetch(`${API_BASE}/api/challenges/falling/advanced`);
-        if (!res.ok) throw new Error("Failed to fetch advanced falling challenges");
-        const data = await res.json();
-        setChallenges(data);
+       setChallenges(AdvancedFallingLocalSetup);
       } else {
         throw new Error("Unknown challenge type");
       }
@@ -79,14 +76,13 @@ const TypingTest = () => {
         navigate("/fallingtypingtest");
         return;
       } else if (challengeType === "advancedFalling") {
-        const res = await fetch(
-          `${API_BASE}/api/challenges/falling/advanced/${challenge.challengeId || challenge.id}`
-        );
-        if (!res.ok) throw new Error("Failed to load advanced falling challenge");
-        const data = await res.json();
-        sessionStorage.setItem("fallingChallenge", JSON.stringify(data));
-        navigate("/fallingtypingtest2");
-        return;
+         sessionStorage.setItem(
+    "fallingGameConfig",
+    JSON.stringify(challenge.config)
+  );
+
+  navigate("/fallingtypingtest2");
+  return;
       } else {
         throw new Error("Unknown challenge type");
       }
