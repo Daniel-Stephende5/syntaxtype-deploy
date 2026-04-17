@@ -8,6 +8,7 @@ import Button from "@mui/material/Button";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import codeChallenges from "./codeChallenges";
+import AdvancedFallingLocalSetup from "./AdvancedFallingLocalSetup";
 
 const TypingTest = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
