@@ -1,8 +1,37 @@
+"use client"
+
 import React, { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { lessons as quizLessons, quizTitle } from "./QuizData";
 import CodeWormBattle from "./CodeWormBattle";
+import "./SyntaxSaverLesson.css";
 
+// ── Design Tokens (same as dashboard) ─────────────────────────────────────────
+const T = {
+  ink: "#1a1a2e",
+  paper: "#f5f0e8",
+  paperDark: "#ede7d9",
+  paperMid: "#ddd5c5",
+  accent: "#e8622a",
+  accentDim: "#c44e1e",
+  green: "#2d7a3a",
+  red: "#b91c1c",
+  blue: "#2563a8",
+};
+
+// ── Boot fonts ────────────────────────────────────────────────────────────────
+function boot() {
+  if (!document.getElementById("st-fonts")) {
+    const l = document.createElement("link");
+    l.id = "st-fonts";
+    l.rel = "stylesheet";
+    l.href =
+      "https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap";
+    document.head.appendChild(l);
+  }
+}
+
+// ── MAIN ──────────────────────────────────────────────────────────────────────
 export default function SyntaxSaverLesson({ onBack }) {
   const [resetKey, setResetKey] = useState(0);
   const [step, setStep] = useState(0);
@@ -11,6 +40,8 @@ export default function SyntaxSaverLesson({ onBack }) {
 
   const lessons = quizLessons;
   const current = lessons[step];
+
+  useEffect(() => boot(), []);
 
   const handleNext = (points = 0) => {
     setScore(prev => prev + points);
@@ -40,11 +71,16 @@ export default function SyntaxSaverLesson({ onBack }) {
   };
 
   return (
-    <div className="lesson-container">
-      <div className="lesson-card" key={resetKey}>
-        <h2>🧠 {quizTitle}</h2>
-        <p>Step {step + 1} of {lessons.length}</p>
+    <div className="st-lesson-bg">
+      <div className="st-lesson-card" key={resetKey}>
 
+        {/* HEADER */}
+        <div className="st-header">
+          <h2>🧠 {quizTitle}</h2>
+          <p>Step {step + 1} / {lessons.length}</p>
+        </div>
+
+        {/* CONTENT */}
         {current.type === "match" && (
           <MatchQuestion data={current} onNext={handleNext} setFeedback={setFeedback} />
         )}
@@ -55,19 +91,30 @@ export default function SyntaxSaverLesson({ onBack }) {
           <CodeWormBattle onNext={handleNext} />
         )}
 
-        <p className="feedback">{feedback}</p>
-        <p className="score">⭐ Score: {score}</p>
+        {/* FEEDBACK */}
+        <div className="st-feedback">{feedback}</div>
 
-        <div className="lesson-buttons">
-          {step > 0 && <button onClick={handleBackStep}>⬅️ Previous</button>}
-          <button onClick={handleBackToMenu}>🏠 Menu</button>
+        {/* SCORE */}
+        <div className="st-score">⭐ Score: {score}</div>
+
+        {/* NAV */}
+        <div className="st-actions">
+          {step > 0 && (
+            <button onClick={handleBackStep} className="st-btn secondary">
+              ⬅ Previous
+            </button>
+          )}
+          <button onClick={handleBackToMenu} className="st-btn danger">
+            🏠 Menu
+          </button>
         </div>
+
       </div>
     </div>
   );
 }
 
-// --- MatchQuestion ---
+// ── MatchQuestion ─────────────────────────────────────────────────────────────
 function MatchQuestion({ data, onNext, setFeedback }) {
   const normalize = s => (s ?? "").toString().trim().toLowerCase();
 
@@ -77,16 +124,17 @@ function MatchQuestion({ data, onNext, setFeedback }) {
       onNext(10);
     } else {
       setFeedback("❌ Incorrect! Moving on...");
-      onNext(0); // ✅ proceed even if wrong
+      onNext(0);
     }
   };
 
   return (
-    <div className="question">
+    <div className="st-question">
       <h3>{data.question}</h3>
-      <div className="options">
+
+      <div className="st-options">
         {data.options.map((opt, i) => (
-          <button key={i} onClick={() => handleClick(opt)}>
+          <button key={i} onClick={() => handleClick(opt)} className="st-btn">
             {opt}
           </button>
         ))}
@@ -95,7 +143,7 @@ function MatchQuestion({ data, onNext, setFeedback }) {
   );
 }
 
-// --- ReorderQuestion ---
+// ── ReorderQuestion ───────────────────────────────────────────────────────────
 const scramble = arr => {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -124,25 +172,21 @@ function ReorderQuestion({ data, onNext, setFeedback }) {
       onNext(15);
     } else {
       setFeedback("❌ Not correct. Moving on...");
-      onNext(0); // ✅ proceed even if wrong
+      onNext(0);
     }
   };
 
   return (
-    <div className="question">
+    <div className="st-question">
       <h3>{data.question}</h3>
+
       <DragDropContext onDragEnd={handleDragEnd}>
         <Droppable droppableId="droppable" direction="horizontal">
           {(provided) => (
             <div
               ref={provided.innerRef}
               {...provided.droppableProps}
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 8,
-                marginBottom: 16
-              }}
+              className="st-drag-area"
             >
               {order.map((part, index) => (
                 <Draggable key={index} draggableId={`part-${index}`} index={index}>
@@ -151,16 +195,7 @@ function ReorderQuestion({ data, onNext, setFeedback }) {
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
-                      style={{
-                        padding: "8px 12px",
-                        background: snapshot.isDragging ? "#9fe3ff" : "#0c5b0bff",
-                        color: "white",
-                        fontWeight: "bold",
-                        borderRadius: 4,
-                        cursor: "grab",
-                        userSelect: "none",
-                        ...provided.draggableProps.style
-                      }}
+                      className={`st-code-block ${snapshot.isDragging ? "dragging" : ""}`}
                     >
                       {part}
                     </div>
@@ -172,7 +207,10 @@ function ReorderQuestion({ data, onNext, setFeedback }) {
           )}
         </Droppable>
       </DragDropContext>
-      <button onClick={handleSubmit}>Check Order</button>
+
+      <button onClick={handleSubmit} className="st-btn primary">
+        Check Order
+      </button>
     </div>
   );
 }
