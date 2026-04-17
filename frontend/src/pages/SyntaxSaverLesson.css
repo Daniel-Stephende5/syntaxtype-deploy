@@ -1,184 +1,151 @@
-.slots-container {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin: 20px 0;
-  flex-wrap: wrap;
-}
-
-.slot-box {
-  width: 45px;
-  height: 55px;
-  border-bottom: 4px solid #333;
-  text-align: center;
-  font-size: 24px;
-  font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #fff;
-  border-radius: 6px 6px 0 0;
-}
-
-.slot-box:hover {
-  background: #f2f2f2;
-}
-
-.letter-bank {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-  margin-top: 10px;
-}
-
-.letter-btn {
-  padding: 10px 14px;
-  font-size: 16px;
-  background: #0c5b0bff;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.letter-btn:hover {
-  background: #0a4709;
-}
-.quiz-menu {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh; /* full screen center */
-  text-align: center;
-}
-
-.quiz-list {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  margin-top: 20px;
-  width: 100%;
-  max-width: 400px; /* keeps it like a menu box */
-}
-
-.quiz-item {
-  width: 100%;
-  padding: 15px;
-  font-size: 18px;
-  font-weight: bold;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  background: #0c5b0bff;
-  color: white;
-  transition: 0.2s;
-}
-.bookworm {
-  width: 100%;
-  padding: 15px;
-  font-size: 18px;
-  font-weight: bold;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  background: #0c5b0bff;
-  color: white;
-  transition: 0.2s;
-}
-.quiz-item:hover {
-  background: #0a4709;
-  transform: scale(1.03);
-}
-
-.quiz-item.special {
-  background: #1e88e5;
-}
-
-.quiz-item.special:hover {
-  background: #1565c0;
-}
-.lesson-container {
+/* ── BACKGROUND ───────────────────────────────────────── */
+.st-lesson-bg {
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #0b1a2a; /* optional dark bg */
-  padding: 20px;
+
+  background: #f5f0e8;
+  background-image: radial-gradient(circle, #c8bfaa 1px, transparent 1px);
+  background-size: 24px 24px;
+
+  padding: 24px;
+  font-family: 'DM Sans', sans-serif;
 }
 
-/* CARD CONTAINER */
-.lesson-card {
-  background: #ffffff;
-  padding: 30px;
-  border-radius: 16px;
+/* ── CARD ─────────────────────────────────────────────── */
+.st-lesson-card {
   width: 100%;
-  max-width: 700px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  max-width: 720px;
+  background: #fff;
+
+  border-radius: 16px;
+  border: 2px solid #ddd5c5;
+
+  box-shadow: 0 6px 0 #ddd5c5;
+
+  padding: 28px;
   text-align: center;
 }
 
-/* QUESTION AREA */
-.question {
+/* ── HEADER ───────────────────────────────────────────── */
+.st-header h2 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  color: #1a1a2e;
+}
+
+.st-header p {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: #888;
+  margin-top: 6px;
+}
+
+/* ── QUESTION ─────────────────────────────────────────── */
+.st-question {
   margin-top: 20px;
 }
 
-/* OPTIONS BUTTONS */
-.options {
+.st-question h3 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  color: #1a1a2e;
+}
+
+/* ── OPTIONS ──────────────────────────────────────────── */
+.st-options {
+  margin-top: 16px;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
 }
 
-.options button {
+/* ── BUTTON SYSTEM ────────────────────────────────────── */
+.st-btn {
   padding: 10px 16px;
-  border: none;
-  border-radius: 8px;
-  background: #1f6feb;
-  color: white;
+  border-radius: 10px;
+  border: 2px solid #ddd5c5;
+
+  background: #ede7d9;
   cursor: pointer;
-  transition: 0.2s;
-}
 
-.options button:hover {
-  background: #1554b3;
-}
-
-/* DRAG ITEMS CENTER */
-.question > div {
-  justify-content: center;
-}
-
-/* FEEDBACK + SCORE */
-.feedback {
-  margin-top: 15px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
   font-weight: bold;
+
+  box-shadow: 0 3px 0 #ddd5c5;
+  transition: all 0.15s ease;
 }
 
-.score {
-  margin-top: 5px;
+.st-btn:hover {
+  transform: translateY(-2px);
+  background: #1a1a2e;
+  color: #fff;
+  box-shadow: 0 3px 0 #c44e1e;
 }
 
-/* BUTTONS */
-.lesson-buttons {
+.st-btn.primary {
+  background: #e8622a;
+  color: white;
+}
+
+.st-btn.secondary {
+  background: #ddd5c5;
+}
+
+.st-btn.danger {
+  background: #b91c1c;
+  color: white;
+}
+
+/* ── DRAG AREA ───────────────────────────────────────── */
+.st-drag-area {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+/* ── CODE BLOCK ───────────────────────────────────────── */
+.st-code-block {
+  padding: 8px 14px;
+  border-radius: 8px;
+
+  background: #1a1a2e;
+  color: #fff;
+
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+
+  cursor: grab;
+  box-shadow: 0 3px 0 #000;
+}
+
+.st-code-block.dragging {
+  background: #e8622a;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+/* ── FEEDBACK ─────────────────────────────────────────── */
+.st-feedback {
+  margin-top: 16px;
+  font-weight: bold;
+  font-family: 'DM Mono', monospace;
+}
+
+/* ── SCORE ────────────────────────────────────────────── */
+.st-score {
+  margin-top: 6px;
+  font-family: 'DM Mono', monospace;
+}
+
+/* ── ACTIONS ──────────────────────────────────────────── */
+.st-actions {
   margin-top: 20px;
   display: flex;
   justify-content: center;
   gap: 10px;
-}
-
-.lesson-buttons button {
-  padding: 10px 16px;
-  border-radius: 8px;
-  border: none;
-  background: #2ea043;
-  color: white;
-  cursor: pointer;
-}
-
-.lesson-buttons button:hover {
-  background: #238636;
 }
