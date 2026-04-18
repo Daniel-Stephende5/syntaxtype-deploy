@@ -113,7 +113,7 @@ useEffect(() => {
         text: word,
         y: 0,
         x: (i * 12) + Math.random() * 10, // prevents overlap
-        isWrong: useWrong,
+        isWrong: useWrong === true,
       });
     }
 
@@ -146,7 +146,7 @@ useEffect(() => {
       const newY = word.y + (0.2 * speed);
 
       if (newY > GAME_AREA_HEIGHT) {
-        if (useLives && !word.isWrong) lostWords += 1;
+        if (useLives && word.isWrong === false) lostWords += 1;
         return acc;
       }
 
