@@ -39,7 +39,10 @@ const [useLives, setUseLives] = useState(false);
       const res = await fetch(`${API_BASE}/api/challenges/falling/${id}`);
       const challenge = await res.json();
       if (challenge && challenge.words?.length > 0) {
-        setAvailableWords(challenge.words.map(w => w.trim()));
+       setAvailableWords([
+  ...challenge.words.map(w => ({ text: w.trim(), isCorrect: true })),
+  ...(challenge.wrongWords || []).map(w => ({ text: w.trim(), isCorrect: false }))
+]);
   
         setGameDuration(challenge.testTimer || challenge.duration || 60);
         setTimeLeft(challenge.testTimer || challenge.duration || 60);
@@ -124,13 +127,15 @@ useEffect(() => {
     if (availableWords.length === 0 || isGameOver) return;
 
     const spawnInterval = setInterval(() => {
-      const word = availableWords[Math.floor(Math.random() * availableWords.length)];
-      const newWord = {
-        id: wordIdCounter.current++,
-        text: word,
-        y: 0,
-        x: Math.random() * 80,
-      };
+      const wordObj = availableWords[Math.floor(Math.random() * availableWords.length)];
+
+const newWord = {
+  id: wordIdCounter.current++,
+  text: wordObj.text,
+  isCorrect: wordObj.isCorrect,
+  y: 0,
+  x: Math.random() * 80,
+};
       setFallingWords(prev => {
         const updated = [...prev, newWord];
         fallingWordsRef.current = updated;
@@ -143,10 +148,12 @@ useEffect(() => {
 
       const updatedWords = fallingWordsRef.current.reduce((acc, word) => {
         const newY = word.y + 5 * speed; // speed affects fall rate
-        if (newY > GAME_AREA_HEIGHT) {
-          if (useLives) lostWordsCount += 1;
-          return acc; // remove word lost
-        }
+     if (newY > GAME_AREA_HEIGHT) {
+  if (useLives && word.isCorrect) {
+    lostWordsCount += 1; // ✅ ONLY correct words punish
+  }
+  return acc;
+}
         acc.push({ ...word, y: newY });
         return acc;
       }, []);
@@ -226,7 +233,7 @@ const handleRestart = () => {
 
     if (match) {
       setActiveWordId(match.id);
-      if (value === match.text) {
+      if (value === match.text && match.isCorrect) {
         setFallingWords(prev => {
           const updated = prev.filter(word => word.id !== match.id);
           fallingWordsRef.current = updated;
