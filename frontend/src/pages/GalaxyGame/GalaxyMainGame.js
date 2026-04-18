@@ -1,11 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
 import { useBackground } from "./GalaxyBackground";
 import { loadAssets } from "./assets";
-import { getEnemiesByLevel, easyEnemies } from "./GalaxyLibrary";
+import { getEnemiesByLevel } from "./GalaxyLibrary";
 import { spawnEnemy, updateEnemies, drawEnemies, cleanupEnemies } from "./GalaxyEnemy";
 import { useScoreSubmission } from '../../hooks/useScoreSubmission';
-
 const GalaxyMainGame = () => {
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
@@ -26,39 +24,39 @@ const GalaxyMainGame = () => {
   const keysPressed = useRef({});
 
   // States for UI rendering
-  const [score, setScore] = useState(0);
-  const [lives, setLives] = useState(3);
   const [gameReady, setGameReady] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [gameOver, setGameOver] = useState(false);
-  
-  // Score submission states
-  const [showSubmitButton, setShowSubmitButton] = useState(false);
-  const { submitScore, isSubmitting, submitMessage, submitSuccess, snackbarOpen, setSnackbarOpen } = useScoreSubmission();
-
-  // Challenge loading from URL
-  const { id: challengeId } = useParams();
-  const [challengeData, setChallengeData] = useState(null);
 
   const { initStars, drawBackground } = useBackground();
+const [showSubmitButton, setShowSubmitButton] = useState(false);
 
+const {
+  submitScore,
+  isSubmitting,
+  submitMessage,
+  submitSuccess
+} = useScoreSubmission();
   // --- UI & GAME HELPERS ---
   const updateScoreUI = (pts) => {
     scoreRef.current += pts;
-    setScore(scoreRef.current);
+    const scoreEl = document.getElementById("ui-score");
+    if (scoreEl) scoreEl.innerText = `SCORE: ${scoreRef.current}`;
   };
 
   const updateLivesUI = () => {
-    const newLives = livesRef.current - 1;
-    livesRef.current = newLives;
-    setLives(newLives);
-    if (newLives <= 0) {
-      setGameOver(true);
-      setShowSubmitButton(true);
+    livesRef.current -= 1;
+    const livesEl = document.getElementById("ui-lives");
+    if (livesEl) {
+      let hearts = "";
+      for (let i = 0; i < 3; i++) hearts += i < livesRef.current ? "❤️ " : "🖤 ";
+      livesEl.innerText = hearts;
     }
+   if (livesRef.current <= 0) {
+  setGameOver(true);
+  setShowSubmitButton(true);
+}
   };
-  
-  // Submit score to leaderboard
   const handleSubmitScore = async () => {
     const payload = {
       score: scoreRef.current
@@ -70,6 +68,7 @@ const GalaxyMainGame = () => {
     }
   };
 
+
   const shootBullet = (target) => {
     const p = playerRef.current;
     bulletsRef.current.push({
@@ -78,34 +77,6 @@ const GalaxyMainGame = () => {
       target,
       speed: 1400,
     });
-  };
-
-  // Restart game - resets all state without full page reload
-  const restartGame = () => {
-    // Reset score
-    scoreRef.current = 0;
-    setScore(0);
-
-    // Reset lives
-    livesRef.current = 3;
-    setLives(3);
-
-    // Reset game state
-    setGameOver(false);
-    setShowSubmitButton(false);
-    setSubmitMessage("");
-    setSubmitSuccess(false);
-
-    // Reset game refs
-    enemiesRef.current = [];
-    targetEnemyRef.current = null;
-    bulletsRef.current = [];
-    gameTimeRef.current = 0;
-    spawnTimerRef.current = -1.5;
-    difficultyRef.current = 1;
-
-    // Reset player position
-    playerRef.current = { x: window.innerWidth / 2, y: window.innerHeight - 100, width: 80, height: 60, speed: 500 };
   };
 
   const finishEnemy = (target) => {
@@ -125,22 +96,6 @@ const GalaxyMainGame = () => {
       })
       .catch((err) => console.error("Asset load failed", err));
   }, []);
-
-  // --- CHALLENGE LOADING ---
-  useEffect(() => {
-    if (challengeId) {
-      fetch(`${process.env.REACT_APP_API_BASE_URL || ''}/api/challenges/galaxy/${challengeId}`)
-        .then(res => {
-          if (!res.ok) throw new Error("Challenge not found");
-          return res.json();
-        })
-        .then(data => setChallengeData(data))
-        .catch(err => {
-          console.error("Failed to load challenge:", err);
-          // Fall back to default words
-        });
-    }
-  }, [challengeId]);
 
   // --- INPUT HANDLING ---
   useEffect(() => {
@@ -282,17 +237,7 @@ const GalaxyMainGame = () => {
         const activeCount = enemiesRef.current.filter(en => !en.remove && !en.destroyed).length;
         if (!bossActive && spawnTimerRef.current > 1.8 && activeCount < maxEnemies) {
           spawnTimerRef.current = 0;
-          
-          // Get words from challenge or use default library
-          let wordList = [];
-          if (challengeData?.questions) {
-            wordList = challengeData.questions.map(q => q.question);
-          } else {
-            // Use default library
-            wordList = easyEnemies.map(e => e.word);
-          }
-          
-          const enemiesToSpawn = getEnemiesByLevel(gameTimeRef.current * 1000, wordList);
+          const enemiesToSpawn = getEnemiesByLevel(gameTimeRef.current * 1000);
           
           if (enemiesToSpawn.some(e => e.type === "boss")) {
             enemiesRef.current.forEach(en => { en.destroyed = true; en.remove = true; });
@@ -345,7 +290,7 @@ const GalaxyMainGame = () => {
       window.removeEventListener("resize", resize);
       cancelAnimationFrame(animationRef.current);
     };
-  }, [gameReady, isPaused, gameOver, initStars, drawBackground, challengeData]);
+  }, [gameReady, isPaused, gameOver, initStars, drawBackground]);
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "black", overflow: "hidden" }}>
@@ -357,14 +302,12 @@ const GalaxyMainGame = () => {
         padding: "0 50px", pointerEvents: "none", zIndex: 100,
         background: "linear-gradient(to top, rgba(0,0,0,0.9), transparent)"
       }}>
-        <div style={{ color: "white", fontSize: "28px", fontFamily: "monospace", fontWeight: "bold" }}>SCORE: {score}</div>
+        <div id="ui-score" style={{ color: "white", fontSize: "28px", fontFamily: "monospace", fontWeight: "bold" }}>SCORE: 0</div>
         <div style={{ color: "#aaa", fontSize: "18px", fontFamily: "monospace" }}>LVL: {difficultyRef.current}</div>
-        <div style={{ fontSize: "28px" }}>
-          {Array.from({ length: 3 }, (_, i) => i < lives ? "❤️ " : "🖤 ").join("")}
-        </div>
+        <div id="ui-lives" style={{ fontSize: "28px" }}>❤️ ❤️ ❤️</div>
       </div>
 
-      {gameOver && (
+   {gameOver && (
         <div style={{
           position: "absolute", inset: 0, background: "rgba(0,0,0,0.85)",
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 200, color: "white"
