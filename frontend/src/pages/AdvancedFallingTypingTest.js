@@ -148,7 +148,8 @@ const config = raw?.config || raw;
       const newY = word.y + (0.2 * speed);
 
       if (newY > GAME_AREA_HEIGHT) {
-       
+       if (!word.isWrong) console.log("Life lost to correct word:", word.text);
+  if (word.isWrong) console.log("Wrong word ignored:", word.text);
         if (useLives && word.isWrong === false) lostWords += 1;
         return acc;
       }
