@@ -7,7 +7,7 @@ import Button from "@mui/material/Button";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 
-const GAME_AREA_HEIGHT = 500;
+const GAME_AREA_HEIGHT = 600;
 
 const FallingTypingTest = () => {
   const [gameDuration, setGameDuration] = useState(60); // fallback duration first
