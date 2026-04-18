@@ -97,37 +97,54 @@ const config = raw?.config || raw;
   let timeoutId;
 
   const spawnWordsRandomly = () => {
-     if (isGameOver) return;
-    // Random batch size between 5–8
-    const batchSize = Math.floor(Math.random() * 6) + 5;
+    if (isGameOver) return;
 
+    // 1. Get a list of words currently on the screen to avoid duplicates
+    const currentlyFallingTexts = fallingWordsRef.current.map(w => w.text);
+
+    // 2. Filter pools to only include words NOT currently on screen
+    const uniqueAvailable = availableWords.filter(w => !currentlyFallingTexts.includes(w));
+    const uniqueWrong = wrongWordsPool.filter(w => !currentlyFallingTexts.includes(w));
+
+    // Stop if we have no words left to spawn
+    if (uniqueAvailable.length === 0 && uniqueWrong.length === 0) return;
+
+    const batchSize = Math.floor(Math.random() * 6) + 5;
     const newWords = [];
 
     for (let i = 0; i < batchSize; i++) {
-      const useWrong = Math.random() < 0.25 && wrongWordsPool.length > 0;
+      // Determine if we should use a wrong word
+      const shouldPickWrong = Math.random() < 0.25 && uniqueWrong.length > 0;
+      
+      // Select the pool and pick a random word
+      const pool = shouldPickWrong ? uniqueWrong : uniqueAvailable;
+      
+      // Fallback in case a pool is empty
+      if (pool.length === 0) continue; 
 
-      const word = useWrong
-        ? wrongWordsPool[Math.floor(Math.random() * wrongWordsPool.length)]
-        : availableWords[Math.floor(Math.random() * availableWords.length)];
+      const randomIndex = Math.floor(Math.random() * pool.length);
+      const wordText = pool[randomIndex];
+
+      // Remove the chosen word from the local pool so it's not picked twice in the same batch
+      pool.splice(randomIndex, 1);
 
       newWords.push({
         id: wordIdCounter.current++,
-        text: word,
+        text: wordText,
         y: 0,
-        x: (i * 12) + Math.random() * 10, // prevents overlap
-        isWrong: useWrong === true,
+        x: (i * 12) + Math.random() * 10,
+        isWrong: shouldPickWrong,
       });
     }
 
     setFallingWords(prev => {
       const updated = [...prev, ...newWords];
-      const limited = updated.slice(-20);
-      fallingWordsRef.current = limited;
-      return limited;
+      // Keep the ref in sync for the animation loop
+      fallingWordsRef.current = updated;
+      return updated;
     });
 
-    // Schedule next spawn with randomized interval (2.5s – 4s, scaled by speed)
-    const nextInterval = (Math.random() * 9000 + 15000) / speed; // 2500–4000 ms
+    const nextInterval = (Math.random() * 9000 + 15000) / speed;
     timeoutId = setTimeout(spawnWordsRandomly, nextInterval);
   };
 
