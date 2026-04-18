@@ -26,7 +26,9 @@ const AdvancedFallingTypingTest = () => {
 
 
 useEffect(() => {
-  const config = JSON.parse(sessionStorage.getItem("fallingGameConfig"));
+  const raw = JSON.parse(sessionStorage.getItem("fallingGameConfig"));
+const config = raw?.config || raw;
+ 
 
   if (!config) return;
 
@@ -146,6 +148,8 @@ useEffect(() => {
       const newY = word.y + (0.2 * speed);
 
       if (newY > GAME_AREA_HEIGHT) {
+        console.log("CONFIG:", config);
+console.log("WRONG WORDS:", config?.wrongWords);
         if (useLives && word.isWrong === false) lostWords += 1;
         return acc;
       }
