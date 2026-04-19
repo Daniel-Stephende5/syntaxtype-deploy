@@ -357,7 +357,7 @@ const {
         background: "linear-gradient(to top, rgba(0,0,0,0.9), transparent)"
       }}>
         <div id="ui-score" style={{ color: "white", fontSize: "28px", fontFamily: "monospace", fontWeight: "bold" }}>SCORE: 0</div>
-        <div style={{ color: "#aaa", fontSize: "18px", fontFamily: "monospace" }}>LVL: {difficultyRef.current}</div>
+        <div style={{ color: "#aaa", fontSize: "18px", fontFamily: "monospace" }}>Type the words to clear them out and score, use Tab button to switch targets: {difficultyRef.current}</div>
         <div id="ui-lives" style={{ fontSize: "28px" }}>❤️ ❤️ ❤️</div>
       </div>
 
