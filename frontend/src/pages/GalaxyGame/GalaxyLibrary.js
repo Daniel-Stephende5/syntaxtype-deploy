@@ -11,6 +11,21 @@ export const easyEnemies = [
   { type: "typing", word: "bool alive = true;", speed: 45 },
   { type: "typing", word: "void reset();", speed: 42 },
   { type: "typing", word: "double distance = 0.0;", speed: 44 },
+    { type: "typing", word: "int y = 10;", speed: 40 },
+  { type: "typing", word: "bool win = false;", speed: 45 },
+  { type: "typing", word: "hp = hp - 1;", speed: 48 },
+  { type: "typing", word: "score++;", speed: 50 },
+  { type: "typing", word: "level = 1;", speed: 42 },
+  { type: "typing", word: "int lives = 3;", speed: 44 },
+  { type: "typing", word: "x += 2;", speed: 46 },
+  { type: "typing", word: "y -= 1;", speed: 46 },
+  { type: "typing", word: "if (x > 0)", speed: 49 },
+  { type: "typing", word: "return hp;", speed: 50 },
+  { type: "typing", word: "float x = 1.5;", speed: 45 },
+  { type: "typing", word: "char b = 'B';", speed: 47 },
+  { type: "typing", word: "bool jump = true;", speed: 44 },
+  { type: "typing", word: "int coins = 0;", speed: 43 },
+  { type: "typing", word: "damage = 5;", speed: 48 },
 ];
 
 // ✅ Shield enemies with single concept
@@ -53,6 +68,86 @@ export const shieldEnemies = [
     speed: 30,
     questions: [
       { prompt: "Keyword for multiple-choice branching", answer: "switch" },
+    ],
+  },
+   {
+    type: "shield",
+    word: "char name = 'A';",
+    speed: 34,
+    questions: [
+      { prompt: "Keyword for single character type in C", answer: "char" },
+    ],
+  },
+  {
+    type: "shield",
+    word: "float speed = 1.5;",
+    speed: 33,
+    questions: [
+      { prompt: "Keyword for decimal numbers in C", answer: "float" },
+    ],
+  },
+  {
+    type: "shield",
+    word: "double total = 99.99;",
+    speed: 32,
+    questions: [
+      { prompt: "Higher precision decimal type in C", answer: "double" },
+    ],
+  },
+  {
+    type: "shield",
+    word: "if (hp < 50) {}",
+    speed: 31,
+    questions: [
+      { prompt: "Keyword used for conditional statements", answer: "if" },
+    ],
+  },
+  {
+    type: "shield",
+    word: "else { hp = 100; }",
+    speed: 31,
+    questions: [
+      { prompt: "Keyword for alternative condition", answer: "else" },
+    ],
+  },
+  {
+    type: "shield",
+    word: "return 1;",
+    speed: 34,
+    questions: [
+      { prompt: "Keyword used to return a value from a function", answer: "return" },
+    ],
+  },
+  {
+    type: "shield",
+    word: "#include <stdio.h>",
+    speed: 29,
+    questions: [
+      { prompt: "Preprocessor directive to include libraries", answer: "#include" },
+    ],
+  },
+  {
+    type: "shield",
+    word: "scanf(\"%d\", &x);",
+    speed: 30,
+    questions: [
+      { prompt: "Function used to take input in C", answer: "scanf" },
+    ],
+  },
+  {
+    type: "shield",
+    word: "break;",
+    speed: 35,
+    questions: [
+      { prompt: "Keyword used to exit a loop or switch", answer: "break" },
+    ],
+  },
+  {
+    type: "shield",
+    word: "continue;",
+    speed: 35,
+    questions: [
+      { prompt: "Keyword to skip to next loop iteration", answer: "continue" },
     ],
   },
 ];
@@ -120,9 +215,7 @@ export const bossEnemy3 = {
 export function getEnemiesByLevel(currentTime = 0, customWordList = null) {
   const enemies = [];
   
-  // If custom words provided, use them instead of default pool
   if (customWordList && customWordList.length > 0) {
-    // Spawn enemies with custom words (no bosses for challenges)
     const randomIndex = Math.floor(Math.random() * customWordList.length);
     enemies.push({ 
       type: "typing", 
@@ -131,23 +224,24 @@ export function getEnemiesByLevel(currentTime = 0, customWordList = null) {
     });
     return enemies;
   }
-  
-  // 🔥 Check Boss 1 (60s)
-  if (currentTime - (bossEnemy.lastSpawn || 0) >= 60000) {
-    bossEnemy.lastSpawn = currentTime;
-    // Return ONLY the boss to signal a phase shift
-    return [{ ...bossEnemy, type: "boss" }]; 
+
+  // 1. Check Boss 3 (120s) - Check the highest time requirement FIRST
+  if (!bossEnemy3.spawned && currentTime >= 120000) {
+    bossEnemy3.spawned = true;
+    return [{ ...bossEnemy3, type: "boss" }];
   }
 
-  // 🔥 Check Boss 2 (90s)
+  // 2. Check Boss 2 (90s)
   if (currentTime - (bossEnemy2.lastSpawn || 0) >= 90000) {
     bossEnemy2.lastSpawn = currentTime;
     return [{ ...bossEnemy2, type: "boss" }];
   }
-  if (!bossEnemy3.spawned && currentTime >= 120000) {
-  bossEnemy3.spawned = true;
-  return [{ ...bossEnemy3, type: "boss" }];
-}
+  
+  // 3. Check Boss 1 (60s)
+  if (currentTime - (bossEnemy.lastSpawn || 0) >= 60000) {
+    bossEnemy.lastSpawn = currentTime;
+    return [{ ...bossEnemy, type: "boss" }]; 
+  }
 
   // Normal spawn if no boss is due
   const spawnPool = [...easyEnemies, ...shieldEnemies];
