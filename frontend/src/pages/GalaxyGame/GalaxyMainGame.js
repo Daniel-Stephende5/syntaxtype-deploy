@@ -22,7 +22,8 @@ const GalaxyMainGame = () => {
   const targetEnemyRef = useRef(null);
   const bulletsRef = useRef([]);
   const keysPressed = useRef({});
-
+const bossesDefeatedRef = useRef(0);
+const MAX_BOSSES = 3; 
   // States for UI rendering
   const [gameReady, setGameReady] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -80,12 +81,34 @@ const {
   };
 
   const finishEnemy = (target) => {
-    const pts = target.type === "boss" ? 50 : (target.type === "shield" ? 2 : 1);
-    updateScoreUI(pts);
-    target.destroyed = true;
-    if (targetEnemyRef.current === target) targetEnemyRef.current = null;
-    setTimeout(() => { target.remove = true; }, 100);
-  };
+  const pts = target.type === "boss" ? 50 : (target.type === "shield" ? 2 : 1);
+  updateScoreUI(pts);
+
+  // ✅ Check if boss defeated
+  if (target.type === "boss") {
+    bossesDefeatedRef.current++;
+
+    // 👉 WIN CONDITION
+    if (bossesDefeatedRef.current >= MAX_BOSSES) {
+      setGameOver(true);
+      setShowSubmitButton(true);
+
+      // Optional: stop everything immediately
+      enemiesRef.current.forEach(en => {
+        en.destroyed = true;
+        en.remove = true;
+      });
+
+      targetEnemyRef.current = null;
+      return;
+    }
+  }
+
+  target.destroyed = true;
+  if (targetEnemyRef.current === target) targetEnemyRef.current = null;
+
+  setTimeout(() => { target.remove = true; }, 100);
+};
 
   // --- INITIALIZATION ---
   useEffect(() => {
