@@ -12,6 +12,7 @@ const GalaxyMainGame = () => {
   // Game State Refs
   const gameTimeRef = useRef(0); // This only tracks ACTIVE combat time (non-boss)
   const difficultyRef = useRef(1);
+  const realTimeRef = useRef(0);
   const scoreRef = useRef(0);
   const livesRef = useRef(3);
   const spawnTimerRef = useRef(-1.5);
