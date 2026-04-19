@@ -299,10 +299,7 @@ const {
         const activeCount = enemiesRef.current.filter(en => !en.remove && !en.destroyed).length;
         if (!bossActive && spawnTimerRef.current > 1.8 && activeCount < maxEnemies) {
           spawnTimerRef.current = 0;
-          const enemiesToSpawn = getEnemiesByLevel(
-  gameTimeRef.current * 1000,
-  bossStateRef.current
-);
+          const enemiesToSpawn = getEnemiesByLevel(realTimeRef.current * 1000, bossStateRef.current);
           
           if (enemiesToSpawn.some(e => e.type === "boss")) {
            
