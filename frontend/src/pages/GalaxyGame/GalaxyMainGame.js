@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useBackground } from "./GalaxyBackground";
 import { loadAssets } from "./assets";
-import { getEnemiesByLevel } from "./GalaxyLibrary";
+import { getEnemiesByLevel, bossEnemy, bossEnemy2, bossEnemy3 } from "./GalaxyLibrary";
 import { spawnEnemy, updateEnemies, drawEnemies, cleanupEnemies } from "./GalaxyEnemy";
 import { useScoreSubmission } from '../../hooks/useScoreSubmission';
 const GalaxyMainGame = () => {
@@ -15,7 +15,36 @@ const GalaxyMainGame = () => {
   const scoreRef = useRef(0);
   const livesRef = useRef(3);
   const spawnTimerRef = useRef(-1.5);
-  
+  const restartGame = () => {
+    // 1. Reset component states
+    setGameOver(false);
+    setGameWon(false);
+    setShowSubmitButton(false);
+
+    // 2. Reset refs
+    gameTimeRef.current = 0;
+    difficultyRef.current = 1;
+    scoreRef.current = 0;
+    livesRef.current = 3;
+    spawnTimerRef.current = -1.5;
+    bossesDefeatedRef.current = 0;
+    
+    enemiesRef.current = [];
+    bulletsRef.current = [];
+    targetEnemyRef.current = null;
+    playerRef.current = { x: 50, y: 300, width: 80, height: 60, speed: 500 };
+
+    // 3. Reset UI DOM elements
+    const scoreEl = document.getElementById("ui-score");
+    if (scoreEl) scoreEl.innerText = "SCORE: 0";
+    const livesEl = document.getElementById("ui-lives");
+    if (livesEl) livesEl.innerText = "❤️ ❤️ ❤️";
+
+    // 4. IMPORTANT: Reset the mutated library values!
+    bossEnemy.lastSpawn = 0;
+    bossEnemy2.lastSpawn = 0;
+    bossEnemy3.spawned = false;
+  };
   // Logic Refs
   const playerRef = useRef({ x: 50, y: 300, width: 80, height: 60, speed: 500 });
   const enemiesRef = useRef([]);
@@ -28,7 +57,7 @@ const MAX_BOSSES = 3;
   const [gameReady, setGameReady] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [gameOver, setGameOver] = useState(false);
-
+const [gameWon, setGameWon] = useState(false);
   const { initStars, drawBackground } = useBackground();
 const [showSubmitButton, setShowSubmitButton] = useState(false);
 
@@ -54,8 +83,9 @@ const {
       livesEl.innerText = hearts;
     }
    if (livesRef.current <= 0) {
-  setGameOver(true);
-  setShowSubmitButton(true);
+ setGameOver(true);
+      setGameWon(false); // Player lost
+      setShowSubmitButton(true);
 }
   };
   const handleSubmitScore = async () => {
@@ -91,6 +121,7 @@ const {
     // 👉 WIN CONDITION
     if (bossesDefeatedRef.current >= MAX_BOSSES) {
       setGameOver(true);
+      setGameWon(true);
       setShowSubmitButton(true);
 
       // Optional: stop everything immediately
@@ -335,8 +366,10 @@ const {
           position: "absolute", inset: 0, background: "rgba(0,0,0,0.85)",
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 200, color: "white"
         }}>
-          <h1 style={{ fontSize: "5rem", color: "#ff4444" }}>MISSION FAILED</h1>
-          <p style={{ fontSize: "2rem" }}>FINAL SCORE: {score}</p>
+        <h1 style={{ fontSize: "5rem", color: gameWon ? "#4caf50" : "#ff4444" }}>
+            {gameWon ? "MISSION ACCOMPLISHED" : "MISSION FAILED"}
+          </h1>
+          <p style={{ fontSize: "2rem" }}>FINAL SCORE: {scoreRef.current}</p>
           
           {showSubmitButton && (
             <div style={{ marginTop: "20px", textAlign: "center" }}>
