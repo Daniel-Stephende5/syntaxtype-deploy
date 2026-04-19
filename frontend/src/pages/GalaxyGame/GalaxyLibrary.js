@@ -89,7 +89,31 @@ export const bossEnemy2 = {
   lastSpawn: 0,         // Timestamp tracker
 };
 
-
+export const bossEnemy3 = {
+  type: "shield",
+  word: `int factorial(int n) {
+  if (n < 0) {
+    printf("Invalid input");
+    return -1;
+  }
+  if (n == 0 || n == 1) {
+    return 1;
+  }
+  int result = n * factorial(n - 1);
+  if (result > 1000000) {
+    printf("Warning: large value");
+  }
+  return result;
+}`,
+  speed: 11,
+  questions: [
+    { prompt: "Function calling itself is called", answer: "recursion" },
+    { prompt: "Keyword used to return a value", answer: "return" },
+  ],
+  spawnInterval: 120000,
+  lastSpawn: 0,
+  spawned: false,
+};
 // --- Combined library based on level ---
 // GalaxyLibrary.js
 
@@ -120,6 +144,10 @@ export function getEnemiesByLevel(currentTime = 0, customWordList = null) {
     bossEnemy2.lastSpawn = currentTime;
     return [{ ...bossEnemy2, type: "boss" }];
   }
+  if (!bossEnemy3.spawned && currentTime >= 120000) {
+  bossEnemy3.spawned = true;
+  return [{ ...bossEnemy3, type: "boss" }];
+}
 
   // Normal spawn if no boss is due
   const spawnPool = [...easyEnemies, ...shieldEnemies];
