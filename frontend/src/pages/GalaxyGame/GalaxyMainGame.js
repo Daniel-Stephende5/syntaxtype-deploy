@@ -15,6 +15,10 @@ const GalaxyMainGame = () => {
   const scoreRef = useRef(0);
   const livesRef = useRef(3);
   const spawnTimerRef = useRef(-1.5);
+  const bossStateRef = useRef({
+  index: 0,
+  lastBossDefeatedTime: 0,
+});
   const restartGame = () => {
     // 1. Reset component states
     setGameOver(false);
@@ -116,7 +120,10 @@ const {
 
   // ✅ Check if boss defeated
   if (target.type === "boss") {
-    bossesDefeatedRef.current++;
+   bossesDefeatedRef.current++;
+
+  bossStateRef.current.lastBossDefeatedTime = gameTimeRef.current;
+  bossStateRef.current.index++;
 
     // 👉 WIN CONDITION
     if (bossesDefeatedRef.current >= MAX_BOSSES) {
@@ -291,7 +298,10 @@ const {
         const activeCount = enemiesRef.current.filter(en => !en.remove && !en.destroyed).length;
         if (!bossActive && spawnTimerRef.current > 1.8 && activeCount < maxEnemies) {
           spawnTimerRef.current = 0;
-          const enemiesToSpawn = getEnemiesByLevel(gameTimeRef.current * 1000);
+          const enemiesToSpawn = getEnemiesByLevel(
+  gameTimeRef.current * 1000,
+  bossStateRef.current
+);
           
           if (enemiesToSpawn.some(e => e.type === "boss")) {
            
