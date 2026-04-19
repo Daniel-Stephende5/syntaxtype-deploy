@@ -276,10 +276,12 @@ const {
         const bossActive = enemiesRef.current.some(en => en.type === "boss" && !en.remove && !en.destroyed);
 
         // Pause progression while fighting boss
-        if (!bossActive) {
-          gameTimeRef.current += dt;
-          spawnTimerRef.current += dt;
-        }
+       if (!bossActive) {
+  gameTimeRef.current += dt;
+  spawnTimerRef.current += dt;
+}
+
+realTimeRef.current += dt;
 
         difficultyRef.current = Math.floor(gameTimeRef.current / 60) + 1;
         const speedMultiplier = 1 + (difficultyRef.current - 1) * 0.15;
