@@ -240,7 +240,7 @@ const {
           const enemiesToSpawn = getEnemiesByLevel(gameTimeRef.current * 1000);
           
           if (enemiesToSpawn.some(e => e.type === "boss")) {
-            enemiesRef.current.forEach(en => { en.destroyed = true; en.remove = true; });
+           
             targetEnemyRef.current = null;
           }
 
