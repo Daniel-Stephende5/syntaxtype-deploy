@@ -47,7 +47,7 @@ export default function GalaxyChallengeList() {
     transition: "0.2s"
   };
 
-  if (loading) return <div style={{ textAlign: "center", marginTop: "50px", color: "#fff" }}>Loading challenges…</div>;
+  if (loading) return <div style={{ textAlign: "center", marginTop: "50px", color: "#000000" }}>Loading challenges…</div>;
   
   if (error)
     return (
