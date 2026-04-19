@@ -207,45 +207,36 @@ export const bossEnemy3 = {
   ],
   spawnInterval: 120000,
   lastSpawn: 0,
-  spawned: false,
+ 
 };
 // --- Combined library based on level ---
 // GalaxyLibrary.js
 
-export function getEnemiesByLevel(currentTime = 0, customWordList = null) {
+export function getEnemiesByLevel(currentTime = 0, bossState = null) {
   const enemies = [];
-  
-  if (customWordList && customWordList.length > 0) {
-    const randomIndex = Math.floor(Math.random() * customWordList.length);
-    enemies.push({ 
-      type: "typing", 
-      word: customWordList[randomIndex], 
-      speed: 40 + Math.random() * 20 
-    });
-    return enemies;
+
+  const bossIndex = bossState?.index ?? 0;
+  const timeSinceLastBoss = currentTime - (bossState?.lastBossDefeatedTime ?? 0);
+
+  // Boss 1
+  if (bossIndex === 0 && timeSinceLastBoss >= 60000) {
+    return [{ ...bossEnemy, type: "boss" }];
   }
 
-  // 1. Check Boss 3 (120s) - Check the highest time requirement FIRST
-  if (!bossEnemy3.spawned && currentTime >= 120000) {
-    bossEnemy3.spawned = true;
+  // Boss 2
+  if (bossIndex === 1 && timeSinceLastBoss >= 60000) {
+    return [{ ...bossEnemy2, type: "boss" }];
+  }
+
+  // Boss 3
+  if (bossIndex === 2 && timeSinceLastBoss >= 60000) {
     return [{ ...bossEnemy3, type: "boss" }];
   }
 
-  // 2. Check Boss 2 (90s)
-  if (currentTime - (bossEnemy2.lastSpawn || 0) >= 90000) {
-    bossEnemy2.lastSpawn = currentTime;
-    return [{ ...bossEnemy2, type: "boss" }];
-  }
-  
-  // 3. Check Boss 1 (60s)
-  if (currentTime - (bossEnemy.lastSpawn || 0) >= 60000) {
-    bossEnemy.lastSpawn = currentTime;
-    return [{ ...bossEnemy, type: "boss" }]; 
-  }
-
-  // Normal spawn if no boss is due
+  // Normal spawn
   const spawnPool = [...easyEnemies, ...shieldEnemies];
   const randomIndex = Math.floor(Math.random() * spawnPool.length);
+
   enemies.push({ ...spawnPool[randomIndex] });
 
   return enemies;
