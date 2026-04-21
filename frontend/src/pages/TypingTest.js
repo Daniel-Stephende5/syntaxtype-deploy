@@ -237,25 +237,10 @@ const completeTest = () => {
   setIsTestComplete(true);
   setScore(finalScore);
 
-  // ===== BACKEND SUBMISSION =====
-  fetch(`${API_BASE}/api/scores`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      score: finalScore,
-      timeInSeconds: finalElapsed,
-      challengeType: "normal",
-    }),
-  })
-    .then((res) => {
-      if (!res.ok) throw new Error("Failed to save score");
-      console.log("✅ Score submitted successfully!");
-    })
-.catch((err) => {
-      console.error("❌ Error submitting score:", err);
-    });
-    
   // Show submit to leaderboard button after test completion
+  // Note: Removed duplicate automatic score submission - scores are now saved
+  // only via the authenticated "Submit to Leaderboard" button to ensure
+  // proper user association in Teacher Dashboard
   setShowSubmitButton(true);
 };
 
