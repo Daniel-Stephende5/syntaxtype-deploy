@@ -50,7 +50,7 @@ class LeaderboardServiceTest {
         testUser3.setUsername("player3");
     }
 
-    private Leaderboard createLeaderboard(User user, Integer wpm, Integer accuracy, Category category) {
+    private Leaderboard createLeaderboard(User user, Integer wpm, Double accuracy, Category category) {
         Leaderboard lb = new Leaderboard();
         lb.setLeaderboardId(user.getUserId());
         lb.setUser(user);
@@ -68,7 +68,7 @@ class LeaderboardServiceTest {
         @DisplayName("Should calculate combined score with 1.5x multiplier for accuracy > 95")
         void shouldCalculateCombinedScoreWithMultiplier() {
             // WPM: 100, Accuracy: 98 -> base = 100 * 0.98 = 98, with 1.5x = 147.0
-            Double score = LeaderboardEntry.calculateCombinedScore(100, 98);
+            Double score = LeaderboardEntry.calculateCombinedScore(100, 98.0);
             assertThat(score).isEqualTo(147.0);
         }
 
@@ -76,14 +76,14 @@ class LeaderboardServiceTest {
         @DisplayName("Should calculate combined score without multiplier for accuracy <= 95")
         void shouldCalculateCombinedScoreWithoutMultiplier() {
             // WPM: 100, Accuracy: 90 -> base = 100 * 0.90 = 90.0 (no multiplier)
-            Double score = LeaderboardEntry.calculateCombinedScore(100, 90);
+            Double score = LeaderboardEntry.calculateCombinedScore(100, 90.0);
             assertThat(score).isEqualTo(90.0);
         }
 
         @Test
         @DisplayName("Should return 0 for null WPM")
         void shouldReturnZeroForNullWpm() {
-            Double score = LeaderboardEntry.calculateCombinedScore(null, 90);
+            Double score = LeaderboardEntry.calculateCombinedScore(null, 90.0);
             assertThat(score).isEqualTo(0.0);
         }
 
@@ -98,7 +98,7 @@ class LeaderboardServiceTest {
         @DisplayName("Should handle edge case accuracy exactly 95 (no multiplier)")
         void shouldNotApplyMultiplierAtExactly95() {
             // WPM: 100, Accuracy: 95 -> base = 100 * 0.95 = 95.0 (no multiplier)
-            Double score = LeaderboardEntry.calculateCombinedScore(100, 95);
+            Double score = LeaderboardEntry.calculateCombinedScore(100, 95.0);
             assertThat(score).isEqualTo(95.0);
         }
 
@@ -106,7 +106,7 @@ class LeaderboardServiceTest {
         @DisplayName("Should handle edge case accuracy 96 (with multiplier)")
         void shouldApplyMultiplierAt96() {
             // WPM: 100, Accuracy: 96 -> base = 100 * 0.96 = 96, with 1.5x = 144.0
-            Double score = LeaderboardEntry.calculateCombinedScore(100, 96);
+            Double score = LeaderboardEntry.calculateCombinedScore(100, 96.0);
             assertThat(score).isEqualTo(144.0);
         }
     }
@@ -119,9 +119,9 @@ class LeaderboardServiceTest {
         @DisplayName("Should assign sequential ranks when no ties exist")
         void shouldAssignSequentialRanksWithoutTies() {
             List<Leaderboard> entries = Arrays.asList(
-                    createLeaderboard(testUser1, 100, 95, Category.TYPING_TESTS),
-                    createLeaderboard(testUser2, 90, 95, Category.TYPING_TESTS),
-                    createLeaderboard(testUser3, 80, 95, Category.TYPING_TESTS)
+                    createLeaderboard(testUser1, 100, 95.0, Category.TYPING_TESTS),
+                    createLeaderboard(testUser2, 90, 95.0, Category.TYPING_TESTS),
+                    createLeaderboard(testUser3, 80, 95.0, Category.TYPING_TESTS)
             );
 
             when(leaderboardRepository.findTop10ByCategoryOrderByWordsPerMinuteDesc(Category.TYPING_TESTS))
@@ -140,9 +140,9 @@ class LeaderboardServiceTest {
         void shouldAssignSameRankToTiedEntries() {
             // Two users with same WPM (tie)
             List<Leaderboard> entries = Arrays.asList(
-                    createLeaderboard(testUser1, 100, 95, Category.TYPING_TESTS),
-                    createLeaderboard(testUser2, 100, 90, Category.TYPING_TESTS), // Same WPM
-                    createLeaderboard(testUser3, 80, 95, Category.TYPING_TESTS)
+                    createLeaderboard(testUser1, 100, 95.0, Category.TYPING_TESTS),
+                    createLeaderboard(testUser2, 100, 90.0, Category.TYPING_TESTS), // Same WPM
+                    createLeaderboard(testUser3, 80, 95.0, Category.TYPING_TESTS)
             );
 
             when(leaderboardRepository.findTop10ByCategoryOrderByWordsPerMinuteDesc(Category.TYPING_TESTS))
@@ -160,9 +160,9 @@ class LeaderboardServiceTest {
         @DisplayName("Should handle multiple ties at different positions")
         void shouldHandleMultipleTiesAtDifferentPositions() {
             List<Leaderboard> entries = Arrays.asList(
-                    createLeaderboard(testUser1, 100, 95, Category.TYPING_TESTS),
-                    createLeaderboard(testUser2, 100, 90, Category.TYPING_TESTS), // Tie at rank 1
-                    createLeaderboard(testUser3, 90, 95, Category.TYPING_TESTS)
+                    createLeaderboard(testUser1, 100, 95.0, Category.TYPING_TESTS),
+                    createLeaderboard(testUser2, 100, 90.0, Category.TYPING_TESTS), // Tie at rank 1
+                    createLeaderboard(testUser3, 90, 95.0, Category.TYPING_TESTS)
             );
 
             when(leaderboardRepository.findTop10ByCategoryOrderByAccuracyDesc(Category.TYPING_TESTS))
@@ -227,9 +227,9 @@ class LeaderboardServiceTest {
         @DisplayName("Should return entries sorted by WPM descending")
         void shouldReturnEntriesSortedByWpmDescending() {
             List<Leaderboard> entries = Arrays.asList(
-                    createLeaderboard(testUser1, 120, 95, Category.TYPING_TESTS),
-                    createLeaderboard(testUser2, 100, 98, Category.TYPING_TESTS),
-                    createLeaderboard(testUser3, 80, 92, Category.TYPING_TESTS)
+                    createLeaderboard(testUser1, 120, 95.0, Category.TYPING_TESTS),
+                    createLeaderboard(testUser2, 100, 98.0, Category.TYPING_TESTS),
+                    createLeaderboard(testUser3, 80, 92.0, Category.TYPING_TESTS)
             );
 
             when(leaderboardRepository.findTop10ByCategoryOrderByWordsPerMinuteDesc(Category.TYPING_TESTS))
@@ -255,9 +255,9 @@ class LeaderboardServiceTest {
         @DisplayName("Should return entries sorted by accuracy descending")
         void shouldReturnEntriesSortedByAccuracyDescending() {
             List<Leaderboard> entries = Arrays.asList(
-                    createLeaderboard(testUser1, 100, 98, Category.TYPING_TESTS),
-                    createLeaderboard(testUser2, 120, 95, Category.TYPING_TESTS),
-                    createLeaderboard(testUser3, 80, 92, Category.TYPING_TESTS)
+                    createLeaderboard(testUser1, 100, 98.0, Category.TYPING_TESTS),
+                    createLeaderboard(testUser2, 120, 95.0, Category.TYPING_TESTS),
+                    createLeaderboard(testUser3, 80, 92.0, Category.TYPING_TESTS)
             );
 
             when(leaderboardRepository.findTop10ByCategoryOrderByAccuracyDesc(Category.TYPING_TESTS))
@@ -285,8 +285,8 @@ class LeaderboardServiceTest {
             // User1: 100 WPM, 98% accuracy -> 100 * 0.98 * 1.5 = 147.0
             // User2: 120 WPM, 90% accuracy -> 120 * 0.90 = 108.0 (no multiplier, accuracy <= 95)
             List<Leaderboard> entries = Arrays.asList(
-                    createLeaderboard(testUser1, 100, 98, Category.TYPING_TESTS),
-                    createLeaderboard(testUser2, 120, 90, Category.TYPING_TESTS)
+                    createLeaderboard(testUser1, 100, 98.0, Category.TYPING_TESTS),
+                    createLeaderboard(testUser2, 120, 90.0, Category.TYPING_TESTS)
             );
 
             when(leaderboardRepository.findByCategoryOrderByWordsPerMinuteDesc(Category.TYPING_TESTS))
@@ -311,9 +311,9 @@ class LeaderboardServiceTest {
         @DisplayName("Should return all rankings for a user across categories")
         void shouldReturnAllRankingsForUser() {
             List<Leaderboard> entries = Arrays.asList(
-                    createLeaderboard(testUser1, 100, 95, Category.TYPING_TESTS),
-                    createLeaderboard(testUser1, 90, 98, Category.CHALLENGES),
-                    createLeaderboard(testUser1, 110, 92, Category.GALAXY)
+                    createLeaderboard(testUser1, 100, 95.0, Category.TYPING_TESTS),
+                    createLeaderboard(testUser1, 90, 98.0, Category.CHALLENGES),
+                    createLeaderboard(testUser1, 110, 92.0, Category.GALAXY)
             );
 
             when(leaderboardRepository.findAllByUserId(1L)).thenReturn(entries);

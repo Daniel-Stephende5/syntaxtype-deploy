@@ -38,7 +38,7 @@ class LeaderboardRepositoryTest {
         return entityManager.persistFlushFind(user);
     }
 
-    private Leaderboard createAndPersistLeaderboard(User user, Category category, int wpm, int accuracy) {
+    private Leaderboard createAndPersistLeaderboard(User user, Category category, int wpm, double accuracy) {
         Leaderboard leaderboard = Leaderboard.builder()
                 .user(user)
                 .category(category)

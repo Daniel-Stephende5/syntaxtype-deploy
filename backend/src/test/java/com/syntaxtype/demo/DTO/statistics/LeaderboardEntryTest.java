@@ -23,7 +23,7 @@ class LeaderboardEntryTest {
         void shouldCalculateBasicCombinedScore() {
             // WPM: 100, Accuracy: 80%
             // Base: 100 * (80 / 100.0) = 80.0
-            Double score = LeaderboardEntry.calculateCombinedScore(100, 80);
+            Double score = LeaderboardEntry.calculateCombinedScore(100, 80.0);
             assertEquals(80.0, score);
         }
 
@@ -33,7 +33,7 @@ class LeaderboardEntryTest {
             // WPM: 100, Accuracy: 98%
             // Base: 100 * (98 / 100.0) = 98.0
             // With multiplier: 98.0 * 1.5 = 147.0
-            Double score = LeaderboardEntry.calculateCombinedScore(100, 98);
+            Double score = LeaderboardEntry.calculateCombinedScore(100, 98.0);
             assertEquals(147.0, score);
         }
 
@@ -43,7 +43,7 @@ class LeaderboardEntryTest {
             // WPM: 100, Accuracy: 95%
             // Base: 100 * (95 / 100.0) = 95.0
             // No multiplier (only > 95)
-            Double score = LeaderboardEntry.calculateCombinedScore(100, 95);
+            Double score = LeaderboardEntry.calculateCombinedScore(100, 95.0);
             assertEquals(95.0, score);
         }
 
@@ -53,7 +53,7 @@ class LeaderboardEntryTest {
             // WPM: 100, Accuracy: 96%
             // Base: 100 * (96 / 100.0) = 96.0
             // With multiplier: 96.0 * 1.5 = 144.0
-            Double score = LeaderboardEntry.calculateCombinedScore(100, 96);
+            Double score = LeaderboardEntry.calculateCombinedScore(100, 96.0);
             assertEquals(144.0, score);
         }
 
@@ -62,7 +62,7 @@ class LeaderboardEntryTest {
         void shouldRoundToTwoDecimalPlaces() {
             // WPM: 85, Accuracy: 87%
             // Base: 85 * (87 / 100.0) = 73.95
-            Double score = LeaderboardEntry.calculateCombinedScore(85, 87);
+            Double score = LeaderboardEntry.calculateCombinedScore(85, 87.0);
             assertEquals(73.95, score);
         }
 
@@ -71,14 +71,14 @@ class LeaderboardEntryTest {
         void shouldRoundUpCorrectly() {
             // WPM: 77, Accuracy: 93%
             // Base: 77 * (93 / 100.0) = 71.61
-            Double score = LeaderboardEntry.calculateCombinedScore(77, 93);
+            Double score = LeaderboardEntry.calculateCombinedScore(77, 93.0);
             assertEquals(71.61, score);
         }
 
         @Test
         @DisplayName("Should return 0.0 for null WPM")
         void shouldReturnZeroForNullWpm() {
-            Double score = LeaderboardEntry.calculateCombinedScore(null, 80);
+            Double score = LeaderboardEntry.calculateCombinedScore(null, 80.0);
             assertEquals(0.0, score);
         }
 
@@ -111,7 +111,7 @@ class LeaderboardEntryTest {
                     .build();
         }
 
-        private Leaderboard createTestLeaderboard(User user, Category category, int wpm, int accuracy) {
+        private Leaderboard createTestLeaderboard(User user, Category category, int wpm, double accuracy) {
             return Leaderboard.builder()
                     .leaderboardId(1L)
                     .user(user)
@@ -191,7 +191,7 @@ class LeaderboardEntryTest {
                     .username("builderuser")
                     .score(125.50)
                     .wpm(85)
-                    .accuracy(96)
+                    .accuracy(96.0)
                     .gameName("CHALLENGES")
                     .dateAchieved(date)
                     .build();
@@ -240,7 +240,7 @@ class LeaderboardEntryTest {
             LocalDateTime date = LocalDateTime.now();
             
             LeaderboardEntry entry = new LeaderboardEntry(
-                    3, "user3", 90.5, 70, 85, "GALAXY", date
+                    3, "user3", 90.5, 70, 85.0, "GALAXY", date
             );
 
             assertEquals(3, entry.getRank());
