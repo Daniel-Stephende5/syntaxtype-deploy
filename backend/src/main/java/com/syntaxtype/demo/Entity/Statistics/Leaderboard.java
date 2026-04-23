@@ -28,7 +28,7 @@ public class Leaderboard {
     private User user;
 
     private Integer wordsPerMinute;
-    private Integer accuracy;
+    private Double accuracy;
     private Integer totalWordsTyped;
     private Integer totalTimeSpent;
 

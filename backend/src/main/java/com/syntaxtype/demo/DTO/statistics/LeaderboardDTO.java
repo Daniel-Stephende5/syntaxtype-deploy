@@ -11,7 +11,7 @@ public class LeaderboardDTO {
     private Long leaderboardId;
     private Long userId;
     private Integer wordsPerMinute;
-    private Integer accuracy;
+    private Double accuracy;
     private Integer totalWordsTyped;
     private Integer totalTimeSpent;
     private Category category;

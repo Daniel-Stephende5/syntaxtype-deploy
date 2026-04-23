@@ -21,7 +21,7 @@ public class ScoreSubmissionRequest {
      * Accuracy percentage for typing games.
      * Set to 100 for non-typing games.
      */
-    private Integer accuracy;
+    private Double accuracy;
 
     /**
      * Raw game score.

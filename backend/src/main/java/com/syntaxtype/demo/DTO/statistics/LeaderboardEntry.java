@@ -16,7 +16,7 @@ public class LeaderboardEntry {
     private String username;
     private Double score;
     private Integer wpm;
-    private Integer accuracy;
+    private Double accuracy;
     private String gameName;
     private LocalDateTime dateAchieved;
 
@@ -60,7 +60,7 @@ public class LeaderboardEntry {
      * @param accuracy Accuracy percentage (0-100)
      * @return The calculated combined score rounded to 2 decimal places
      */
-    public static Double calculateCombinedScore(Integer wpm, Integer accuracy) {
+    public static Double calculateCombinedScore(Integer wpm, Double accuracy) {
         if (wpm == null || accuracy == null) {
             return 0.0;
         }

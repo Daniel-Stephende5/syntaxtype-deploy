@@ -89,7 +89,7 @@ public class LeaderboardService {
     }
 
     // PATCH: Update accuracy
-    public LeaderboardDTO updateAccuracy(Long leaderboardId, Integer newAccuracy) {
+    public LeaderboardDTO updateAccuracy(Long leaderboardId, Double newAccuracy) {
         Optional<Leaderboard> leaderboardOpt = leaderboardRepository.findById(leaderboardId);
         if (leaderboardOpt.isPresent()) {
             Leaderboard leaderboard = leaderboardOpt.get();
@@ -348,7 +348,7 @@ public class LeaderboardService {
      * @param rawScore Raw game score
      * @return LeaderboardUpdateResult with success, isNewBest, and rank
      */
-    public LeaderboardUpdateResult updateLeaderboardIfBetter(String username, Category category, Integer wpm, Integer accuracy, Integer rawScore) {
+    public LeaderboardUpdateResult updateLeaderboardIfBetter(String username, Category category, Integer wpm, Double accuracy, Integer rawScore) {
         try {
             // Find user by username
             User user = userRepository.findByUsername(username).orElse(null);

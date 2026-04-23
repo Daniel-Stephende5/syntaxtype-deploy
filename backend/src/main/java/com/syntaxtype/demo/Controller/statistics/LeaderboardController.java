@@ -141,7 +141,7 @@ public class LeaderboardController {
 
     @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','USER')")
     @PatchMapping("/{leaderboardId}/accuracy")
-    public ResponseEntity<LeaderboardDTO> updateAccuracy(@PathVariable Long leaderboardId, @RequestParam Integer newAccuracy) {
+    public ResponseEntity<LeaderboardDTO> updateAccuracy(@PathVariable Long leaderboardId, @RequestParam Double newAccuracy) {
         LeaderboardDTO updated = leaderboardService.updateAccuracy(leaderboardId, newAccuracy);
         if (updated != null) {
             return ResponseEntity.ok(updated);

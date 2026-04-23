@@ -34,8 +34,8 @@ public class StudentProgressDTO {
     public static class RecentActivity {
         private Long activityId;
         private String category;
-        private Integer wpm;
-        private Integer accuracy;
+        private Double wpm;
+        private Double accuracy;
         private Integer score;
         private LocalDateTime playedAt;
     }

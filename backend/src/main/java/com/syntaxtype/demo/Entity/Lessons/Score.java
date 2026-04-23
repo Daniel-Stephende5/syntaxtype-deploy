@@ -16,7 +16,7 @@ public class Score {
     private int timeInSeconds;
 
     private String challengeType;
-    private double wpm;
+    private Double wpm;
     private Double accuracy;
     private LocalDateTime submittedAt = LocalDateTime.now();
 
