@@ -88,6 +88,11 @@ const TeacherDashboard = () => {
     }
   }, [fetchStudents, fetchLeaderboard]);
 
+  // Initial data load
+  useEffect(() => {
+    fetchAllData();
+  }, [fetchAllData]);
+
   // Auto-retry on error after 5 seconds
   useEffect(() => {
     if (error) {
@@ -303,7 +308,7 @@ const TeacherDashboard = () => {
             {students.length > 0 && (
               <Grid container spacing={3}>
                 {students.map((student) => (
-                  <Grid item xs={12} sm={6} md={4} key={student.id}>
+                  <Grid item xs={12} sm={6} md={4} key={student.studentId}>
                     <Card 
                       elevation={3}
                       sx={{ 
@@ -316,7 +321,7 @@ const TeacherDashboard = () => {
                       }}
                     >
                       <CardActionArea
-                        onClick={() => handleStudentClick(student.id)}
+                        onClick={() => handleStudentClick(student.studentId)}
                         sx={{ height: "100%" }}
                       >
                         <CardContent>
