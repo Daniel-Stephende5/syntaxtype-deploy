@@ -133,7 +133,7 @@ const config = raw?.config || raw;
         text: wordText,
         y: 0,
         x: (i * 12) + Math.random() * 10,
-        isWrong: shouldPickWrong,
+        isWrong: wrongWordsPool.includes(wordText),
       });
     }
 
