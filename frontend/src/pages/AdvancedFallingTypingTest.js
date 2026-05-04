@@ -162,7 +162,7 @@ const config = raw?.config || raw;
     let lostWords = 0;
 
     const updated = fallingWordsRef.current.reduce((acc, word) => {
-      const newY = word.y + (0.2 * speed);
+      const newY = word.y + (0.09 * speed);
 
       if (newY > GAME_AREA_HEIGHT) {
        if (!word.isWrong) console.log("Life lost to correct word:", word.text);
