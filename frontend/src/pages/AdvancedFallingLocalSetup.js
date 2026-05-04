@@ -28,7 +28,7 @@ const AdvancedFallingLocalSetup = [
     "func","package","defer"    
       ],
 
-      duration: 60,
+      duration: 120,
       speed: 1.5,
       maxLives: 3,
       useLives: true
