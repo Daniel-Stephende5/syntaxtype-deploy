@@ -210,29 +210,34 @@ const config = raw?.config || raw;
     if (match) {
       setActiveWordId(match.id);
       if (value === match.text) {
-        if (match.isWrong) {
-          if (useLives) {
-            setLives(prev => {
-              const updated = prev - 1;
-              if (updated <= 0) {
-                setIsGameOver(true);
-                return 0;
-              }
-              return updated;
-            });
-          }
-        } else {
-          setScore(prev => prev + 1);
-        }
 
-        setFallingWords(prev => {
-          const updated = prev.filter(word => word.id !== match.id);
-          fallingWordsRef.current = updated;
-          return updated;
-        });
-        setCurrentInput("");
-        setActiveWordId(null);
-      }
+  if (match.isWrong) {
+    // ❌ Wrong word typed → LOSE LIFE
+    if (useLives) {
+      setLives(prev => {
+        const updated = prev - 1;
+        if (updated <= 0) {
+          setIsGameOver(true);
+          return 0;
+        }
+        return updated;
+      });
+    }
+  } else {
+    // ✅ Correct word typed → SCORE
+    setScore(prev => prev + 1);
+  }
+
+  // ✅ Remove the word (applies to both)
+  setFallingWords(prev => {
+    const updated = prev.filter(word => word.id !== match.id);
+    fallingWordsRef.current = updated;
+    return updated;
+  });
+
+  setCurrentInput("");
+  setActiveWordId(null);
+}
     } else {
       setActiveWordId(null);
     }
